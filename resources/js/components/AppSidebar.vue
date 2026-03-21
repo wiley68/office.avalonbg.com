@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid, Users } from 'lucide-vue-next';
+import {
+    BookOpen,
+    FolderGit2,
+    LayoutGrid,
+    StickyNote,
+    Users,
+} from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
@@ -17,16 +23,22 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
+import dashboardRoutes from '@/routes/dashboard';
 import { index as usersIndex } from '@/routes/users';
+import type { NavItem } from '@/types';
 
 const page = usePage();
 
 const mainNavItems = computed<NavItem[]>(() => [
     {
-        title: 'Dashboard',
+        title: 'Табло',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Бележки',
+        href: dashboardRoutes.notes.url(),
+        icon: StickyNote,
     },
     ...(page.props.auth.user?.is_admin
         ? [

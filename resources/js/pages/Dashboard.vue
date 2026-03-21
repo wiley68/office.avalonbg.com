@@ -1,47 +1,28 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
+import AgentChatPanel from '@/components/AgentChatPanel.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
+import { agent as postOrchestratorMessage } from '@/routes/dashboard';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Табло',
         href: dashboard(),
     },
 ];
 </script>
 
 <template>
-    <Head title="Dashboard" />
+    <Head title="Табло" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div
-            class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4"
-        >
-            <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-                <div
-                    class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
-                >
-                    <PlaceholderPattern />
-                </div>
-                <div
-                    class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
-                >
-                    <PlaceholderPattern />
-                </div>
-                <div
-                    class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
-                >
-                    <PlaceholderPattern />
-                </div>
-            </div>
-            <div
-                class="relative min-h-screen flex-1 rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border"
-            >
-                <PlaceholderPattern />
-            </div>
-        </div>
+        <AgentChatPanel
+            :post-url="postOrchestratorMessage.url()"
+            title="Офис координатор"
+            description="Общ агент: разбира заявката ви и ползва наличните инструменти (напр. бележки). С време ще се добавят още модули. За фокус само върху бележки отворете „Бележки“ от менюто."
+            placeholder="Например: Обобщи какво мога да правя тук. / Покажи бележките ми. / Как да създам бележка?"
+        />
     </AppLayout>
 </template>
