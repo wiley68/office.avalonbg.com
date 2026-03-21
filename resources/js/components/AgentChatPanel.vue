@@ -1,5 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { consumeAgentSseStream } from '@/composables/useAgentSse';
 
 export type ChatMessage = {
@@ -40,6 +46,7 @@ const textareaPlaceholder = computed(
 const message = ref('');
 const messages = ref<ChatMessage[]>([]);
 const streamingAssistant = ref<string | null>(null);
+const copiedMessageId = ref<string | null>(null);
 const error = ref<string | null>(null);
 const validationErrors = ref<string[]>([]);
 const sending = ref(false);
@@ -185,19 +192,6 @@ const startNewConversation = (): void => {
     });
 };
 
-const formatTime = (iso: string): string => {
-    try {
-        return new Date(iso).toLocaleString('bg-BG', {
-            day: '2-digit',
-            month: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
-    } catch {
-        return '';
-    }
-};
-
 const formatSidebarDate = (iso: string): string => {
     try {
         return new Date(iso).toLocaleDateString('bg-BG', {
@@ -234,6 +228,40 @@ const onMessageKeydown = (e: KeyboardEvent): void => {
 
     e.preventDefault();
     void submit();
+};
+
+const copyAssistantMessage = async (
+    messageId: string,
+    content: string,
+): Promise<void> => {
+    try {
+        if (
+            typeof navigator !== 'undefined' &&
+            navigator.clipboard &&
+            typeof navigator.clipboard.writeText === 'function'
+        ) {
+            await navigator.clipboard.writeText(content);
+        } else {
+            const input = document.createElement('textarea');
+            input.value = content;
+            input.style.position = 'fixed';
+            input.style.opacity = '0';
+            document.body.appendChild(input);
+            input.focus();
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+        }
+
+        copiedMessageId.value = messageId;
+        window.setTimeout(() => {
+            if (copiedMessageId.value === messageId) {
+                copiedMessageId.value = null;
+            }
+        }, 1400);
+    } catch {
+        error.value = 'Неуспешно копиране в клипборда.';
+    }
 };
 
 const submit = async (): Promise<void> => {
@@ -383,7 +411,7 @@ const submit = async (): Promise<void> => {
                             class="flex w-full flex-col items-start gap-0.5 rounded-lg border px-2.5 py-2 text-left text-sm transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                             :class="
                                 conversationId === c.id
-                                    ? 'border-primary/50 bg-primary/10 text-foreground'
+                                    ? 'border-sidebar-border/60 bg-muted/50 text-foreground dark:border-sidebar-border/80 dark:bg-muted/30'
                                     : 'border-transparent bg-transparent text-foreground hover:bg-muted/50'
                             "
                             @click="selectConversation(c.id)"
@@ -404,10 +432,12 @@ const submit = async (): Promise<void> => {
         <div
             class="mx-auto flex min-h-0 min-w-0 flex-1 flex-col gap-4 p-4 md:p-6 lg:max-w-none lg:p-8"
         >
-            <div class="flex min-h-0 flex-1 flex-col gap-2">
+            <div
+                class="flex min-h-0 w-full max-w-3xl flex-1 flex-col gap-2 self-center"
+            >
                 <div
                     ref="historyEl"
-                    class="flex min-h-[min(280px,35vh)] flex-1 flex-col gap-3 overflow-y-auto rounded-lg border border-sidebar-border/70 bg-muted/20 p-3 lg:min-h-0 dark:border-sidebar-border"
+                    class="flex min-h-[min(280px,35vh)] flex-1 flex-col gap-3 overflow-y-auto p-3 lg:min-h-0"
                 >
                     <p
                         v-if="
@@ -422,29 +452,78 @@ const submit = async (): Promise<void> => {
                     <div
                         v-for="m in messages"
                         :key="m.id"
-                        class="flex w-full flex-col gap-1"
+                        class="flex w-full flex-col"
                         :class="m.role === 'user' ? 'items-end' : 'items-start'"
                     >
                         <div
-                            class="max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap"
+                            class="max-w-[85%] rounded-lg px-3 py-2 text-sm wrap-anywhere whitespace-pre-wrap"
                             :class="
                                 m.role === 'user'
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'border border-sidebar-border/60 bg-background text-foreground dark:border-sidebar-border'
+                                    ? 'bg-muted text-foreground'
+                                    : 'text-foreground'
                             "
                         >
                             {{ m.content }}
                         </div>
-                        <span class="text-[10px] text-muted-foreground">{{
-                            formatTime(m.created_at)
-                        }}</span>
+                        <div
+                            v-if="m.role === 'assistant'"
+                            class="mt-1 flex w-full max-w-[85%] items-center"
+                        >
+                            <TooltipProvider :delay-duration="0">
+                                <Tooltip>
+                                    <TooltipTrigger as-child>
+                                        <button
+                                            type="button"
+                                            class="inline-flex items-center rounded-md p-1 text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-muted-foreground/30 focus-visible:outline-none"
+                                            :aria-label="
+                                                copiedMessageId === m.id
+                                                    ? 'Копирано'
+                                                    : 'Копирай отговора'
+                                            "
+                                            @click="
+                                                copyAssistantMessage(
+                                                    m.id,
+                                                    m.content,
+                                                )
+                                            "
+                                        >
+                                            <svg
+                                                class="size-5"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                aria-hidden="true"
+                                            >
+                                                <rect
+                                                    x="9"
+                                                    y="9"
+                                                    width="13"
+                                                    height="13"
+                                                    rx="2"
+                                                    ry="2"
+                                                />
+                                                <path
+                                                    d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                                                />
+                                            </svg>
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Копирай отговора</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
                     </div>
                     <div
                         v-if="streamingAssistant !== null"
                         class="flex w-full flex-col items-start gap-1"
                     >
                         <div
-                            class="max-w-[85%] rounded-2xl border border-dashed border-primary/40 bg-background px-3 py-2 text-sm whitespace-pre-wrap text-foreground"
+                            class="max-w-[85%] px-3 py-2 text-sm wrap-anywhere whitespace-pre-wrap text-foreground"
                         >
                             {{ streamingAssistant }}
                             <span
@@ -459,13 +538,13 @@ const submit = async (): Promise<void> => {
                 </div>
             </div>
 
-            <div class="flex flex-col">
+            <div class="flex w-full max-w-3xl flex-col self-center">
                 <textarea
                     ref="messageInputEl"
                     :id="textareaId"
                     v-model="message"
                     rows="3"
-                    class="min-h-[72px] w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    class="min-h-[72px] w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-muted-foreground/30 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                     :placeholder="textareaPlaceholder"
                     :disabled="sending"
                     aria-label="Поле за съобщение към агента"
@@ -476,7 +555,7 @@ const submit = async (): Promise<void> => {
 
             <div
                 v-if="validationErrors.length"
-                class="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                class="w-full max-w-3xl self-center rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
             >
                 <ul class="list-inside list-disc space-y-1">
                     <li v-for="(err, i) in validationErrors" :key="i">
@@ -487,7 +566,7 @@ const submit = async (): Promise<void> => {
 
             <div
                 v-if="error"
-                class="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                class="w-full max-w-3xl self-center rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
             >
                 {{ error }}
             </div>
