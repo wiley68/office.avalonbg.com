@@ -10,6 +10,8 @@ import type { BreadcrumbItem } from '@/types';
 
 const messagesUrl = (id: string) =>
     dashboardRoutes.agent.conversation.messages.url(id);
+const feedbackUrl = (id: string) =>
+    dashboardRoutes.agent.message.feedback.url(id);
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -34,6 +36,7 @@ const pageDescription =
             :post-url="postOrchestratorMessage.url()"
             :messages-url="messagesUrl"
             :conversations-url="dashboardRoutes.agent.conversations.url()"
+            :feedback-url="feedbackUrl"
             session-key="office-orchestrator"
             placeholder="Вашата заявка, например: Обобщи какво мога да правя тук. / Покажи бележките ми. / Как да създам бележка?"
         />

@@ -8,6 +8,8 @@ import type { BreadcrumbItem } from '@/types';
 
 const messagesUrl = (id: string) =>
     dashboardRoutes.notes.agent.conversation.messages.url(id);
+const feedbackUrl = (id: string) =>
+    dashboardRoutes.notes.agent.message.feedback.url(id);
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -36,6 +38,7 @@ const pageDescription =
             :post-url="dashboardRoutes.notes.agent.url()"
             :messages-url="messagesUrl"
             :conversations-url="dashboardRoutes.notes.agent.conversations.url()"
+            :feedback-url="feedbackUrl"
             session-key="office-notes-agent"
             textarea-id="notes-agent-message"
             placeholder="Вашата заявка, например: Покажи ми бележките ми. / Създай бележка „Среща“ с описание …"

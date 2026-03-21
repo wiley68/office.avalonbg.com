@@ -2,9 +2,11 @@
 import { usePage } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import {
+    BarChart3,
     BookOpen,
     FolderGit2,
     LayoutGrid,
+    Shield,
     StickyNote,
     Users,
 } from 'lucide-vue-next';
@@ -42,12 +44,24 @@ const mainNavItems = computed<NavItem[]>(() => [
     },
     ...(page.props.auth.user?.is_admin
         ? [
-            {
-                title: 'Users',
-                href: usersIndex(),
-                icon: Users,
-            } satisfies NavItem,
-        ]
+              {
+                  title: 'Администрация',
+                  href: usersIndex(),
+                  icon: Shield,
+                  children: [
+                      {
+                          title: 'Потребители',
+                          href: usersIndex(),
+                          icon: Users,
+                      },
+                      {
+                          title: 'Статистика',
+                          href: dashboardRoutes.admin.statistics.url(),
+                          icon: BarChart3,
+                      },
+                  ],
+              } satisfies NavItem,
+          ]
         : []),
 ]);
 
