@@ -6,6 +6,9 @@ import { dashboard } from '@/routes';
 import dashboardRoutes from '@/routes/dashboard';
 import type { BreadcrumbItem } from '@/types';
 
+const messagesUrl = (id: string) =>
+    dashboardRoutes.notes.agent.conversation.messages.url(id);
+
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Табло',
@@ -24,6 +27,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     <AppLayout :breadcrumbs="breadcrumbs">
         <AgentChatPanel
             :post-url="dashboardRoutes.notes.agent.url()"
+            :messages-url="messagesUrl"
             session-key="office-notes-agent"
             textarea-id="notes-agent-message"
             title="Агент за бележки"

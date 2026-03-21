@@ -1,15 +1,23 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { nextTick, onMounted, ref, watch } from 'vue';
+import { consumeAgentSseStream } from '@/composables/useAgentSse';
+
+export type ChatMessage = {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    created_at: string;
+};
 
 type Props = {
-    /** Wayfinder URL string за POST към агента */
     postUrl: string;
+    /** GET JSON с история за даден conversation id */
+    messagesUrl: (conversationId: string) => string;
     title: string;
     description: string;
     placeholder?: string;
     textareaId?: string;
     submitLabel?: string;
-    /** Уникален ключ за sessionStorage (различен за оркестратор vs бележки) */
     sessionKey?: string;
 };
 
@@ -21,29 +29,68 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const message = ref('');
-const reply = ref<string | null>(null);
+const messages = ref<ChatMessage[]>([]);
+const streamingAssistant = ref<string | null>(null);
 const error = ref<string | null>(null);
 const validationErrors = ref<string[]>([]);
 const sending = ref(false);
 const conversationId = ref<string | null>(null);
+const historyEl = ref<HTMLElement | null>(null);
 
-const storageId = computed(
-    () =>
-        props.sessionKey.length > 0
-            ? props.sessionKey
-            : `conv:${props.postUrl}`,
-);
+const storageId = () =>
+    props.sessionKey.length > 0
+        ? props.sessionKey
+        : `conv:${props.postUrl}`;
 
-const canSend = computed(
-    () => message.value.trim().length > 0 && !sending.value,
-);
+const canSend = () =>
+    message.value.trim().length > 0 && !sending.value;
 
 const csrfToken = (): string =>
     document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
         ?.content ?? '';
 
+const scrollHistoryToBottom = async (): Promise<void> => {
+    await nextTick();
+    const el = historyEl.value;
+
+    if (el) {
+        el.scrollTop = el.scrollHeight;
+    }
+};
+
+const loadHistory = async (): Promise<void> => {
+    if (!conversationId.value) {
+        messages.value = [];
+
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            props.messagesUrl(conversationId.value),
+            {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            },
+        );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data = (await response.json()) as { messages: ChatMessage[] };
+        messages.value = data.messages ?? [];
+        await scrollHistoryToBottom();
+    } catch {
+        //
+    }
+};
+
 onMounted(() => {
-    const stored = sessionStorage.getItem(storageId.value);
+    const stored = sessionStorage.getItem(storageId());
 
     if (stored) {
         conversationId.value = stored;
@@ -52,28 +99,44 @@ onMounted(() => {
 
 watch(conversationId, (id) => {
     if (id) {
-        sessionStorage.setItem(storageId.value, id);
+        sessionStorage.setItem(storageId(), id);
     } else {
-        sessionStorage.removeItem(storageId.value);
+        sessionStorage.removeItem(storageId());
     }
+
+    void loadHistory();
 });
 
 const startNewConversation = (): void => {
     conversationId.value = null;
-    reply.value = null;
+    messages.value = [];
+    streamingAssistant.value = null;
     error.value = null;
     validationErrors.value = [];
 };
 
+const formatTime = (iso: string): string => {
+    try {
+        return new Date(iso).toLocaleString('bg-BG', {
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    } catch {
+        return '';
+    }
+};
+
 const submit = async (): Promise<void> => {
-    if (!canSend.value) {
+    if (!canSend()) {
         return;
     }
 
-    reply.value = null;
     error.value = null;
     validationErrors.value = [];
     sending.value = true;
+    streamingAssistant.value = '';
 
     try {
         const payload: Record<string, string> = {
@@ -87,7 +150,7 @@ const submit = async (): Promise<void> => {
         const response = await fetch(props.postUrl, {
             method: 'POST',
             headers: {
-                Accept: 'application/json',
+                Accept: 'text/event-stream',
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken(),
                 'X-Requested-With': 'XMLHttpRequest',
@@ -96,39 +159,65 @@ const submit = async (): Promise<void> => {
             body: JSON.stringify(payload),
         });
 
-        const data = (await response.json()) as {
-            reply?: string;
-            conversation_id?: string;
-            message?: string;
-            error?: string | null;
-            errors?: Record<string, string[]>;
-        };
+        const contentType = response.headers.get('Content-Type') ?? '';
 
-        if (response.status === 422 && data.errors) {
-            validationErrors.value = Object.values(data.errors).flat();
+        if (response.status === 422 && contentType.includes('application/json')) {
+            const data = (await response.json()) as {
+                errors?: Record<string, string[]>;
+            };
+
+            if (data.errors) {
+                validationErrors.value = Object.values(data.errors).flat();
+            }
+
+            streamingAssistant.value = null;
 
             return;
         }
 
-        if (!response.ok) {
+        if (!response.ok && contentType.includes('application/json')) {
+            const data = (await response.json()) as {
+                message?: string;
+                error?: string | null;
+            };
+
             error.value =
                 data.message ??
                 data.error ??
                 `Грешка ${response.status}. Опитайте отново.`;
+            streamingAssistant.value = null;
 
             return;
         }
 
-        if (typeof data.conversation_id === 'string' && data.conversation_id) {
-            conversationId.value = data.conversation_id;
+        if (!response.ok || !response.body) {
+            error.value = `Грешка ${response.status}. Опитайте отново.`;
+            streamingAssistant.value = null;
+
+            return;
         }
 
-        if (typeof data.reply === 'string') {
-            reply.value = data.reply;
-        }
+        await consumeAgentSseStream(
+            response.body,
+            (delta) => {
+                streamingAssistant.value =
+                    (streamingAssistant.value ?? '') + delta;
+                void scrollHistoryToBottom();
+            },
+            (id) => {
+                if (typeof id === 'string' && id.length > 0) {
+                    conversationId.value = id;
+                }
+            },
+        );
+
+        streamingAssistant.value = null;
+        await loadHistory();
+        message.value = '';
     } catch (e) {
         error.value =
             e instanceof Error ? e.message : 'Неуспешна заявка към сървъра.';
+        streamingAssistant.value = null;
     } finally {
         sending.value = false;
     }
@@ -165,6 +254,62 @@ const submit = async (): Promise<void> => {
             </button>
         </div>
 
+        <div class="flex flex-col gap-2">
+            <h2 class="text-sm font-medium text-foreground">История</h2>
+            <div
+                ref="historyEl"
+                class="flex max-h-[min(360px,50vh)] flex-col gap-3 overflow-y-auto rounded-lg border border-sidebar-border/70 bg-muted/20 p-3 dark:border-sidebar-border"
+            >
+                <p
+                    v-if="
+                        messages.length === 0 &&
+                        streamingAssistant === null &&
+                        !sending
+                    "
+                    class="text-center text-sm text-muted-foreground"
+                >
+                    Няма съобщения. Изпратете заявка по-долу.
+                </p>
+                <div
+                    v-for="m in messages"
+                    :key="m.id"
+                    class="flex w-full flex-col gap-1"
+                    :class="m.role === 'user' ? 'items-end' : 'items-start'"
+                >
+                    <div
+                        class="max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap"
+                        :class="
+                            m.role === 'user'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'border border-sidebar-border/60 bg-background text-foreground dark:border-sidebar-border'
+                        "
+                    >
+                        {{ m.content }}
+                    </div>
+                    <span class="text-[10px] text-muted-foreground">{{
+                        formatTime(m.created_at)
+                    }}</span>
+                </div>
+                <div
+                    v-if="streamingAssistant !== null"
+                    class="flex w-full flex-col gap-1 items-start"
+                >
+                    <div
+                        class="max-w-[85%] rounded-2xl border border-dashed border-primary/40 bg-background px-3 py-2 text-sm whitespace-pre-wrap text-foreground"
+                    >
+                        {{ streamingAssistant }}
+                        <span
+                            v-if="sending"
+                            class="ml-1 inline-block size-2 animate-pulse rounded-full bg-primary"
+                        />
+                    </div>
+                    <span class="text-[10px] text-muted-foreground"
+                        >Стрийминг…</span
+                    >
+                </div>
+            </div>
+        </div>
+
         <div class="flex flex-col gap-3">
             <label
                 :for="textareaId"
@@ -175,8 +320,8 @@ const submit = async (): Promise<void> => {
             <textarea
                 :id="textareaId"
                 v-model="message"
-                rows="6"
-                class="min-h-[140px] w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                rows="4"
+                class="min-h-[100px] w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                 :placeholder="placeholder"
                 :disabled="sending"
                 @keydown.ctrl.enter.prevent="submit"
@@ -191,7 +336,7 @@ const submit = async (): Promise<void> => {
             <button
                 type="button"
                 class="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-                :disabled="!canSend"
+                :disabled="!canSend()"
                 @click="submit"
             >
                 <span
@@ -218,16 +363,6 @@ const submit = async (): Promise<void> => {
             class="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
         >
             {{ error }}
-        </div>
-
-        <div v-if="reply !== null" class="flex flex-col gap-2">
-            <h2 class="text-sm font-medium text-foreground">
-                Отговор на агента
-            </h2>
-            <pre
-                class="max-h-[min(480px,70vh)] overflow-auto whitespace-pre-wrap rounded-lg border border-sidebar-border/70 bg-muted/40 p-4 text-sm text-foreground dark:border-sidebar-border"
-                >{{ reply }}</pre
-            >
         </div>
     </div>
 </template>

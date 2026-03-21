@@ -4,16 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Ai\OfficeAgentTools;
 use App\Http\Requests\StoreAgentMessageRequest;
+use App\Http\Responses\AgentSseResponse;
 use App\Support\OfficeAgent;
 use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
 class DashboardAgentController extends Controller
 {
     /**
-     * Общ офис оркестратор: избира кои инструменти да ползва според заявката.
+     * Общ офис оркестратор: избира кои инструменти да ползва според заявката (SSE stream).
      */
-    public function store(StoreAgentMessageRequest $request): JsonResponse
+    public function store(StoreAgentMessageRequest $request): JsonResponse|StreamedResponse
     {
         $instructions = <<<'TXT'
 Ти си общият офис координатор (оркестратор). Отговаряй на български, ясно и кратко.
@@ -29,7 +31,7 @@ TXT;
         try {
             $validated = $request->validated();
 
-            $response = OfficeAgent::promptWithMemory(
+            $streamable = OfficeAgent::streamWithMemory(
                 $request->user(),
                 $validated['conversation_id'] ?? null,
                 $validated['message'],
@@ -37,10 +39,7 @@ TXT;
                 OfficeAgentTools::forOrchestrator(),
             );
 
-            return response()->json([
-                'reply' => $response->text,
-                'conversation_id' => $response->conversationId,
-            ]);
+            return AgentSseResponse::fromStreamable($streamable);
         } catch (Throwable $e) {
             report($e);
 

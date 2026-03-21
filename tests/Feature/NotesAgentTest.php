@@ -6,6 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Ai\Ai;
 
 use function Pest\Laravel\actingAs;
+use function Pest\Laravel\post;
 use function Pest\Laravel\postJson;
 
 uses(RefreshDatabase::class);
@@ -15,17 +16,21 @@ test('guest cannot send message to notes agent', function () {
         ->assertUnauthorized();
 });
 
-test('authenticated user receives reply from notes agent when ai is faked', function () {
+test('authenticated user receives sse stream from notes agent when ai is faked', function () {
     Ai::fakeAgent(ConversationalOfficeAgent::class, ['Отговор от агента за бележки.']);
 
     $user = User::factory()->create();
 
     actingAs($user);
 
-    postJson('/dashboard/notes/agent', ['message' => 'Списък бележки'])
-        ->assertOk()
-        ->assertJson([
-            'reply' => 'Отговор от агента за бележки.',
-        ])
-        ->assertJsonStructure(['conversation_id']);
+    $response = post('/dashboard/notes/agent', ['message' => 'Списък бележки']);
+
+    $response->assertOk();
+    expect($response->headers->get('Content-Type'))->toContain('text/event-stream');
+
+    $content = $response->streamedContent();
+    expect($content)->toContain('text_delta');
+    expect($content)->toContain('"type":"meta"');
+    expect($content)->toContain('conversation_id');
+    expect($content)->toContain('[DONE]');
 });

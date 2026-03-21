@@ -3,8 +3,13 @@ import { Head } from '@inertiajs/vue3';
 import AgentChatPanel from '@/components/AgentChatPanel.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
-import { agent as postOrchestratorMessage } from '@/routes/dashboard';
+import dashboardRoutes, {
+    agent as postOrchestratorMessage,
+} from '@/routes/dashboard';
 import type { BreadcrumbItem } from '@/types';
+
+const messagesUrl = (id: string) =>
+    dashboardRoutes.agent.conversation.messages.url(id);
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -20,6 +25,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     <AppLayout :breadcrumbs="breadcrumbs">
         <AgentChatPanel
             :post-url="postOrchestratorMessage.url()"
+            :messages-url="messagesUrl"
             session-key="office-orchestrator"
             title="Офис координатор"
             description="Общ агент: разбира заявката ви и ползва наличните инструменти (напр. бележки). Разговорът се пази на сървъра — за нов контекст ползвайте „Нов разговор“. За фокус само върху бележки отворете „Бележки“ от менюто."
