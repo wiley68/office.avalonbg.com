@@ -28,6 +28,7 @@ const breadcrumbs: BreadcrumbItem[] = [
         <AgentChatPanel
             :post-url="dashboardRoutes.notes.agent.url()"
             :messages-url="messagesUrl"
+            :conversations-url="dashboardRoutes.notes.agent.conversations.url()"
             session-key="office-notes-agent"
             textarea-id="notes-agent-message"
             title="Агент за бележки"

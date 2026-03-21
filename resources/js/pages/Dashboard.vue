@@ -26,6 +26,7 @@ const breadcrumbs: BreadcrumbItem[] = [
         <AgentChatPanel
             :post-url="postOrchestratorMessage.url()"
             :messages-url="messagesUrl"
+            :conversations-url="dashboardRoutes.agent.conversations.url()"
             session-key="office-orchestrator"
             title="Офис координатор"
             description="Общ агент: разбира заявката ви и ползва наличните инструменти (напр. бележки). Разговорът се пази на сървъра — за нов контекст ползвайте „Нов разговор“. За фокус само върху бележки отворете „Бележки“ от менюто."

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\AgentContext;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -23,13 +24,28 @@ class StoreAgentMessageRequest extends FormRequest
      */
     public function rules(): array
     {
+        $context = $this->expectedAgentContext();
+
         return [
             'message' => ['required', 'string', 'max:16000'],
             'conversation_id' => [
                 'nullable',
                 'uuid',
-                Rule::exists('agent_conversations', 'id')->where('user_id', $this->user()?->id),
+                Rule::exists('agent_conversations', 'id')
+                    ->where('user_id', $this->user()?->id)
+                    ->where('context', $context->value),
             ],
         ];
+    }
+
+    protected function expectedAgentContext(): AgentContext
+    {
+        return match (true) {
+            $this->routeIs('dashboard.agent') => AgentContext::Orchestrator,
+            $this->routeIs('dashboard.notes.agent') => AgentContext::Notes,
+            default => throw new \LogicException(
+                'Unexpected route for agent message: '.$this->route()?->getName()
+            ),
+        };
     }
 }
