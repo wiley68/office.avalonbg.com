@@ -2,24 +2,34 @@
 
 namespace App\Support;
 
+use App\Ai\Agents\ConversationalOfficeAgent;
+use App\Models\User;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Responses\AgentResponse;
 
-use function Laravel\Ai\agent;
-
 /**
- * Общ вход за изпълнение на офис агент (оркестратор или специализиран).
+ * Изпълнение на офис агент с опционален разговор (запис в agent_conversations).
  */
 final class OfficeAgent
 {
     /**
      * @param  iterable<int, Tool>  $tools
      */
-    public static function prompt(string $message, string $instructions, iterable $tools): AgentResponse
-    {
-        return agent(
-            instructions: $instructions,
-            tools: $tools,
-        )->prompt($message);
+    public static function promptWithMemory(
+        User $user,
+        ?string $conversationId,
+        string $message,
+        string $instructions,
+        iterable $tools,
+    ): AgentResponse {
+        $agent = new ConversationalOfficeAgent($instructions, $tools);
+
+        if ($conversationId !== null) {
+            $agent->continue($conversationId, $user);
+        } else {
+            $agent->forUser($user);
+        }
+
+        return $agent->prompt($message);
     }
 }

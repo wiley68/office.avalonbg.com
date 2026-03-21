@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreAgentMessageRequest extends FormRequest
 {
@@ -24,6 +25,11 @@ class StoreAgentMessageRequest extends FormRequest
     {
         return [
             'message' => ['required', 'string', 'max:16000'],
+            'conversation_id' => [
+                'nullable',
+                'uuid',
+                Rule::exists('agent_conversations', 'id')->where('user_id', $this->user()?->id),
+            ],
         ];
     }
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
 type Props = {
     /** Wayfinder URL string за POST към агента */
@@ -9,12 +9,15 @@ type Props = {
     placeholder?: string;
     textareaId?: string;
     submitLabel?: string;
+    /** Уникален ключ за sessionStorage (различен за оркестратор vs бележки) */
+    sessionKey?: string;
 };
 
 const props = withDefaults(defineProps<Props>(), {
     placeholder: 'Напишете заявката си…',
     textareaId: 'agent-message',
     submitLabel: 'Изпрати към агента',
+    sessionKey: '',
 });
 
 const message = ref('');
@@ -22,6 +25,14 @@ const reply = ref<string | null>(null);
 const error = ref<string | null>(null);
 const validationErrors = ref<string[]>([]);
 const sending = ref(false);
+const conversationId = ref<string | null>(null);
+
+const storageId = computed(
+    () =>
+        props.sessionKey.length > 0
+            ? props.sessionKey
+            : `conv:${props.postUrl}`,
+);
 
 const canSend = computed(
     () => message.value.trim().length > 0 && !sending.value,
@@ -30,6 +41,29 @@ const canSend = computed(
 const csrfToken = (): string =>
     document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
         ?.content ?? '';
+
+onMounted(() => {
+    const stored = sessionStorage.getItem(storageId.value);
+
+    if (stored) {
+        conversationId.value = stored;
+    }
+});
+
+watch(conversationId, (id) => {
+    if (id) {
+        sessionStorage.setItem(storageId.value, id);
+    } else {
+        sessionStorage.removeItem(storageId.value);
+    }
+});
+
+const startNewConversation = (): void => {
+    conversationId.value = null;
+    reply.value = null;
+    error.value = null;
+    validationErrors.value = [];
+};
 
 const submit = async (): Promise<void> => {
     if (!canSend.value) {
@@ -42,6 +76,14 @@ const submit = async (): Promise<void> => {
     sending.value = true;
 
     try {
+        const payload: Record<string, string> = {
+            message: message.value,
+        };
+
+        if (conversationId.value) {
+            payload.conversation_id = conversationId.value;
+        }
+
         const response = await fetch(props.postUrl, {
             method: 'POST',
             headers: {
@@ -51,11 +93,12 @@ const submit = async (): Promise<void> => {
                 'X-Requested-With': 'XMLHttpRequest',
             },
             credentials: 'same-origin',
-            body: JSON.stringify({ message: message.value }),
+            body: JSON.stringify(payload),
         });
 
         const data = (await response.json()) as {
             reply?: string;
+            conversation_id?: string;
             message?: string;
             error?: string | null;
             errors?: Record<string, string[]>;
@@ -76,6 +119,10 @@ const submit = async (): Promise<void> => {
             return;
         }
 
+        if (typeof data.conversation_id === 'string' && data.conversation_id) {
+            conversationId.value = data.conversation_id;
+        }
+
         if (typeof data.reply === 'string') {
             reply.value = data.reply;
         }
@@ -90,15 +137,32 @@ const submit = async (): Promise<void> => {
 
 <template>
     <div class="mx-auto flex max-w-3xl flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
-        <div>
-            <h1
-                class="text-2xl font-semibold tracking-tight text-foreground"
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+                <h1
+                    class="text-2xl font-semibold tracking-tight text-foreground"
+                >
+                    {{ title }}
+                </h1>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    {{ description }}
+                </p>
+                <p
+                    v-if="conversationId"
+                    class="mt-2 font-mono text-xs text-muted-foreground"
+                >
+                    Разговор:
+                    {{ conversationId.slice(0, 8) }}… (памет в сървъра)
+                </p>
+            </div>
+            <button
+                type="button"
+                class="shrink-0 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm transition hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                :disabled="sending"
+                @click="startNewConversation"
             >
-                {{ title }}
-            </h1>
-            <p class="mt-1 text-sm text-muted-foreground">
-                {{ description }}
-            </p>
+                Нов разговор
+            </button>
         </div>
 
         <div class="flex flex-col gap-3">

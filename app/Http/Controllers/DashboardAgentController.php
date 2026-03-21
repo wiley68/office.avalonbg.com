@@ -27,14 +27,19 @@ class DashboardAgentController extends Controller
 TXT;
 
         try {
-            $response = OfficeAgent::prompt(
-                $request->validated('message'),
+            $validated = $request->validated();
+
+            $response = OfficeAgent::promptWithMemory(
+                $request->user(),
+                $validated['conversation_id'] ?? null,
+                $validated['message'],
                 $instructions,
                 OfficeAgentTools::forOrchestrator(),
             );
 
             return response()->json([
                 'reply' => $response->text,
+                'conversation_id' => $response->conversationId,
             ]);
         } catch (Throwable $e) {
             report($e);

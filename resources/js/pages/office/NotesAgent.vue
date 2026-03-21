@@ -24,9 +24,10 @@ const breadcrumbs: BreadcrumbItem[] = [
     <AppLayout :breadcrumbs="breadcrumbs">
         <AgentChatPanel
             :post-url="dashboardRoutes.notes.agent.url()"
+            session-key="office-notes-agent"
             textarea-id="notes-agent-message"
             title="Агент за бележки"
-            description="Тук работи само агентът за вашите лични бележки (notes): преглед, създаване, редакция и изтриване."
+            description="Тук работи само агентът за вашите лични бележки (notes). Историята на разговора се пази на сървъра; „Нов разговор“ започва изчистен контекст."
             placeholder="Например: Покажи ми бележките ми. / Създай бележка „Среща“ с описание …"
         />
     </AppLayout>

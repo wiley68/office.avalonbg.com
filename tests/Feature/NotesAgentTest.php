@@ -1,9 +1,9 @@
 <?php
 
+use App\Ai\Agents\ConversationalOfficeAgent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Ai\Ai;
-use Laravel\Ai\AnonymousAgent;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\postJson;
@@ -16,7 +16,7 @@ test('guest cannot send message to notes agent', function () {
 });
 
 test('authenticated user receives reply from notes agent when ai is faked', function () {
-    Ai::fakeAgent(AnonymousAgent::class, ['Отговор от агента за бележки.']);
+    Ai::fakeAgent(ConversationalOfficeAgent::class, ['Отговор от агента за бележки.']);
 
     $user = User::factory()->create();
 
@@ -26,5 +26,6 @@ test('authenticated user receives reply from notes agent when ai is faked', func
         ->assertOk()
         ->assertJson([
             'reply' => 'Отговор от агента за бележки.',
-        ]);
+        ])
+        ->assertJsonStructure(['conversation_id']);
 });
