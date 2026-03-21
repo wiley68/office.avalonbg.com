@@ -46,8 +46,8 @@ test('admin can create user and new user gets user role', function () {
     post('/users', [
         'name' => 'New User',
         'email' => 'new.user@example.com',
-        'password' => 'password123',
-        'password_confirmation' => 'password123',
+        'password' => 'Password123!',
+        'password_confirmation' => 'Password123!',
     ])
         ->assertRedirect('/users');
 
