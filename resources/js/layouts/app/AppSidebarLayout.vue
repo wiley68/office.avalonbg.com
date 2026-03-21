@@ -7,6 +7,8 @@ import type { BreadcrumbItem } from '@/types';
 
 type Props = {
     breadcrumbs?: BreadcrumbItem[];
+    pageTitle?: string;
+    pageDescription?: string;
 };
 
 withDefaults(defineProps<Props>(), {
@@ -18,7 +20,11 @@ withDefaults(defineProps<Props>(), {
     <AppShell variant="sidebar">
         <AppSidebar />
         <AppContent variant="sidebar" class="overflow-x-hidden">
-            <AppSidebarHeader :breadcrumbs="breadcrumbs" />
+            <AppSidebarHeader
+                :breadcrumbs="breadcrumbs"
+                :page-title="pageTitle"
+                :page-description="pageDescription"
+            />
             <slot />
         </AppContent>
     </AppShell>

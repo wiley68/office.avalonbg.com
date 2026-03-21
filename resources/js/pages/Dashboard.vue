@@ -17,20 +17,25 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: dashboard(),
     },
 ];
+
+const pageDescription =
+    'Общ агент: разбира заявката ви и ползва наличните инструменти (напр. бележки). Разговорът се пази на сървъра — за нов контекст ползвайте „Нов разговор“. За фокус само върху бележки отворете „Бележки“ от менюто.';
 </script>
 
 <template>
     <Head title="Табло" />
 
-    <AppLayout :breadcrumbs="breadcrumbs">
+    <AppLayout
+        :breadcrumbs="breadcrumbs"
+        page-title="Офис координатор"
+        :page-description="pageDescription"
+    >
         <AgentChatPanel
             :post-url="postOrchestratorMessage.url()"
             :messages-url="messagesUrl"
             :conversations-url="dashboardRoutes.agent.conversations.url()"
             session-key="office-orchestrator"
-            title="Офис координатор"
-            description="Общ агент: разбира заявката ви и ползва наличните инструменти (напр. бележки). Разговорът се пази на сървъра — за нов контекст ползвайте „Нов разговор“. За фокус само върху бележки отворете „Бележки“ от менюто."
-            placeholder="Например: Обобщи какво мога да правя тук. / Покажи бележките ми. / Как да създам бележка?"
+            placeholder="Вашата заявка, например: Обобщи какво мога да правя тук. / Покажи бележките ми. / Как да създам бележка?"
         />
     </AppLayout>
 </template>

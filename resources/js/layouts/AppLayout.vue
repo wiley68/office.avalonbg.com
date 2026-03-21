@@ -4,6 +4,9 @@ import type { BreadcrumbItem } from '@/types';
 
 type Props = {
     breadcrumbs?: BreadcrumbItem[];
+    /** Заглавие на страницата в хедъра (до/под breadcrumbs), без отделен блок в съдържанието. */
+    pageTitle?: string;
+    pageDescription?: string;
 };
 
 withDefaults(defineProps<Props>(), {
@@ -12,7 +15,11 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-    <AppLayout :breadcrumbs="breadcrumbs">
+    <AppLayout
+        :breadcrumbs="breadcrumbs"
+        :page-title="pageTitle"
+        :page-description="pageDescription"
+    >
         <slot />
     </AppLayout>
 </template>

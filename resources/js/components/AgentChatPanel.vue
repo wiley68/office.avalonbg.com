@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { consumeAgentSseStream } from '@/composables/useAgentSse';
 
 export type ChatMessage = {
@@ -21,20 +21,21 @@ type Props = {
     messagesUrl: (conversationId: string) => string;
     /** GET JSON списък с разговори (id, title, updated_at) */
     conversationsUrl: string;
-    title: string;
-    description: string;
     placeholder?: string;
     textareaId?: string;
-    submitLabel?: string;
     sessionKey?: string;
 };
 
 const props = withDefaults(defineProps<Props>(), {
     placeholder: 'Напишете заявката си…',
     textareaId: 'agent-message',
-    submitLabel: 'Изпрати към агента',
     sessionKey: '',
 });
+
+const textareaPlaceholder = computed(
+    () =>
+        `${props.placeholder}\nEnter за изпращане · Ctrl+Enter или ⌘+Enter за нов ред`,
+);
 
 const message = ref('');
 const messages = ref<ChatMessage[]>([]);
@@ -44,6 +45,7 @@ const validationErrors = ref<string[]>([]);
 const sending = ref(false);
 const conversationId = ref<string | null>(null);
 const historyEl = ref<HTMLElement | null>(null);
+const messageInputEl = ref<HTMLTextAreaElement | null>(null);
 
 const conversations = ref<AgentConversationSummary[]>([]);
 const conversationsLoading = ref(false);
@@ -127,6 +129,10 @@ const loadHistory = async (): Promise<void> => {
     }
 };
 
+const focusMessageInput = (): void => {
+    messageInputEl.value?.focus({ preventScroll: true });
+};
+
 onMounted(() => {
     const stored = sessionStorage.getItem(storageId());
 
@@ -135,6 +141,10 @@ onMounted(() => {
     }
 
     void loadConversations();
+
+    void nextTick(() => {
+        focusMessageInput();
+    });
 });
 
 watch(conversationId, (id) => {
@@ -149,10 +159,18 @@ watch(conversationId, (id) => {
 
 const selectConversation = (id: string): void => {
     if (conversationId.value === id) {
+        void nextTick(() => {
+            focusMessageInput();
+        });
+
         return;
     }
 
     conversationId.value = id;
+
+    void nextTick(() => {
+        focusMessageInput();
+    });
 };
 
 const startNewConversation = (): void => {
@@ -161,6 +179,10 @@ const startNewConversation = (): void => {
     streamingAssistant.value = null;
     error.value = null;
     validationErrors.value = [];
+
+    void nextTick(() => {
+        focusMessageInput();
+    });
 };
 
 const formatTime = (iso: string): string => {
@@ -185,6 +207,33 @@ const formatSidebarDate = (iso: string): string => {
     } catch {
         return '';
     }
+};
+
+const onMessageKeydown = (e: KeyboardEvent): void => {
+    if (e.key !== 'Enter') {
+        return;
+    }
+
+    if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const ta = e.target as HTMLTextAreaElement;
+        const start = ta.selectionStart;
+        const end = ta.selectionEnd;
+        const val = message.value;
+        message.value = val.slice(0, start) + '\n' + val.slice(end);
+        void nextTick(() => {
+            ta.selectionStart = ta.selectionEnd = start + 1;
+        });
+
+        return;
+    }
+
+    if (e.shiftKey) {
+        return;
+    }
+
+    e.preventDefault();
+    void submit();
 };
 
 const submit = async (): Promise<void> => {
@@ -353,34 +402,9 @@ const submit = async (): Promise<void> => {
 
         <!-- Дясно: текущ чат -->
         <div
-            class="mx-auto flex min-h-0 min-w-0 flex-1 flex-col gap-6 p-4 md:p-6 lg:max-w-none lg:p-8"
+            class="mx-auto flex min-h-0 min-w-0 flex-1 flex-col gap-4 p-4 md:p-6 lg:max-w-none lg:p-8"
         >
-            <div
-                class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
-            >
-                <div>
-                    <h1
-                        class="text-2xl font-semibold tracking-tight text-foreground"
-                    >
-                        {{ title }}
-                    </h1>
-                    <p class="mt-1 text-sm text-muted-foreground">
-                        {{ description }}
-                    </p>
-                    <p
-                        v-if="conversationId"
-                        class="mt-2 font-mono text-xs text-muted-foreground"
-                    >
-                        Разговор:
-                        {{ conversationId.slice(0, 8) }}… (памет в сървъра)
-                    </p>
-                </div>
-            </div>
-
             <div class="flex min-h-0 flex-1 flex-col gap-2">
-                <h2 class="shrink-0 text-sm font-medium text-foreground">
-                    История
-                </h2>
                 <div
                     ref="historyEl"
                     class="flex min-h-[min(280px,35vh)] flex-1 flex-col gap-3 overflow-y-auto rounded-lg border border-sidebar-border/70 bg-muted/20 p-3 lg:min-h-0 dark:border-sidebar-border"
@@ -435,41 +459,19 @@ const submit = async (): Promise<void> => {
                 </div>
             </div>
 
-            <div class="flex flex-col gap-3">
-                <label
-                    :for="textareaId"
-                    class="text-sm font-medium text-foreground"
-                >
-                    Вашата заявка
-                </label>
+            <div class="flex flex-col">
                 <textarea
+                    ref="messageInputEl"
                     :id="textareaId"
                     v-model="message"
-                    rows="4"
-                    class="min-h-[100px] w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                    :placeholder="placeholder"
+                    rows="3"
+                    class="min-h-[72px] w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    :placeholder="textareaPlaceholder"
                     :disabled="sending"
-                    @keydown.ctrl.enter.prevent="submit"
-                    @keydown.meta.enter.prevent="submit"
+                    aria-label="Поле за съобщение към агента"
+                    autocomplete="off"
+                    @keydown="onMessageKeydown"
                 />
-                <p class="text-xs text-muted-foreground">
-                    Ctrl+Enter или ⌘+Enter за изпращане.
-                </p>
-            </div>
-
-            <div class="flex flex-wrap items-center gap-3">
-                <button
-                    type="button"
-                    class="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-                    :disabled="!canSend()"
-                    @click="submit"
-                >
-                    <span
-                        v-if="sending"
-                        class="mr-2 size-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground"
-                    />
-                    {{ sending ? 'Изпращане…' : submitLabel }}
-                </button>
             </div>
 
             <div

@@ -19,21 +19,26 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: dashboardRoutes.notes.url(),
     },
 ];
+
+const pageDescription =
+    'Тук работи само агентът за вашите лични бележки (notes). Историята на разговора се пази на сървъра; „Нов разговор“ започва изчистен контекст.';
 </script>
 
 <template>
     <Head title="Агент — бележки" />
 
-    <AppLayout :breadcrumbs="breadcrumbs">
+    <AppLayout
+        :breadcrumbs="breadcrumbs"
+        page-title="Агент за бележки"
+        :page-description="pageDescription"
+    >
         <AgentChatPanel
             :post-url="dashboardRoutes.notes.agent.url()"
             :messages-url="messagesUrl"
             :conversations-url="dashboardRoutes.notes.agent.conversations.url()"
             session-key="office-notes-agent"
             textarea-id="notes-agent-message"
-            title="Агент за бележки"
-            description="Тук работи само агентът за вашите лични бележки (notes). Историята на разговора се пази на сървъра; „Нов разговор“ започва изчистен контекст."
-            placeholder="Например: Покажи ми бележките ми. / Създай бележка „Среща“ с описание …"
+            placeholder="Вашата заявка, например: Покажи ми бележките ми. / Създай бележка „Среща“ с описание …"
         />
     </AppLayout>
 </template>
