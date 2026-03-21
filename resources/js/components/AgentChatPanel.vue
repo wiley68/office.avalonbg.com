@@ -1,5 +1,17 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Tooltip,
     TooltipContent,
@@ -30,6 +42,8 @@ type Props = {
     conversationsUrl: string;
     /** POST JSON feedback за assistant съобщение */
     feedbackUrl: (messageId: string) => string;
+    /** POST JSON изпращане на assistant съобщение по имейл */
+    emailUrl: (messageId: string) => string;
     placeholder?: string;
     textareaId?: string;
     sessionKey?: string;
@@ -50,6 +64,12 @@ const message = ref('');
 const messages = ref<ChatMessage[]>([]);
 const streamingAssistant = ref<string | null>(null);
 const copiedMessageId = ref<string | null>(null);
+const emailedMessageId = ref<string | null>(null);
+const emailDialogOpen = ref(false);
+const emailTargetMessageId = ref<string | null>(null);
+const emailTargetMessageContent = ref<string>('');
+const emailRecipient = ref('');
+const emailSubject = ref('Отговор от офис агента');
 const error = ref<string | null>(null);
 const validationErrors = ref<string[]>([]);
 const sending = ref(false);
@@ -63,6 +83,10 @@ const conversationsError = ref<string | null>(null);
 
 const storageId = () =>
     props.sessionKey.length > 0 ? props.sessionKey : `conv:${props.postUrl}`;
+const emailStorageId = () =>
+    props.sessionKey.length > 0
+        ? `agent-email:${props.sessionKey}`
+        : `agent-email:${props.postUrl}`;
 
 const canSend = () => message.value.trim().length > 0 && !sending.value;
 
@@ -145,9 +169,14 @@ const focusMessageInput = (): void => {
 
 onMounted(() => {
     const stored = sessionStorage.getItem(storageId());
+    const storedEmail = localStorage.getItem(emailStorageId());
 
     if (stored) {
         conversationId.value = stored;
+    }
+
+    if (storedEmail) {
+        emailRecipient.value = storedEmail;
     }
 
     void loadConversations();
@@ -296,6 +325,77 @@ const rateAssistantMessage = async (
     } catch (e) {
         error.value =
             e instanceof Error ? e.message : 'Неуспешно запазване на оценката.';
+    }
+};
+
+const openEmailDialog = (messageId: string, content: string): void => {
+    emailTargetMessageId.value = messageId;
+    emailTargetMessageContent.value = content;
+    emailSubject.value = 'Отговор от офис агента';
+    emailDialogOpen.value = true;
+};
+
+const sendAssistantMessageByEmail = async (): Promise<void> => {
+    if (
+        !emailTargetMessageId.value ||
+        emailRecipient.value.trim().length === 0
+    ) {
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            props.emailUrl(emailTargetMessageId.value),
+            {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    email: emailRecipient.value.trim(),
+                    subject: emailSubject.value.trim() || undefined,
+                }),
+            },
+        );
+
+        if (!response.ok) {
+            const contentType = response.headers.get('Content-Type') ?? '';
+
+            if (contentType.includes('application/json')) {
+                const data = (await response.json()) as {
+                    message?: string;
+                    errors?: Record<string, string[]>;
+                };
+                const validationMessage = data.errors
+                    ? Object.values(data.errors).flat()[0]
+                    : null;
+                error.value =
+                    validationMessage ??
+                    data.message ??
+                    `Грешка ${response.status}. Неуспешно изпращане на имейл.`;
+            } else {
+                error.value = `Грешка ${response.status}. Неуспешно изпращане на имейл.`;
+            }
+
+            return;
+        }
+
+        emailedMessageId.value = emailTargetMessageId.value;
+        localStorage.setItem(emailStorageId(), emailRecipient.value.trim());
+        window.setTimeout(() => {
+            if (emailedMessageId.value === emailTargetMessageId.value) {
+                emailedMessageId.value = null;
+            }
+        }, 1600);
+
+        emailDialogOpen.value = false;
+    } catch (e) {
+        error.value =
+            e instanceof Error ? e.message : 'Неуспешно изпращане на имейл.';
     }
 };
 
@@ -558,6 +658,52 @@ const submit = async (): Promise<void> => {
                                             type="button"
                                             class="inline-flex items-center rounded-md p-1 text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-muted-foreground/30 focus-visible:outline-none"
                                             :class="
+                                                emailedMessageId === m.id
+                                                    ? 'text-foreground'
+                                                    : ''
+                                            "
+                                            :aria-label="
+                                                emailedMessageId === m.id
+                                                    ? 'Изпратено'
+                                                    : 'Изпрати по имейл'
+                                            "
+                                            @click="
+                                                openEmailDialog(m.id, m.content)
+                                            "
+                                        >
+                                            <svg
+                                                class="size-5"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                aria-hidden="true"
+                                            >
+                                                <rect
+                                                    x="3"
+                                                    y="5"
+                                                    width="18"
+                                                    height="14"
+                                                    rx="2"
+                                                />
+                                                <path d="m3 7 9 6 9-6" />
+                                            </svg>
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Изпрати по имейл</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider :delay-duration="0">
+                                <Tooltip>
+                                    <TooltipTrigger as-child>
+                                        <button
+                                            type="button"
+                                            class="inline-flex items-center rounded-md p-1 text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-muted-foreground/30 focus-visible:outline-none"
+                                            :class="
                                                 m.feedback === 'up'
                                                     ? 'text-foreground'
                                                     : ''
@@ -656,6 +802,67 @@ const submit = async (): Promise<void> => {
                     @keydown="onMessageKeydown"
                 />
             </div>
+
+            <Dialog
+                :open="emailDialogOpen"
+                @update:open="emailDialogOpen = $event"
+            >
+                <DialogContent class="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Изпрати отговора по имейл</DialogTitle>
+                        <DialogDescription>
+                            Избраният assistant отговор ще бъде изпратен на
+                            посочения имейл адрес.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div class="space-y-4">
+                        <div class="space-y-2">
+                            <Label for="agent-email-recipient"
+                                >Имейл адрес</Label
+                            >
+                            <Input
+                                id="agent-email-recipient"
+                                v-model="emailRecipient"
+                                type="email"
+                                placeholder="name@example.com"
+                            />
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="agent-email-subject"
+                                >Тема (по избор)</Label
+                            >
+                            <Input
+                                id="agent-email-subject"
+                                v-model="emailSubject"
+                                type="text"
+                                placeholder="Отговор от офис агента"
+                            />
+                        </div>
+
+                        <div
+                            v-if="emailTargetMessageContent"
+                            class="rounded-md border border-sidebar-border/60 bg-muted/20 px-3 py-2 text-xs wrap-anywhere whitespace-pre-wrap text-muted-foreground"
+                        >
+                            {{ emailTargetMessageContent }}
+                        </div>
+                    </div>
+
+                    <DialogFooter class="gap-2">
+                        <DialogClose as-child>
+                            <Button variant="secondary">Отказ</Button>
+                        </DialogClose>
+                        <Button
+                            type="button"
+                            :disabled="emailRecipient.trim().length === 0"
+                            @click="sendAssistantMessageByEmail"
+                        >
+                            Изпрати
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <div
                 v-if="validationErrors.length"

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AgentContext;
+use App\Http\Requests\StoreAgentMessageEmailRequest;
 use App\Http\Requests\StoreAgentMessageFeedbackRequest;
+use App\Services\AgentMessageEmailService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -110,6 +112,29 @@ class AgentConversationMessagesController extends Controller
         return response()->json([
             'ok' => true,
             'feedback' => $feedback,
+        ]);
+    }
+
+    public function email(
+        StoreAgentMessageEmailRequest $request,
+        AgentMessageEmailService $emailService,
+        string $message,
+    ): JsonResponse {
+        $validated = $request->validated();
+        try {
+            $emailService->send(
+                user: $request->user(),
+                context: $request->expectedAgentContext(),
+                email: $validated['email'],
+                messageId: $message,
+                subject: $validated['subject'] ?? null,
+            );
+        } catch (\RuntimeException) {
+            abort(404);
+        }
+
+        return response()->json([
+            'ok' => true,
         ]);
     }
 
