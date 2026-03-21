@@ -44,6 +44,8 @@ type Props = {
     feedbackUrl: (messageId: string) => string;
     /** POST JSON изпращане на assistant съобщение по имейл */
     emailUrl: (messageId: string) => string;
+    /** GET PDF на assistant съобщение (отваряне в нов раздел) */
+    pdfUrl: (messageId: string) => string;
     placeholder?: string;
     textareaId?: string;
     sessionKey?: string;
@@ -326,6 +328,10 @@ const rateAssistantMessage = async (
         error.value =
             e instanceof Error ? e.message : 'Неуспешно запазване на оценката.';
     }
+};
+
+const openAssistantPdf = (messageId: string): void => {
+    window.open(props.pdfUrl(messageId), '_blank', 'noopener,noreferrer');
 };
 
 const openEmailDialog = (messageId: string, content: string): void => {
@@ -694,6 +700,40 @@ const submit = async (): Promise<void> => {
                                     </TooltipTrigger>
                                     <TooltipContent>
                                         <p>Изпрати по имейл</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider :delay-duration="0">
+                                <Tooltip>
+                                    <TooltipTrigger as-child>
+                                        <button
+                                            type="button"
+                                            class="inline-flex items-center rounded-md p-1 text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-muted-foreground/30 focus-visible:outline-none"
+                                            aria-label="Отвори като PDF"
+                                            @click="openAssistantPdf(m.id)"
+                                        >
+                                            <svg
+                                                class="size-5"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                aria-hidden="true"
+                                            >
+                                                <path
+                                                    d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                                                />
+                                                <path d="M14 2v6h6" />
+                                                <path d="M10 12h4" />
+                                                <path d="M10 16h4" />
+                                                <path d="M10 8h1" />
+                                            </svg>
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Отвори като PDF</p>
                                     </TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>

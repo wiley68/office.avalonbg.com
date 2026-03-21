@@ -6,8 +6,10 @@ use App\Enums\AgentContext;
 use App\Http\Requests\StoreAgentMessageEmailRequest;
 use App\Http\Requests\StoreAgentMessageFeedbackRequest;
 use App\Services\AgentMessageEmailService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
 class AgentConversationMessagesController extends Controller
@@ -136,6 +138,38 @@ class AgentConversationMessagesController extends Controller
         return response()->json([
             'ok' => true,
         ]);
+    }
+
+    public function pdf(
+        Request $request,
+        AgentMessageEmailService $emailService,
+        string $message,
+    ): Response {
+        $context = match (true) {
+            $request->routeIs('dashboard.agent.message.pdf') => AgentContext::Orchestrator,
+            $request->routeIs('dashboard.notes.agent.message.pdf') => AgentContext::Notes,
+            default => throw new \LogicException(
+                'Unexpected route for agent PDF: '.$request->route()?->getName()
+            ),
+        };
+
+        $content = $emailService->assistantMessageContentForUser(
+            $request->user(),
+            $context,
+            $message,
+        );
+
+        if ($content === null) {
+            abort(404);
+        }
+
+        $pdf = Pdf::loadView('pdf.agent-response', [
+            'content' => $content,
+            'appName' => config('app.name'),
+            'generatedAt' => now()->timezone(config('app.timezone'))->format('d.m.Y H:i'),
+        ]);
+
+        return $pdf->stream('ofis-agent-otgovor.pdf');
     }
 
     private function contextFromRequest(Request $request): AgentContext

@@ -11,6 +11,19 @@ use Illuminate\Support\Facades\Mail;
 class AgentMessageEmailService
 {
     /**
+     * Текст на assistant съобщение, ако принадлежи на потребителя и контекста.
+     */
+    public function assistantMessageContentForUser(
+        User $user,
+        AgentContext $context,
+        string $messageId,
+    ): ?string {
+        $row = $this->assistantMessageByIdForContext($user, $context, $messageId);
+
+        return $row?->content;
+    }
+
+    /**
      * @return array{id: string, content: string}
      */
     public function send(

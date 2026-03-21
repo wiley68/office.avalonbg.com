@@ -13,6 +13,7 @@ const messagesUrl = (id: string) =>
 const feedbackUrl = (id: string) =>
     dashboardRoutes.agent.message.feedback.url(id);
 const emailUrl = (id: string) => dashboardRoutes.agent.message.email.url(id);
+const pdfUrl = (id: string) => dashboardRoutes.agent.message.pdf.url(id);
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -39,6 +40,7 @@ const pageDescription =
             :conversations-url="dashboardRoutes.agent.conversations.url()"
             :feedback-url="feedbackUrl"
             :email-url="emailUrl"
+            :pdf-url="pdfUrl"
             session-key="office-orchestrator"
             placeholder="Вашата заявка, например: Обобщи какво мога да правя тук. / Покажи бележките ми. / Как да създам бележка?"
         />

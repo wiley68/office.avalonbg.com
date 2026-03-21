@@ -22,6 +22,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('dashboard.agent.message.feedback');
     Route::post('dashboard/agent/messages/{message}/email', [AgentConversationMessagesController::class, 'email'])
         ->name('dashboard.agent.message.email');
+    Route::get('dashboard/agent/messages/{message}/pdf', [AgentConversationMessagesController::class, 'pdf'])
+        ->name('dashboard.agent.message.pdf');
 
     Route::inertia('dashboard/notes', 'office/NotesAgent')->name('dashboard.notes');
     Route::post('dashboard/notes/agent', [NotesAgentController::class, 'store'])
@@ -35,6 +37,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('dashboard.notes.agent.message.feedback');
     Route::post('dashboard/notes/agent/messages/{message}/email', [AgentConversationMessagesController::class, 'email'])
         ->name('dashboard.notes.agent.message.email');
+    Route::get('dashboard/notes/agent/messages/{message}/pdf', [AgentConversationMessagesController::class, 'pdf'])
+        ->name('dashboard.notes.agent.message.pdf');
 });
 
 Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
