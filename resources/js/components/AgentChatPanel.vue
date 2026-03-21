@@ -237,6 +237,23 @@ const formatSidebarDate = (iso: string): string => {
     }
 };
 
+/** Дата и час под assistant отговор (същият мащаб като преди премахването на датата). */
+const formatAssistantMessageTimestamp = (iso: string): string => {
+    try {
+        const d = new Date(iso);
+
+        return d.toLocaleString('bg-BG', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    } catch {
+        return '';
+    }
+};
+
 const onMessageKeydown = (e: KeyboardEvent): void => {
     if (e.key !== 'Enter') {
         return;
@@ -588,224 +605,286 @@ const submit = async (): Promise<void> => {
                     >
                         Няма съобщения. Изпратете заявка по-долу.
                     </p>
-                    <div
-                        v-for="m in messages"
-                        :key="m.id"
-                        class="flex w-full flex-col"
-                        :class="m.role === 'user' ? 'items-end' : 'items-start'"
-                    >
+                    <template v-for="(m, index) in messages" :key="m.id">
                         <div
-                            class="max-w-[85%] rounded-lg px-3 py-2 text-sm wrap-anywhere whitespace-pre-wrap"
-                            :class="
+                            v-if="
+                                index > 0 &&
+                                messages[index - 1]?.role === 'assistant' &&
                                 m.role === 'user'
-                                    ? 'bg-muted text-foreground'
-                                    : 'text-foreground'
+                            "
+                            class="w-full max-w-3xl shrink-0 self-center py-[20px]"
+                            role="separator"
+                        >
+                            <div
+                                aria-hidden="true"
+                                class="h-px w-full rounded-full bg-muted-foreground/25 dark:bg-muted-foreground/20"
+                            />
+                        </div>
+                        <div
+                            class="flex w-full flex-col"
+                            :class="
+                                m.role === 'user' ? 'items-end' : 'items-start'
                             "
                         >
-                            {{ m.content }}
+                            <div
+                                class="max-w-[85%] rounded-lg px-3 py-2 text-sm wrap-anywhere whitespace-pre-wrap"
+                                :class="
+                                    m.role === 'user'
+                                        ? 'bg-muted text-foreground'
+                                        : 'text-foreground'
+                                "
+                            >
+                                {{ m.content }}
+                            </div>
+                            <time
+                                v-if="m.role === 'user' && m.created_at"
+                                class="mt-1 max-w-[85%] shrink-0 self-end text-right text-[10px] leading-none text-muted-foreground/65 tabular-nums dark:text-muted-foreground/55"
+                                :datetime="m.created_at"
+                            >
+                                {{
+                                    formatAssistantMessageTimestamp(
+                                        m.created_at,
+                                    )
+                                }}
+                            </time>
+                            <div
+                                v-if="m.role === 'assistant'"
+                                class="mt-1 flex w-full max-w-[85%] flex-wrap items-center gap-1"
+                            >
+                                <div
+                                    class="flex min-w-0 flex-wrap items-center gap-1"
+                                >
+                                    <TooltipProvider :delay-duration="0">
+                                        <Tooltip>
+                                            <TooltipTrigger as-child>
+                                                <button
+                                                    type="button"
+                                                    class="inline-flex items-center rounded-md p-1 text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-muted-foreground/30 focus-visible:outline-none"
+                                                    :aria-label="
+                                                        copiedMessageId === m.id
+                                                            ? 'Копирано'
+                                                            : 'Копирай отговора'
+                                                    "
+                                                    @click="
+                                                        copyAssistantMessage(
+                                                            m.id,
+                                                            m.content,
+                                                        )
+                                                    "
+                                                >
+                                                    <svg
+                                                        class="size-5"
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        stroke-width="2"
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        aria-hidden="true"
+                                                    >
+                                                        <rect
+                                                            x="9"
+                                                            y="9"
+                                                            width="13"
+                                                            height="13"
+                                                            rx="2"
+                                                            ry="2"
+                                                        />
+                                                        <path
+                                                            d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                                                        />
+                                                    </svg>
+                                                </button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Копирай отговора</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                    <TooltipProvider :delay-duration="0">
+                                        <Tooltip>
+                                            <TooltipTrigger as-child>
+                                                <button
+                                                    type="button"
+                                                    class="inline-flex items-center rounded-md p-1 text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-muted-foreground/30 focus-visible:outline-none"
+                                                    :class="
+                                                        emailedMessageId ===
+                                                        m.id
+                                                            ? 'text-foreground'
+                                                            : ''
+                                                    "
+                                                    :aria-label="
+                                                        emailedMessageId ===
+                                                        m.id
+                                                            ? 'Изпратено'
+                                                            : 'Изпрати по имейл'
+                                                    "
+                                                    @click="
+                                                        openEmailDialog(
+                                                            m.id,
+                                                            m.content,
+                                                        )
+                                                    "
+                                                >
+                                                    <svg
+                                                        class="size-5"
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        stroke-width="2"
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        aria-hidden="true"
+                                                    >
+                                                        <rect
+                                                            x="3"
+                                                            y="5"
+                                                            width="18"
+                                                            height="14"
+                                                            rx="2"
+                                                        />
+                                                        <path
+                                                            d="m3 7 9 6 9-6"
+                                                        />
+                                                    </svg>
+                                                </button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Изпрати по имейл</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                    <TooltipProvider :delay-duration="0">
+                                        <Tooltip>
+                                            <TooltipTrigger as-child>
+                                                <button
+                                                    type="button"
+                                                    class="inline-flex items-center rounded-md p-1 text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-muted-foreground/30 focus-visible:outline-none"
+                                                    aria-label="Отвори като PDF"
+                                                    @click="
+                                                        openAssistantPdf(m.id)
+                                                    "
+                                                >
+                                                    <svg
+                                                        class="size-5"
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        stroke-width="2"
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        aria-hidden="true"
+                                                    >
+                                                        <path
+                                                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                                                        />
+                                                        <path d="M14 2v6h6" />
+                                                        <path d="M10 12h4" />
+                                                        <path d="M10 16h4" />
+                                                        <path d="M10 8h1" />
+                                                    </svg>
+                                                </button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Отвори като PDF</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                    <TooltipProvider :delay-duration="0">
+                                        <Tooltip>
+                                            <TooltipTrigger as-child>
+                                                <button
+                                                    type="button"
+                                                    class="inline-flex items-center rounded-md p-1 text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-muted-foreground/30 focus-visible:outline-none"
+                                                    :class="
+                                                        m.feedback === 'up'
+                                                            ? 'text-foreground'
+                                                            : ''
+                                                    "
+                                                    aria-label="Полезен отговор"
+                                                    @click="
+                                                        rateAssistantMessage(
+                                                            m.id,
+                                                            'up',
+                                                        )
+                                                    "
+                                                >
+                                                    <svg
+                                                        class="size-5"
+                                                        viewBox="0 0 24 24"
+                                                        fill="currentColor"
+                                                        aria-hidden="true"
+                                                    >
+                                                        <path
+                                                            d="M5,9V21H1V9H5M9,21A2,2 0 0,1 7,19V9C7,8.45 7.22,7.95 7.59,7.59L14.17,1L15.23,2.06C15.5,2.33 15.67,2.7 15.67,3.11L15.64,3.43L14.69,8H21C22.11,8 23,8.9 23,10V12C23,12.26 22.95,12.5 22.86,12.73L19.84,19.78C19.54,20.5 18.83,21 18,21H9M9,19H18.03L21,12V10H12.21L13.34,4.68L9,9.03V19Z"
+                                                        />
+                                                    </svg>
+                                                </button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Полезен отговор</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                    <TooltipProvider :delay-duration="0">
+                                        <Tooltip>
+                                            <TooltipTrigger as-child>
+                                                <button
+                                                    type="button"
+                                                    class="inline-flex items-center rounded-md p-1 text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-muted-foreground/30 focus-visible:outline-none"
+                                                    :class="
+                                                        m.feedback === 'down'
+                                                            ? 'text-foreground'
+                                                            : ''
+                                                    "
+                                                    aria-label="Неполезен отговор"
+                                                    @click="
+                                                        rateAssistantMessage(
+                                                            m.id,
+                                                            'down',
+                                                        )
+                                                    "
+                                                >
+                                                    <svg
+                                                        class="size-5"
+                                                        viewBox="0 0 24 24"
+                                                        fill="currentColor"
+                                                        aria-hidden="true"
+                                                    >
+                                                        <path
+                                                            d="M19,15V3H23V15H19M15,3A2,2 0 0,1 17,5V15C17,15.55 16.78,16.05 16.41,16.41L9.83,23L8.77,21.94C8.5,21.67 8.33,21.3 8.33,20.88L8.36,20.57L9.31,16H3C1.89,16 1,15.1 1,14V12C1,11.74 1.05,11.5 1.14,11.27L4.16,4.22C4.46,3.5 5.17,3 6,3H15M15,5H5.97L3,12V14H11.78L10.65,19.32L15,14.97V5Z"
+                                                        />
+                                                    </svg>
+                                                </button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Неполезен отговор</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </div>
+                                <div
+                                    v-if="m.created_at"
+                                    class="flex items-center gap-1.5"
+                                >
+                                    <span
+                                        aria-hidden="true"
+                                        class="h-3 w-px shrink-0 self-center rounded-sm bg-muted-foreground/65 dark:bg-muted-foreground/55"
+                                    />
+                                    <time
+                                        class="shrink-0 text-[10px] leading-none text-muted-foreground/65 tabular-nums dark:text-muted-foreground/55"
+                                        :datetime="m.created_at"
+                                    >
+                                        {{
+                                            formatAssistantMessageTimestamp(
+                                                m.created_at,
+                                            )
+                                        }}
+                                    </time>
+                                </div>
+                            </div>
                         </div>
-                        <div
-                            v-if="m.role === 'assistant'"
-                            class="mt-1 flex w-full max-w-[85%] items-center gap-1"
-                        >
-                            <TooltipProvider :delay-duration="0">
-                                <Tooltip>
-                                    <TooltipTrigger as-child>
-                                        <button
-                                            type="button"
-                                            class="inline-flex items-center rounded-md p-1 text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-muted-foreground/30 focus-visible:outline-none"
-                                            :aria-label="
-                                                copiedMessageId === m.id
-                                                    ? 'Копирано'
-                                                    : 'Копирай отговора'
-                                            "
-                                            @click="
-                                                copyAssistantMessage(
-                                                    m.id,
-                                                    m.content,
-                                                )
-                                            "
-                                        >
-                                            <svg
-                                                class="size-5"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="2"
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                aria-hidden="true"
-                                            >
-                                                <rect
-                                                    x="9"
-                                                    y="9"
-                                                    width="13"
-                                                    height="13"
-                                                    rx="2"
-                                                    ry="2"
-                                                />
-                                                <path
-                                                    d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
-                                                />
-                                            </svg>
-                                        </button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Копирай отговора</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            <TooltipProvider :delay-duration="0">
-                                <Tooltip>
-                                    <TooltipTrigger as-child>
-                                        <button
-                                            type="button"
-                                            class="inline-flex items-center rounded-md p-1 text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-muted-foreground/30 focus-visible:outline-none"
-                                            :class="
-                                                emailedMessageId === m.id
-                                                    ? 'text-foreground'
-                                                    : ''
-                                            "
-                                            :aria-label="
-                                                emailedMessageId === m.id
-                                                    ? 'Изпратено'
-                                                    : 'Изпрати по имейл'
-                                            "
-                                            @click="
-                                                openEmailDialog(m.id, m.content)
-                                            "
-                                        >
-                                            <svg
-                                                class="size-5"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="2"
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                aria-hidden="true"
-                                            >
-                                                <rect
-                                                    x="3"
-                                                    y="5"
-                                                    width="18"
-                                                    height="14"
-                                                    rx="2"
-                                                />
-                                                <path d="m3 7 9 6 9-6" />
-                                            </svg>
-                                        </button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Изпрати по имейл</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            <TooltipProvider :delay-duration="0">
-                                <Tooltip>
-                                    <TooltipTrigger as-child>
-                                        <button
-                                            type="button"
-                                            class="inline-flex items-center rounded-md p-1 text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-muted-foreground/30 focus-visible:outline-none"
-                                            aria-label="Отвори като PDF"
-                                            @click="openAssistantPdf(m.id)"
-                                        >
-                                            <svg
-                                                class="size-5"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="2"
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                aria-hidden="true"
-                                            >
-                                                <path
-                                                    d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
-                                                />
-                                                <path d="M14 2v6h6" />
-                                                <path d="M10 12h4" />
-                                                <path d="M10 16h4" />
-                                                <path d="M10 8h1" />
-                                            </svg>
-                                        </button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Отвори като PDF</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            <TooltipProvider :delay-duration="0">
-                                <Tooltip>
-                                    <TooltipTrigger as-child>
-                                        <button
-                                            type="button"
-                                            class="inline-flex items-center rounded-md p-1 text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-muted-foreground/30 focus-visible:outline-none"
-                                            :class="
-                                                m.feedback === 'up'
-                                                    ? 'text-foreground'
-                                                    : ''
-                                            "
-                                            aria-label="Полезен отговор"
-                                            @click="
-                                                rateAssistantMessage(m.id, 'up')
-                                            "
-                                        >
-                                            <svg
-                                                class="size-5"
-                                                viewBox="0 0 24 24"
-                                                fill="currentColor"
-                                                aria-hidden="true"
-                                            >
-                                                <path
-                                                    d="M5,9V21H1V9H5M9,21A2,2 0 0,1 7,19V9C7,8.45 7.22,7.95 7.59,7.59L14.17,1L15.23,2.06C15.5,2.33 15.67,2.7 15.67,3.11L15.64,3.43L14.69,8H21C22.11,8 23,8.9 23,10V12C23,12.26 22.95,12.5 22.86,12.73L19.84,19.78C19.54,20.5 18.83,21 18,21H9M9,19H18.03L21,12V10H12.21L13.34,4.68L9,9.03V19Z"
-                                                />
-                                            </svg>
-                                        </button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Полезен отговор</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            <TooltipProvider :delay-duration="0">
-                                <Tooltip>
-                                    <TooltipTrigger as-child>
-                                        <button
-                                            type="button"
-                                            class="inline-flex items-center rounded-md p-1 text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-muted-foreground/30 focus-visible:outline-none"
-                                            :class="
-                                                m.feedback === 'down'
-                                                    ? 'text-foreground'
-                                                    : ''
-                                            "
-                                            aria-label="Неполезен отговор"
-                                            @click="
-                                                rateAssistantMessage(
-                                                    m.id,
-                                                    'down',
-                                                )
-                                            "
-                                        >
-                                            <svg
-                                                class="size-5"
-                                                viewBox="0 0 24 24"
-                                                fill="currentColor"
-                                                aria-hidden="true"
-                                            >
-                                                <path
-                                                    d="M19,15V3H23V15H19M15,3A2,2 0 0,1 17,5V15C17,15.55 16.78,16.05 16.41,16.41L9.83,23L8.77,21.94C8.5,21.67 8.33,21.3 8.33,20.88L8.36,20.57L9.31,16H3C1.89,16 1,15.1 1,14V12C1,11.74 1.05,11.5 1.14,11.27L4.16,4.22C4.46,3.5 5.17,3 6,3H15M15,5H5.97L3,12V14H11.78L10.65,19.32L15,14.97V5Z"
-                                                />
-                                            </svg>
-                                        </button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Неполезен отговор</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        </div>
-                    </div>
+                    </template>
                     <div
                         v-if="streamingAssistant !== null"
                         class="flex w-full flex-col items-start gap-1"
