@@ -37,16 +37,20 @@ const pageDescription =
         page-title="Агент за бележки"
         :page-description="pageDescription"
     >
-        <AgentChatPanel
-            :post-url="dashboardRoutes.notes.agent.url()"
-            :messages-url="messagesUrl"
-            :conversations-url="dashboardRoutes.notes.agent.conversations.url()"
-            :feedback-url="feedbackUrl"
-            :email-url="emailUrl"
-            :pdf-url="pdfUrl"
-            session-key="office-notes-agent"
-            textarea-id="notes-agent-message"
-            placeholder="Вашата заявка, например: Покажи ми бележките ми. / Създай бележка „Среща“ с описание …"
-        />
+        <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <AgentChatPanel
+                :post-url="dashboardRoutes.notes.agent.url()"
+                :messages-url="messagesUrl"
+                :conversations-url="
+                    dashboardRoutes.notes.agent.conversations.url()
+                "
+                :feedback-url="feedbackUrl"
+                :email-url="emailUrl"
+                :pdf-url="pdfUrl"
+                session-key="office-notes-agent"
+                textarea-id="notes-agent-message"
+                placeholder="Вашата заявка, например: Покажи ми бележките ми. / Създай бележка „Среща“ с описание …"
+            />
+        </div>
     </AppLayout>
 </template>

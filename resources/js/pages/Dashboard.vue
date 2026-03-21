@@ -34,15 +34,17 @@ const pageDescription =
         page-title="Офис координатор"
         :page-description="pageDescription"
     >
-        <AgentChatPanel
-            :post-url="postOrchestratorMessage.url()"
-            :messages-url="messagesUrl"
-            :conversations-url="dashboardRoutes.agent.conversations.url()"
-            :feedback-url="feedbackUrl"
-            :email-url="emailUrl"
-            :pdf-url="pdfUrl"
-            session-key="office-orchestrator"
-            placeholder="Вашата заявка, например: Обобщи какво мога да правя тук. / Покажи бележките ми. / Как да създам бележка?"
-        />
+        <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <AgentChatPanel
+                :post-url="postOrchestratorMessage.url()"
+                :messages-url="messagesUrl"
+                :conversations-url="dashboardRoutes.agent.conversations.url()"
+                :feedback-url="feedbackUrl"
+                :email-url="emailUrl"
+                :pdf-url="pdfUrl"
+                session-key="office-orchestrator"
+                placeholder="Вашата заявка, например: Обобщи какво мога да правя тук. / Покажи бележките ми. / Как да създам бележка?"
+            />
+        </div>
     </AppLayout>
 </template>

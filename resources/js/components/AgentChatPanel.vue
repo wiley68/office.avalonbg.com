@@ -506,12 +506,10 @@ const submit = async (): Promise<void> => {
 </script>
 
 <template>
-    <div
-        class="flex min-h-0 w-full flex-1 flex-col gap-0 lg:min-h-[calc(100svh-9rem)] lg:flex-row"
-    >
+    <div class="flex h-full min-h-0 w-full flex-1 flex-col gap-0 lg:flex-row">
         <!-- Ляв сайдбар: история на разговорите -->
         <aside
-            class="flex max-h-[min(280px,40vh)] shrink-0 flex-col border-b border-sidebar-border/70 bg-muted/15 lg:max-h-none lg:w-72 lg:border-r lg:border-b-0 dark:border-sidebar-border"
+            class="flex max-h-[min(280px,40vh)] shrink-0 flex-col border-b border-sidebar-border/70 bg-muted/15 lg:max-h-none lg:min-h-0 lg:w-72 lg:self-stretch lg:border-r lg:border-b-0 dark:border-sidebar-border"
         >
             <div
                 class="flex shrink-0 items-center justify-between gap-2 border-b border-sidebar-border/50 px-3 py-3 dark:border-sidebar-border/80"
@@ -569,16 +567,16 @@ const submit = async (): Promise<void> => {
             </div>
         </aside>
 
-        <!-- Дясно: текущ чат -->
+        <!-- Дясно: текущ чат — история скролира; полето за въпрос е закачено долу -->
         <div
-            class="mx-auto flex min-h-0 min-w-0 flex-1 flex-col gap-4 p-4 md:p-6 lg:max-w-none lg:p-8"
+            class="mx-auto flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-4 md:p-6 lg:max-w-none lg:p-8"
         >
             <div
-                class="flex min-h-0 w-full max-w-3xl flex-1 flex-col gap-2 self-center"
+                class="flex min-h-0 w-full max-w-3xl flex-1 flex-col self-center overflow-hidden"
             >
                 <div
                     ref="historyEl"
-                    class="flex min-h-[min(280px,35vh)] flex-1 flex-col gap-3 overflow-y-auto p-3 lg:min-h-0"
+                    class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-3"
                 >
                     <p
                         v-if="
@@ -828,7 +826,27 @@ const submit = async (): Promise<void> => {
                 </div>
             </div>
 
-            <div class="flex w-full max-w-3xl flex-col self-center">
+            <div
+                class="flex w-full max-w-3xl shrink-0 flex-col gap-2 self-center border-t border-sidebar-border/50 bg-background pt-3 dark:border-sidebar-border/60"
+            >
+                <div
+                    v-if="validationErrors.length"
+                    class="w-full rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                >
+                    <ul class="list-inside list-disc space-y-1">
+                        <li v-for="(err, i) in validationErrors" :key="i">
+                            {{ err }}
+                        </li>
+                    </ul>
+                </div>
+
+                <div
+                    v-if="error"
+                    class="w-full rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                >
+                    {{ error }}
+                </div>
+
                 <textarea
                     ref="messageInputEl"
                     :id="textareaId"
@@ -903,24 +921,6 @@ const submit = async (): Promise<void> => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-
-            <div
-                v-if="validationErrors.length"
-                class="w-full max-w-3xl self-center rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-            >
-                <ul class="list-inside list-disc space-y-1">
-                    <li v-for="(err, i) in validationErrors" :key="i">
-                        {{ err }}
-                    </li>
-                </ul>
-            </div>
-
-            <div
-                v-if="error"
-                class="w-full max-w-3xl self-center rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-            >
-                {{ error }}
-            </div>
         </div>
     </div>
 </template>
