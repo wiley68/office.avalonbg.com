@@ -13,11 +13,15 @@ return [
     |
     */
 
-    'default' => 'openai',
+    'default' => 'xai',
     'default_for_images' => 'gemini',
-    'default_for_audio' => 'openai',
-    'default_for_transcription' => 'openai',
-    'default_for_embeddings' => 'openai',
+    /*
+     * xAI (Laravel Ai XaiProvider) поддържа само текст и изображения — не embeddings, audio, transcription.
+     * Тези операции трябва да сочат към доставчик с реална поддръжка (виж документацията на пакета).
+     */
+    'default_for_audio' => env('AI_DEFAULT_FOR_AUDIO', 'openai'),
+    'default_for_transcription' => env('AI_DEFAULT_FOR_TRANSCRIPTION', 'openai'),
+    'default_for_embeddings' => env('AI_DEFAULT_FOR_EMBEDDINGS', 'openai'),
     'default_for_reranking' => 'cohere',
 
     /*
@@ -123,6 +127,16 @@ return [
         'xai' => [
             'driver' => 'xai',
             'key' => env('XAI_API_KEY'),
+            'models' => [
+                'text' => [
+                    'default' => env('XAI_TEXT_MODEL', 'grok-4-1-fast-reasoning'),
+                    'cheapest' => env('XAI_TEXT_MODEL_CHEAPEST', 'grok-4-1-fast-non-reasoning'),
+                    'smartest' => env('XAI_TEXT_MODEL_SMARTEST', 'grok-4-1-fast-reasoning'),
+                ],
+                'image' => [
+                    'default' => env('XAI_IMAGE_MODEL', 'grok-imagine-image'),
+                ],
+            ],
         ],
     ],
 

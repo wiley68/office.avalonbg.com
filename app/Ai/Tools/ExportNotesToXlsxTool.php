@@ -27,12 +27,20 @@ class ExportNotesToXlsxTool implements Tool
     public function description(): Stringable|string
     {
         return 'Експортира всички лични бележки на логнатия потребител в Excel файл (.xlsx). '
-            .'Връща връзка за еднократно изтегляне. Изисква автентикиран потребител в текущата HTTP сесия.';
+            . 'Връща връзка за еднократно изтегляне. Изисква автентикиран потребител в текущата HTTP сесия.';
     }
 
     public function schema(JsonSchema $schema): array
     {
-        return [];
+        /*
+         * Празна схема [] кара Prism да изпрати "properties": [] (JSON масив), а не обект — xAI връща 400.
+         * Нужен е поне един опционален параметър, за да се генерира валиден JSON Schema обект.
+         */
+        return [
+            'confirm' => $schema
+                ->boolean()
+                ->description('Потвърди експорт на всички бележки в Excel (true). По избор — може да се пропусне.'),
+        ];
     }
 
     public function handle(Request $request): Stringable|string
@@ -52,7 +60,7 @@ class ExportNotesToXlsxTool implements Tool
         }
 
         unlink($tmpBase);
-        $absolutePath = $tmpBase.'.xlsx';
+        $absolutePath = $tmpBase . '.xlsx';
 
         try {
             $count = $this->exportService->writeExportFile($user, $absolutePath);
@@ -70,7 +78,7 @@ class ExportNotesToXlsxTool implements Tool
         }
 
         Cache::put(
-            'notes_export:'.$token,
+            'notes_export:' . $token,
             [
                 'user_id' => $user->id,
                 'path' => $absolutePath,
@@ -79,7 +87,7 @@ class ExportNotesToXlsxTool implements Tool
         );
 
         $downloadUrl = route('dashboard.notes.export.download', ['token' => $token], true);
-        $filename = 'belazhki-'.now()->format('Y-m-d-His').'.xlsx';
+        $filename = 'belazhki-' . now()->format('Y-m-d-His') . '.xlsx';
 
         return json_encode([
             'ok' => true,
