@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
 import {
+    BarChart3,
     BookOpen,
-    Folder,
     LayoutGrid,
     Menu,
     Search,
     StickyNote,
+    Users,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
@@ -44,6 +45,7 @@ import { getInitials } from '@/composables/useInitials';
 import { toUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import dashboardRoutes from '@/routes/dashboard';
+import { index as usersIndex } from '@/routes/users';
 import type { BreadcrumbItem, NavItem } from '@/types';
 
 type Props = {
@@ -61,31 +63,45 @@ const { isCurrentUrl, whenCurrentUrl } = useCurrentUrl();
 const activeItemStyles =
     'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Табло',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Бележки',
-        href: dashboardRoutes.notes.url(),
-        icon: StickyNote,
-    },
-];
+const mainNavItems = computed<NavItem[]>(() => {
+    if (page.props.auth.user?.is_admin) {
+        return [
+            {
+                title: 'Потребители',
+                href: usersIndex(),
+                icon: Users,
+            },
+            {
+                title: 'Статистика',
+                href: dashboardRoutes.admin.statistics.url(),
+                icon: BarChart3,
+            },
+        ];
+    }
 
-const rightNavItems: NavItem[] = [
+    return [
+        {
+            title: 'Табло',
+            href: dashboard(),
+            icon: LayoutGrid,
+        },
+        {
+            title: 'Бележки',
+            href: dashboardRoutes.notes.url(),
+            icon: StickyNote,
+        },
+    ];
+});
+
+const rightNavItems = computed<NavItem[]>(() => [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
+        title: 'Магазин',
+        href: page.props.shopUrl,
+        target: '_blank',
+        rel: 'noopener noreferrer',
         icon: BookOpen,
     },
-];
+]);
 </script>
 
 <template>

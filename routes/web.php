@@ -12,6 +12,9 @@ Route::inertia('/', 'Welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+});
+
+Route::middleware(['auth', 'verified', 'admin.agent.block'])->group(function () {
     Route::post('dashboard/agent', [DashboardAgentController::class, 'store'])
         ->middleware('agent.context:orchestrator')
         ->name('dashboard.agent');

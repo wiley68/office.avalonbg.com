@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import { ChevronDown } from 'lucide-vue-next';
+import { computed } from 'vue';
 import {
     Collapsible,
     CollapsibleContent,
@@ -24,11 +25,19 @@ defineProps<{
 }>();
 
 const { isCurrentUrl } = useCurrentUrl();
+
+const page = usePage();
+
+const organizationLabel = computed(() => {
+    const o = page.props.organization;
+
+    return typeof o === 'string' && o.trim() !== '' ? o : 'Maxtrade AI Office';
+});
 </script>
 
 <template>
     <SidebarGroup class="px-2 py-0">
-        <SidebarGroupLabel>Platform</SidebarGroupLabel>
+        <SidebarGroupLabel>{{ organizationLabel }}</SidebarGroupLabel>
         <SidebarMenu>
             <template v-for="item in items" :key="item.title">
                 <SidebarMenuItem

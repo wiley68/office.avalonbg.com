@@ -3,10 +3,8 @@ import { usePage } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import {
     BarChart3,
-    BookOpen,
-    FolderGit2,
+    ShoppingCart,
     LayoutGrid,
-    Shield,
     StickyNote,
     Users,
 } from 'lucide-vue-next';
@@ -31,52 +29,45 @@ import type { NavItem } from '@/types';
 
 const page = usePage();
 
-const mainNavItems = computed<NavItem[]>(() => [
-    {
-        title: 'Табло',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Бележки',
-        href: dashboardRoutes.notes.url(),
-        icon: StickyNote,
-    },
-    ...(page.props.auth.user?.is_admin
-        ? [
-              {
-                  title: 'Администрация',
-                  href: usersIndex(),
-                  icon: Shield,
-                  children: [
-                      {
-                          title: 'Потребители',
-                          href: usersIndex(),
-                          icon: Users,
-                      },
-                      {
-                          title: 'Статистика',
-                          href: dashboardRoutes.admin.statistics.url(),
-                          icon: BarChart3,
-                      },
-                  ],
-              } satisfies NavItem,
-          ]
-        : []),
-]);
+const mainNavItems = computed<NavItem[]>(() => {
+    if (page.props.auth.user?.is_admin) {
+        return [
+            {
+                title: 'Потребители',
+                href: usersIndex(),
+                icon: Users,
+            },
+            {
+                title: 'Статистика',
+                href: dashboardRoutes.admin.statistics.url(),
+                icon: BarChart3,
+            },
+        ];
+    }
 
-const footerNavItems: NavItem[] = [
+    return [
+        {
+            title: 'Табло',
+            href: dashboard(),
+            icon: LayoutGrid,
+        },
+        {
+            title: 'Бележки',
+            href: dashboardRoutes.notes.url(),
+            icon: StickyNote,
+        },
+    ];
+});
+
+const footerNavItems = computed<NavItem[]>(() => [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
+        title: 'Магазин',
+        href: page.props.shopUrl,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        icon: ShoppingCart,
     },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
-    },
-];
+]);
 </script>
 
 <template>
