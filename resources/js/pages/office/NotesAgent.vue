@@ -16,7 +16,7 @@ const pdfUrl = (id: string) => dashboardRoutes.notes.agent.message.pdf.url(id);
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Табло',
+        title: 'Композитор',
         href: dashboard(),
     },
     {

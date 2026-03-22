@@ -87,7 +87,7 @@ const mainNavItems = computed<NavItem[]>(() => {
 
     return [
         {
-            title: 'Табло',
+            title: 'Композитор',
             href: dashboard(),
             icon: LayoutGrid,
         },

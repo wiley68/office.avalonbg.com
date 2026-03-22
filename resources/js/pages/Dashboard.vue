@@ -22,7 +22,7 @@ const pdfUrl = (id: string) => dashboardRoutes.agent.message.pdf.url(id);
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Табло',
+        title: 'Композитор',
         href: dashboard(),
     },
 ];
@@ -31,15 +31,15 @@ const pageDescriptionUser =
     'Общ агент: разбира заявката ви и ползва наличните инструменти (напр. бележки). Разговорът се пази на сървъра — за нов контекст ползвайте „Нов разговор“. За фокус само върху бележки отворете „Бележки“ от менюто.';
 
 const pageDescriptionAdmin =
-    'Табло за администратори — тук по-късно ще се добави съдържание.';
+    'Композитор за администратори — тук по-късно ще се добави съдържание.';
 </script>
 
 <template>
-    <Head title="Табло" />
+    <Head title="Композитор" />
 
     <AppLayout
         :breadcrumbs="breadcrumbs"
-        :page-title="isAdmin ? 'Табло' : 'Офис координатор'"
+        :page-title="isAdmin ? 'Композитор' : 'Офис координатор'"
         :page-description="isAdmin ? pageDescriptionAdmin : pageDescriptionUser"
     >
         <div

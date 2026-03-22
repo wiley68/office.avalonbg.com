@@ -46,7 +46,7 @@ test('conversation id from orchestrator context is rejected on notes agent', fun
         'id' => $convId,
         'user_id' => $user->id,
         'context' => AgentContext::Orchestrator->value,
-        'title' => 'Табло',
+        'title' => 'Композитор',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
