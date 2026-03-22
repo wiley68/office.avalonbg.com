@@ -58,9 +58,17 @@ const mainNavItems = computed<NavItem[]>(() => {
             icon: LayoutGrid,
         },
         {
-            title: 'Бележки',
-            href: dashboardRoutes.notes.url(),
-            icon: StickyNote,
+            title: 'Агенти',
+            href: dashboard(),
+            icon: Users,
+            children: [
+                {
+                    title: 'Бележки',
+                    href: dashboardRoutes.notes.url(),
+                    icon: StickyNote,
+                },
+            ],
+            collapsibleVariant: 'agents',
         },
     ];
 });

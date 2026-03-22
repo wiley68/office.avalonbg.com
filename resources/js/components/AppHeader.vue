@@ -3,10 +3,8 @@ import { Link, usePage } from '@inertiajs/vue3';
 import {
     BarChart3,
     BookOpen,
-    LayoutGrid,
     Menu,
     Search,
-    StickyNote,
     Table,
     Users,
 } from 'lucide-vue-next';
@@ -14,6 +12,7 @@ import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
+import OfficeMainNav from '@/components/OfficeMainNav.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -85,19 +84,12 @@ const mainNavItems = computed<NavItem[]>(() => {
         ];
     }
 
-    return [
-        {
-            title: 'Композитор',
-            href: dashboard(),
-            icon: LayoutGrid,
-        },
-        {
-            title: 'Бележки',
-            href: dashboardRoutes.notes.url(),
-            icon: StickyNote,
-        },
-    ];
+    return [];
 });
+
+const isOfficeNav = computed(() =>
+    Boolean(page.props.auth.user && !page.props.auth.user.is_admin),
+);
 
 const rightNavItems = computed<NavItem[]>(() => [
     {
@@ -138,7 +130,10 @@ const rightNavItems = computed<NavItem[]>(() => [
                             <div
                                 class="flex h-full flex-1 flex-col justify-between space-y-4 py-6"
                             >
-                                <nav class="-mx-3 space-y-1">
+                                <nav
+                                    v-if="!isOfficeNav"
+                                    class="-mx-3 space-y-1"
+                                >
                                     <Link
                                         v-for="item in mainNavItems"
                                         :key="item.title"
@@ -159,6 +154,7 @@ const rightNavItems = computed<NavItem[]>(() => [
                                         {{ item.title }}
                                     </Link>
                                 </nav>
+                                <OfficeMainNav v-else variant="sheet" />
                                 <div class="flex flex-col space-y-4">
                                     <a
                                         v-for="item in rightNavItems"
@@ -189,6 +185,7 @@ const rightNavItems = computed<NavItem[]>(() => [
                 <div class="hidden h-full lg:flex lg:flex-1">
                     <NavigationMenu class="ml-10 flex h-full items-stretch">
                         <NavigationMenuList
+                            v-if="!isOfficeNav"
                             class="flex h-full items-stretch space-x-2"
                         >
                             <NavigationMenuItem
@@ -219,6 +216,12 @@ const rightNavItems = computed<NavItem[]>(() => [
                                     class="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"
                                 ></div>
                             </NavigationMenuItem>
+                        </NavigationMenuList>
+                        <NavigationMenuList
+                            v-else
+                            class="flex h-full items-stretch space-x-2"
+                        >
+                            <OfficeMainNav variant="bar" />
                         </NavigationMenuList>
                     </NavigationMenu>
                 </div>

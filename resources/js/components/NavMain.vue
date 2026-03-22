@@ -17,6 +17,7 @@ import {
     SidebarMenuSubButton,
     SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
+import { useAgentsNavSection } from '@/composables/useAgentsNavSection';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import type { NavItem } from '@/types';
 
@@ -25,6 +26,7 @@ defineProps<{
 }>();
 
 const { isCurrentUrl } = useCurrentUrl();
+const { agentsNavOpen } = useAgentsNavSection();
 
 const page = usePage();
 
@@ -56,10 +58,69 @@ const organizationLabel = computed(() => {
                 </SidebarMenuItem>
 
                 <Collapsible
+                    v-else-if="item.collapsibleVariant === 'agents'"
+                    v-model:open="agentsNavOpen"
+                    as-child
+                >
+                    <SidebarMenuItem>
+                        <CollapsibleTrigger as-child>
+                            <SidebarMenuButton :tooltip="item.title">
+                                <component v-if="item.icon" :is="item.icon" />
+                                <span>{{ item.title }}</span>
+                                <svg
+                                    v-if="agentsNavOpen"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    class="ml-auto size-4 shrink-0"
+                                    aria-hidden="true"
+                                >
+                                    <title>chevron-down</title>
+                                    <path
+                                        d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+                                    />
+                                </svg>
+                                <svg
+                                    v-else
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    class="ml-auto size-4 shrink-0"
+                                    aria-hidden="true"
+                                >
+                                    <title>chevron-up</title>
+                                    <path
+                                        d="M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z"
+                                    />
+                                </svg>
+                            </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                            <SidebarMenuSub>
+                                <SidebarMenuSubItem
+                                    v-for="child in item.children"
+                                    :key="child.title"
+                                >
+                                    <SidebarMenuSubButton
+                                        as-child
+                                        :is-active="isCurrentUrl(child.href)"
+                                    >
+                                        <Link :href="child.href">
+                                            <component
+                                                v-if="child.icon"
+                                                :is="child.icon"
+                                            />
+                                            <span>{{ child.title }}</span>
+                                        </Link>
+                                    </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                            </SidebarMenuSub>
+                        </CollapsibleContent>
+                    </SidebarMenuItem>
+                </Collapsible>
+                <Collapsible
                     v-else
                     as-child
                     :default-open="
-                        item.children.some((child) => isCurrentUrl(child.href))
+                        item.children!.some((child) => isCurrentUrl(child.href))
                     "
                 >
                     <SidebarMenuItem>
