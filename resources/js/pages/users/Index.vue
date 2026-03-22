@@ -4,8 +4,8 @@ import { Pencil, Plus, Trash2 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
-import type { BreadcrumbItem } from '@/types';
 import { create, destroy, edit, index } from '@/routes/users';
+import type { BreadcrumbItem } from '@/types';
 
 type UserListItem = {
     id: number;

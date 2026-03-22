@@ -20,6 +20,9 @@ withDefaults(defineProps<Props>(), {
         :page-title="pageTitle"
         :page-description="pageDescription"
     >
+        <template v-if="$slots.pageActions" #pageActions>
+            <slot name="pageActions" />
+        </template>
         <slot />
     </AppLayout>
 </template>

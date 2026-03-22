@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Ai\Tools\Request as AiToolRequest;
 use Laravel\Sanctum\Sanctum;
 
+use function Pest\Laravel\actingAs;
 use function Pest\Laravel\deleteJson;
 use function Pest\Laravel\getJson;
 use function Pest\Laravel\postJson;
@@ -16,6 +17,21 @@ uses(RefreshDatabase::class);
 
 test('guest cannot list notes', function () {
     getJson('/api/notes')->assertUnauthorized();
+});
+
+test('session api request without referer authenticates with xhr header on same host', function () {
+    $owner = User::factory()->create();
+    Note::factory()->for($owner)->create(['name' => 'Mine', 'note' => 'A']);
+
+    actingAs($owner);
+
+    $response = getJson('/api/notes', [
+        'X-Requested-With' => 'XMLHttpRequest',
+    ]);
+
+    $response->assertOk();
+    $response->assertJsonCount(1, 'data');
+    $response->assertJsonFragment(['name' => 'Mine']);
 });
 
 test('authenticated user can list only own notes', function () {
@@ -72,7 +88,7 @@ test('user cannot view another users note', function () {
 
     Sanctum::actingAs($intruder);
 
-    getJson('/api/notes/' . $note->id)->assertForbidden();
+    getJson('/api/notes/'.$note->id)->assertForbidden();
 });
 
 test('user cannot update another users note', function () {
@@ -82,7 +98,7 @@ test('user cannot update another users note', function () {
 
     Sanctum::actingAs($intruder);
 
-    putJson('/api/notes/' . $note->id, [
+    putJson('/api/notes/'.$note->id, [
         'name' => 'Hack',
         'note' => 'No',
     ])->assertForbidden();
@@ -95,7 +111,7 @@ test('user cannot delete another users note', function () {
 
     Sanctum::actingAs($intruder);
 
-    deleteJson('/api/notes/' . $note->id)->assertForbidden();
+    deleteJson('/api/notes/'.$note->id)->assertForbidden();
 });
 
 test('owner can show update and delete own note', function () {
@@ -107,16 +123,16 @@ test('owner can show update and delete own note', function () {
 
     Sanctum::actingAs($owner);
 
-    getJson('/api/notes/' . $note->id)->assertOk()->assertJsonFragment(['name' => 'Original']);
+    getJson('/api/notes/'.$note->id)->assertOk()->assertJsonFragment(['name' => 'Original']);
 
-    putJson('/api/notes/' . $note->id, [
+    putJson('/api/notes/'.$note->id, [
         'name' => 'Updated',
         'note' => 'New body',
     ])->assertOk()->assertJsonFragment(['name' => 'Updated']);
 
-    deleteJson('/api/notes/' . $note->id)->assertNoContent();
+    deleteJson('/api/notes/'.$note->id)->assertNoContent();
 
-    getJson('/api/notes/' . $note->id)->assertNotFound();
+    getJson('/api/notes/'.$note->id)->assertNotFound();
 });
 
 test('manage notes tool returns error when not authenticated', function () {

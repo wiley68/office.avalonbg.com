@@ -34,10 +34,10 @@ withDefaults(
         </div>
         <div
             v-if="pageTitle"
-            class="flex min-h-0 min-w-0 flex-1 items-center justify-end self-stretch sm:pl-4"
+            class="flex min-h-0 min-w-0 flex-1 items-center justify-end gap-2 self-stretch sm:pl-4"
         >
             <div
-                class="flex h-full min-h-0 w-full min-w-0 flex-col justify-center gap-0.5 overflow-hidden py-0.5"
+                class="flex h-full min-h-0 min-w-0 flex-1 flex-col justify-center gap-0.5 overflow-hidden py-0.5"
             >
                 <h1
                     class="m-0 w-full min-w-0 truncate text-right text-sm leading-tight font-semibold tracking-tight text-foreground"
@@ -50,6 +50,9 @@ withDefaults(
                 >
                     {{ pageDescription }}
                 </p>
+            </div>
+            <div v-if="$slots.pageActions" class="flex shrink-0 items-center">
+                <slot name="pageActions" />
             </div>
         </div>
     </header>

@@ -27,7 +27,11 @@ withDefaults(defineProps<Props>(), {
                 :breadcrumbs="breadcrumbs"
                 :page-title="pageTitle"
                 :page-description="pageDescription"
-            />
+            >
+                <template v-if="$slots.pageActions" #pageActions>
+                    <slot name="pageActions" />
+                </template>
+            </AppSidebarHeader>
             <slot />
         </AppContent>
     </AppShell>

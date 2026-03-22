@@ -6,6 +6,7 @@ use App\Ai\Storage\ContextualDatabaseConversationStore;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Ai\Contracts\ConversationStore;
@@ -26,6 +27,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureUrlForReverseProxy();
     }
 
     /**
@@ -49,5 +51,27 @@ class AppServiceProvider extends ServiceProvider
                     ->uncompromised()
                 : null,
         );
+    }
+
+    /**
+     * Behind Cloudflare / nginx / tunnel: клиентът е по HTTPS, а APP_URL може да е http://localhost.
+     * Генерираните URL-и и схемата да следват реалния протокол.
+     */
+    protected function configureUrlForReverseProxy(): void
+    {
+        if ($this->app->runningInConsole()) {
+            return;
+        }
+
+        $appUrl = config('app.url');
+        if (is_string($appUrl) && str_starts_with($appUrl, 'https://')) {
+            URL::forceScheme('https');
+
+            return;
+        }
+
+        if (request()->header('X-Forwarded-Proto') === 'https') {
+            URL::forceScheme('https');
+        }
     }
 }

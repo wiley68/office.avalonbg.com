@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Ai\Ai;
 
 use function Pest\Laravel\actingAs;
@@ -25,7 +26,9 @@ test('authenticated user can open notes agent page', function () {
 
     actingAs($user);
 
-    get(route('dashboard.notes'))->assertOk();
+    get(route('dashboard.notes'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->component('office/NotesAgent'));
 });
 
 test('authenticated user receives sse stream from notes agent when ai is faked', function () {
