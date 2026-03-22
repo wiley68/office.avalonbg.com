@@ -28,6 +28,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { consumeAgentSseStream } from '@/composables/useAgentSse';
+import { linkifyParts } from '@/lib/linkifyParts';
 
 export type ChatMessage = {
     id: string;
@@ -748,7 +749,27 @@ const submit = async (): Promise<void> => {
                                         : 'text-foreground'
                                 "
                             >
-                                {{ m.content }}
+                                <template v-if="m.role === 'user'">{{
+                                    m.content
+                                }}</template>
+                                <template v-else>
+                                    <template
+                                        v-for="(part, pi) in linkifyParts(
+                                            m.content,
+                                        )"
+                                        :key="pi"
+                                    >
+                                        <a
+                                            v-if="part.type === 'link'"
+                                            :href="part.href"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="font-medium break-all text-primary underline underline-offset-2 hover:text-primary/90"
+                                            >{{ part.text }}</a
+                                        >
+                                        <span v-else>{{ part.text }}</span>
+                                    </template>
+                                </template>
                             </div>
                             <time
                                 v-if="m.role === 'user' && m.created_at"
@@ -1006,7 +1027,22 @@ const submit = async (): Promise<void> => {
                         <div
                             class="max-w-[85%] px-3 py-2 text-sm wrap-anywhere whitespace-pre-wrap text-foreground"
                         >
-                            {{ streamingAssistant }}
+                            <template
+                                v-for="(part, pi) in linkifyParts(
+                                    streamingAssistant ?? '',
+                                )"
+                                :key="pi"
+                            >
+                                <a
+                                    v-if="part.type === 'link'"
+                                    :href="part.href"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="font-medium break-all text-primary underline underline-offset-2 hover:text-primary/90"
+                                    >{{ part.text }}</a
+                                >
+                                <span v-else>{{ part.text }}</span>
+                            </template>
                             <span
                                 v-if="sending"
                                 class="ml-1 inline-block size-2 animate-pulse rounded-full bg-primary"
