@@ -112,11 +112,16 @@ const csrfToken = (): string =>
 
 const scrollHistoryToBottom = async (): Promise<void> => {
     await nextTick();
+    await nextTick();
     const el = historyEl.value;
 
-    if (el) {
-        el.scrollTop = el.scrollHeight;
+    if (!el) {
+        return;
     }
+
+    requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight;
+    });
 };
 
 const loadConversations = async (): Promise<void> => {
@@ -491,6 +496,7 @@ const submit = async (): Promise<void> => {
     validationErrors.value = [];
     sending.value = true;
     streamingAssistant.value = '';
+    await scrollHistoryToBottom();
 
     try {
         const payload: Record<string, string> = {
