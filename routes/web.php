@@ -6,6 +6,7 @@ use App\Http\Controllers\AgentConversationMessagesController;
 use App\Http\Controllers\DashboardAgentController;
 use App\Http\Controllers\NotesAgentController;
 use App\Http\Controllers\NotesExportDownloadController;
+use App\Http\Controllers\Office\TextCryptoController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -13,6 +14,13 @@ Route::inertia('/', 'Welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+});
+
+Route::middleware(['auth', 'verified', 'office.user'])->group(function () {
+    Route::post('dashboard/crypto/encrypt', [TextCryptoController::class, 'encrypt'])
+        ->name('dashboard.crypto.encrypt');
+    Route::post('dashboard/crypto/decrypt', [TextCryptoController::class, 'decrypt'])
+        ->name('dashboard.crypto.decrypt');
 });
 
 Route::middleware(['auth', 'verified', 'admin.agent.block'])->group(function () {

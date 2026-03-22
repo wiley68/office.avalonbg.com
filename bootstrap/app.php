@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureAgentConversationContext;
+use App\Http\Middleware\EnsureUserIsNotAdmin;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RedirectAdminFromAgentModules;
@@ -42,6 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'agent.context' => EnsureAgentConversationContext::class,
             'admin.agent.block' => RedirectAdminFromAgentModules::class,
+            'office.user' => EnsureUserIsNotAdmin::class,
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,

@@ -12,6 +12,7 @@ import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
+import EncryptionDialog from '@/components/EncryptionDialog.vue';
 import OfficeMainNav from '@/components/OfficeMainNav.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -155,6 +156,10 @@ const rightNavItems = computed<NavItem[]>(() => [
                                     </Link>
                                 </nav>
                                 <OfficeMainNav v-else variant="sheet" />
+                                <EncryptionDialog
+                                    v-if="isOfficeNav"
+                                    placement="header-mobile"
+                                />
                                 <div class="flex flex-col space-y-4">
                                     <a
                                         v-for="item in rightNavItems"
@@ -239,6 +244,10 @@ const rightNavItems = computed<NavItem[]>(() => [
                         </Button>
 
                         <div class="hidden space-x-1 lg:flex">
+                            <EncryptionDialog
+                                v-if="isOfficeNav"
+                                placement="header-desktop"
+                            />
                             <template
                                 v-for="item in rightNavItems"
                                 :key="item.title"

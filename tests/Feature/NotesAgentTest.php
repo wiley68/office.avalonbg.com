@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use Laravel\Ai\Ai;
 
 use function Pest\Laravel\actingAs;
+use function Pest\Laravel\get;
 use function Pest\Laravel\post;
 use function Pest\Laravel\postJson;
 
@@ -17,6 +18,14 @@ uses(RefreshDatabase::class);
 test('guest cannot send message to notes agent', function () {
     postJson('/dashboard/notes/agent', ['message' => 'Hello'])
         ->assertUnauthorized();
+});
+
+test('authenticated user can open notes agent page', function () {
+    $user = User::factory()->create();
+
+    actingAs($user);
+
+    get(route('dashboard.notes'))->assertOk();
 });
 
 test('authenticated user receives sse stream from notes agent when ai is faked', function () {
