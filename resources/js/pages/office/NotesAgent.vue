@@ -44,6 +44,9 @@ const pageDescription =
                 :conversations-url="
                     dashboardRoutes.notes.agent.conversations.url()
                 "
+                :delete-all-conversations-url="
+                    dashboardRoutes.notes.agent.conversations.destroy.url()
+                "
                 :feedback-url="feedbackUrl"
                 :email-url="emailUrl"
                 :pdf-url="pdfUrl"

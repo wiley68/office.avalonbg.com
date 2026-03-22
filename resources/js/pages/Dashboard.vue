@@ -39,6 +39,9 @@ const pageDescription =
                 :post-url="postOrchestratorMessage.url()"
                 :messages-url="messagesUrl"
                 :conversations-url="dashboardRoutes.agent.conversations.url()"
+                :delete-all-conversations-url="
+                    dashboardRoutes.agent.conversations.destroy.url()
+                "
                 :feedback-url="feedbackUrl"
                 :email-url="emailUrl"
                 :pdf-url="pdfUrl"

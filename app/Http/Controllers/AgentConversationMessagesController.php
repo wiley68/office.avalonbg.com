@@ -172,6 +172,53 @@ class AgentConversationMessagesController extends Controller
         return $pdf->stream('ofis-agent-otgovor.pdf');
     }
 
+    /**
+     * Изтрива всички разговори за текущия потребител и контекста на страницата (оркестратор / бележки),
+     * заедно със съобщенията и обратната връзка към тях.
+     */
+    public function destroyAll(Request $request): JsonResponse
+    {
+        $context = match (true) {
+            $request->routeIs('dashboard.agent.conversations.destroy') => AgentContext::Orchestrator,
+            $request->routeIs('dashboard.notes.agent.conversations.destroy') => AgentContext::Notes,
+            default => throw new \LogicException(
+                'Unexpected route for destroy all conversations: '.$request->route()?->getName()
+            ),
+        };
+
+        $userId = $request->user()->id;
+
+        $conversationIds = DB::table('agent_conversations')
+            ->where('user_id', $userId)
+            ->where('context', $context->value)
+            ->pluck('id');
+
+        if ($conversationIds->isEmpty()) {
+            return response()->json([
+                'ok' => true,
+                'deleted_conversations' => 0,
+            ]);
+        }
+
+        $messageIds = DB::table('agent_conversation_messages')
+            ->whereIn('conversation_id', $conversationIds)
+            ->pluck('id');
+
+        DB::transaction(function () use ($messageIds, $conversationIds): void {
+            if ($messageIds->isNotEmpty()) {
+                DB::table('agent_message_feedback')->whereIn('message_id', $messageIds)->delete();
+            }
+
+            DB::table('agent_conversation_messages')->whereIn('conversation_id', $conversationIds)->delete();
+            DB::table('agent_conversations')->whereIn('id', $conversationIds)->delete();
+        });
+
+        return response()->json([
+            'ok' => true,
+            'deleted_conversations' => $conversationIds->count(),
+        ]);
+    }
+
     private function contextFromRequest(Request $request): AgentContext
     {
         if ($request->routeIs('dashboard.agent.conversations', 'dashboard.agent.conversation.messages')) {

@@ -16,6 +16,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('dashboard.agent');
     Route::get('dashboard/agent/conversations', [AgentConversationMessagesController::class, 'index'])
         ->name('dashboard.agent.conversations');
+    Route::delete('dashboard/agent/conversations', [AgentConversationMessagesController::class, 'destroyAll'])
+        ->name('dashboard.agent.conversations.destroy');
     Route::get('dashboard/agent/conversations/{conversation}/messages', [AgentConversationMessagesController::class, 'show'])
         ->name('dashboard.agent.conversation.messages');
     Route::post('dashboard/agent/messages/{message}/feedback', [AgentConversationMessagesController::class, 'feedback'])
@@ -31,6 +33,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('dashboard.notes.agent');
     Route::get('dashboard/notes/agent/conversations', [AgentConversationMessagesController::class, 'index'])
         ->name('dashboard.notes.agent.conversations');
+    Route::delete('dashboard/notes/agent/conversations', [AgentConversationMessagesController::class, 'destroyAll'])
+        ->name('dashboard.notes.agent.conversations.destroy');
     Route::get('dashboard/notes/agent/conversations/{conversation}/messages', [AgentConversationMessagesController::class, 'show'])
         ->name('dashboard.notes.agent.conversation.messages');
     Route::post('dashboard/notes/agent/messages/{message}/feedback', [AgentConversationMessagesController::class, 'feedback'])

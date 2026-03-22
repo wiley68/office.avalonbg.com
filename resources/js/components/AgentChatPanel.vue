@@ -1,5 +1,14 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -40,6 +49,8 @@ type Props = {
     messagesUrl: (conversationId: string) => string;
     /** GET JSON списък с разговори (id, title, updated_at) */
     conversationsUrl: string;
+    /** DELETE — изтрива всички разговори за текущия контекст (оркестратор / бележки) */
+    deleteAllConversationsUrl: string;
     /** POST JSON feedback за assistant съобщение */
     feedbackUrl: (messageId: string) => string;
     /** POST JSON изпращане на assistant съобщение по имейл */
@@ -82,6 +93,8 @@ const messageInputEl = ref<HTMLTextAreaElement | null>(null);
 const conversations = ref<AgentConversationSummary[]>([]);
 const conversationsLoading = ref(false);
 const conversationsError = ref<string | null>(null);
+const deletingAllConversations = ref(false);
+const deleteAllDialogOpen = ref(false);
 
 const storageId = () =>
     props.sessionKey.length > 0 ? props.sessionKey : `conv:${props.postUrl}`;
@@ -224,6 +237,52 @@ const startNewConversation = (): void => {
     void nextTick(() => {
         focusMessageInput();
     });
+};
+
+const openDeleteAllDialog = (): void => {
+    if (conversations.value.length === 0 || deletingAllConversations.value) {
+        return;
+    }
+
+    deleteAllDialogOpen.value = true;
+};
+
+const confirmDeleteAllConversations = async (): Promise<void> => {
+    if (deletingAllConversations.value) {
+        return;
+    }
+
+    deletingAllConversations.value = true;
+    conversationsError.value = null;
+
+    try {
+        const response = await fetch(props.deleteAllConversationsUrl, {
+            method: 'DELETE',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken(),
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+        });
+
+        if (!response.ok) {
+            conversationsError.value =
+                'Неуспешно изтриване на разговорите. Опитайте отново.';
+
+            return;
+        }
+
+        deleteAllDialogOpen.value = false;
+        startNewConversation();
+        await loadConversations();
+    } catch {
+        conversationsError.value =
+            'Неуспешно изтриване на разговорите. Опитайте отново.';
+    } finally {
+        deletingAllConversations.value = false;
+    }
 };
 
 const formatSidebarDate = (iso: string): string => {
@@ -532,14 +591,69 @@ const submit = async (): Promise<void> => {
                 class="flex shrink-0 items-center justify-between gap-2 border-b border-sidebar-border/50 px-3 py-3 dark:border-sidebar-border/80"
             >
                 <h2 class="text-sm font-semibold text-foreground">Разговори</h2>
-                <button
-                    type="button"
-                    class="shrink-0 rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground shadow-sm transition hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                    :disabled="sending"
-                    @click="startNewConversation"
-                >
-                    Нов
-                </button>
+                <div class="flex shrink-0 items-center gap-1.5">
+                    <TooltipProvider :delay-duration="0">
+                        <Tooltip>
+                            <TooltipTrigger as-child>
+                                <button
+                                    type="button"
+                                    class="inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-input bg-background text-foreground shadow-sm transition hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                    :disabled="sending"
+                                    aria-label="Нов разговор"
+                                    @click="startNewConversation"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        class="size-[18px]"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
+                                        />
+                                    </svg>
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Нов разговор</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider :delay-duration="0">
+                        <Tooltip>
+                            <TooltipTrigger as-child>
+                                <button
+                                    type="button"
+                                    class="inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-destructive/40 bg-background text-destructive shadow-sm transition hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                    :disabled="
+                                        sending ||
+                                        conversationsLoading ||
+                                        deletingAllConversations ||
+                                        conversations.length === 0
+                                    "
+                                    aria-label="Изтрий всички разговори"
+                                    @click="openDeleteAllDialog"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        class="size-[18px]"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            d="M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19M8,9H16V19H8V9M15.5,4L14.5,3H9.5L8.5,4H5V6H19V4H15.5Z"
+                                        />
+                                    </svg>
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Изтрий всички разговори</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
             </div>
             <div class="min-h-0 flex-1 overflow-y-auto px-2 py-2">
                 <p
@@ -1000,6 +1114,38 @@ const submit = async (): Promise<void> => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <AlertDialog v-model:open="deleteAllDialogOpen">
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            Изтриване на всички разговори?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Ще изтриете всички разговори, видими в този панел,
+                            заедно с историята им. Действието не може да бъде
+                            отменено.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel :disabled="deletingAllConversations">
+                            Отказ
+                        </AlertDialogCancel>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            :disabled="deletingAllConversations"
+                            @click="confirmDeleteAllConversations"
+                        >
+                            {{
+                                deletingAllConversations
+                                    ? 'Изтриване…'
+                                    : 'Изтрий всички'
+                            }}
+                        </Button>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     </div>
 </template>
