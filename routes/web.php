@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AgentFeedbackStatisticsController;
+use App\Http\Controllers\Admin\DataExportController;
 use App\Http\Controllers\AgentConversationMessagesController;
 use App\Http\Controllers\DashboardAgentController;
 use App\Http\Controllers\NotesAgentController;
@@ -55,6 +56,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::resource('users', UserController::class)->except('show');
     Route::get('dashboard/admin/statistics', AgentFeedbackStatisticsController::class)
         ->name('dashboard.admin.statistics');
+    Route::get('dashboard/admin/export/notes', [DataExportController::class, 'notes'])
+        ->name('dashboard.admin.export.notes');
+    Route::get('dashboard/admin/export', [DataExportController::class, 'index'])
+        ->name('dashboard.admin.export');
 });
 
 require __DIR__.'/settings.php';

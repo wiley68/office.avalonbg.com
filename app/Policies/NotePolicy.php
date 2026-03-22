@@ -46,4 +46,12 @@ class NotePolicy
     {
         return $user->id === $note->user_id;
     }
+
+    /**
+     * Пълен административен експорт на всички бележки.
+     */
+    public function exportAll(User $user): bool
+    {
+        return $user->hasRole('admin');
+    }
 }

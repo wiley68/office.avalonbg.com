@@ -7,6 +7,7 @@ import {
     Menu,
     Search,
     StickyNote,
+    Table,
     Users,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
@@ -75,6 +76,11 @@ const mainNavItems = computed<NavItem[]>(() => {
                 title: 'Статистика',
                 href: dashboardRoutes.admin.statistics.url(),
                 icon: BarChart3,
+            },
+            {
+                title: 'Експорт',
+                href: dashboardRoutes.admin.export.url(),
+                icon: Table,
             },
         ];
     }
