@@ -22,7 +22,10 @@ class NoteFactory extends Factory
         return [
             'user_id' => User::factory(),
             'name' => Str::limit(fake()->words(3, true), 40, ''),
-            'description' => fake()->paragraph(),
+            'description' => fake()->boolean(60)
+                ? Str::limit(fake()->sentence(), 120, '')
+                : null,
+            'note' => fake()->paragraph(),
         ];
     }
 }

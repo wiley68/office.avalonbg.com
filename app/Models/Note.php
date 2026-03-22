@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['name', 'description'])]
+#[Fillable(['name', 'description', 'note'])]
 class Note extends Model
 {
     /** @use HasFactory<NoteFactory> */
@@ -20,7 +20,7 @@ class Note extends Model
     protected function casts(): array
     {
         return [
-            'description' => 'encrypted',
+            'note' => 'encrypted',
         ];
     }
 

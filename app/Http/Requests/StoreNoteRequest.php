@@ -24,7 +24,8 @@ class StoreNoteRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:40'],
-            'description' => ['required', 'string'],
+            'description' => ['nullable', 'string', 'max:120'],
+            'note' => ['required', 'string'],
         ];
     }
 }

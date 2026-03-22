@@ -34,7 +34,7 @@ class ManageNotesTool implements Tool
     public function handle(Request $request): Stringable|string
     {
         $user = Auth::user();
-        if (!$user instanceof User) {
+        if (! $user instanceof User) {
             return json_encode(['error' => 'Няма логнат потребител.'], JSON_UNESCAPED_UNICODE);
         }
 
@@ -69,7 +69,10 @@ class ManageNotesTool implements Tool
                 ->description('Заглавие до 40 символа (create/update).'),
             'description' => $schema
                 ->string()
-                ->description('Текст на бележката (create/update).'),
+                ->description('Кратко описание до 120 символа, по избор (create/update).'),
+            'note' => $schema
+                ->string()
+                ->description('Пълно съдържание на бележката (create/update).'),
         ];
     }
 
@@ -109,7 +112,8 @@ class ManageNotesTool implements Tool
 
         $v = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:40'],
-            'description' => ['required', 'string'],
+            'description' => ['nullable', 'string', 'max:120'],
+            'note' => ['required', 'string'],
         ]);
 
         if ($v->fails()) {
@@ -126,7 +130,8 @@ class ManageNotesTool implements Tool
         $v = Validator::make($request->all(), [
             'id' => ['required', 'integer', 'exists:notes,id'],
             'name' => ['sometimes', 'required', 'string', 'max:40'],
-            'description' => ['sometimes', 'required', 'string'],
+            'description' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'note' => ['sometimes', 'required', 'string'],
         ]);
 
         if ($v->fails()) {

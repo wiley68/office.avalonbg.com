@@ -21,8 +21,8 @@ test('guest cannot list notes', function () {
 test('authenticated user can list only own notes', function () {
     $owner = User::factory()->create();
     $other = User::factory()->create();
-    Note::factory()->for($owner)->create(['name' => 'Mine', 'description' => 'A']);
-    Note::factory()->for($other)->create(['name' => 'Theirs', 'description' => 'B']);
+    Note::factory()->for($owner)->create(['name' => 'Mine', 'note' => 'A']);
+    Note::factory()->for($other)->create(['name' => 'Theirs', 'note' => 'B']);
 
     Sanctum::actingAs($owner);
 
@@ -39,13 +39,30 @@ test('authenticated user can create a note', function () {
 
     postJson('/api/notes', [
         'name' => 'Заглавие',
-        'description' => 'Пълно описание на бележката.',
+        'description' => 'Кратко',
+        'note' => 'Пълно съдържание на бележката.',
     ])
         ->assertCreated()
         ->assertJsonFragment([
             'name' => 'Заглавие',
-            'description' => 'Пълно описание на бележката.',
+            'description' => 'Кратко',
+            'note' => 'Пълно съдържание на бележката.',
         ]);
+});
+
+test('authenticated user can create a note without optional description', function () {
+    Sanctum::actingAs(User::factory()->create());
+
+    postJson('/api/notes', [
+        'name' => 'Само заглавие',
+        'note' => 'Съдържание.',
+    ])
+        ->assertCreated()
+        ->assertJsonFragment([
+            'name' => 'Само заглавие',
+            'note' => 'Съдържание.',
+        ])
+        ->assertJsonPath('data.description', null);
 });
 
 test('user cannot view another users note', function () {
@@ -67,7 +84,7 @@ test('user cannot update another users note', function () {
 
     putJson('/api/notes/' . $note->id, [
         'name' => 'Hack',
-        'description' => 'No',
+        'note' => 'No',
     ])->assertForbidden();
 });
 
@@ -85,7 +102,7 @@ test('owner can show update and delete own note', function () {
     $owner = User::factory()->create();
     $note = Note::factory()->for($owner)->create([
         'name' => 'Original',
-        'description' => 'Text',
+        'note' => 'Text',
     ]);
 
     Sanctum::actingAs($owner);
@@ -94,7 +111,7 @@ test('owner can show update and delete own note', function () {
 
     putJson('/api/notes/' . $note->id, [
         'name' => 'Updated',
-        'description' => 'New body',
+        'note' => 'New body',
     ])->assertOk()->assertJsonFragment(['name' => 'Updated']);
 
     deleteJson('/api/notes/' . $note->id)->assertNoContent();
@@ -111,7 +128,7 @@ test('manage notes tool returns error when not authenticated', function () {
 
 test('manage notes tool lists notes for authenticated user', function () {
     $user = User::factory()->create();
-    Note::factory()->for($user)->create(['name' => 'T1', 'description' => 'D1']);
+    Note::factory()->for($user)->create(['name' => 'T1', 'note' => 'D1']);
 
     Sanctum::actingAs($user);
 
