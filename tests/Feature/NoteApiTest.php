@@ -50,6 +50,23 @@ test('authenticated user can list only own notes', function () {
     $response->assertJsonMissing(['name' => 'Theirs']);
 });
 
+test('notes index uses pagination metadata', function () {
+    $user = User::factory()->create();
+
+    Note::factory()->count(15)->for($user)->create();
+
+    Sanctum::actingAs($user);
+
+    $response = getJson('/api/notes?per_page=10&page=2');
+
+    $response->assertOk();
+    $response->assertJsonCount(5, 'data');
+    $response->assertJsonPath('meta.current_page', 2);
+    $response->assertJsonPath('meta.per_page', 10);
+    $response->assertJsonPath('meta.last_page', 2);
+    $response->assertJsonPath('meta.total', 15);
+});
+
 test('authenticated user can create a note', function () {
     Sanctum::actingAs(User::factory()->create());
 

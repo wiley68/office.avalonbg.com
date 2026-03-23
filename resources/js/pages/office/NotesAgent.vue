@@ -61,35 +61,38 @@ const pageDescription = computed(() =>
         :page-description="pageDescription"
     >
         <template #pageActions>
-            <div
-                class="inline-flex rounded-md border border-input bg-background p-0.5 shadow-xs"
-                role="group"
-                aria-label="Режим на бележки"
-            >
-                <button
-                    type="button"
-                    :class="[
-                        'rounded px-2.5 py-1 text-xs font-medium transition-colors',
-                        viewMode === 'agent'
-                            ? 'bg-muted text-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground',
-                    ]"
-                    @click="viewMode = 'agent'"
+            <div class="flex h-full items-center gap-2 pl-2">
+                <div class="h-6 w-px bg-gray-200 dark:bg-gray-700"></div>
+                <div
+                    class="inline-flex rounded-md border border-input bg-background p-0.5 shadow-xs"
+                    role="group"
+                    aria-label="Режим на бележки"
                 >
-                    Агент
-                </button>
-                <button
-                    type="button"
-                    :class="[
-                        'rounded px-2.5 py-1 text-xs font-medium transition-colors',
-                        viewMode === 'manual'
-                            ? 'bg-muted text-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground',
-                    ]"
-                    @click="viewMode = 'manual'"
-                >
-                    Ръчно
-                </button>
+                    <button
+                        type="button"
+                        :class="[
+                            'rounded px-2.5 py-1 text-xs font-medium transition-colors',
+                            viewMode === 'agent'
+                                ? 'bg-muted text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground',
+                        ]"
+                        @click="viewMode = 'agent'"
+                    >
+                        Агент
+                    </button>
+                    <button
+                        type="button"
+                        :class="[
+                            'rounded px-2.5 py-1 text-xs font-medium transition-colors',
+                            viewMode === 'manual'
+                                ? 'bg-muted text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground',
+                        ]"
+                        @click="viewMode = 'manual'"
+                    >
+                        Ръчно
+                    </button>
+                </div>
             </div>
         </template>
 

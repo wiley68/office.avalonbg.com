@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Encryption\Encrypter;
+use Illuminate\Support\Facades\Crypt;
 use Normalizer;
 use RuntimeException;
 
@@ -35,7 +36,11 @@ class TextCryptoService
     {
         $payload = self::normalizePayloadForDecrypt($payload);
 
-        return $this->encrypter->decryptString($payload);
+        try {
+            return $this->encrypter->decryptString($payload);
+        } catch (DecryptException) {
+            return Crypt::decryptString($payload);
+        }
     }
 
     /**

@@ -6,7 +6,7 @@ import {
     MoreHorizontal,
     Plus,
 } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -34,6 +34,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import dashboardRoutes from '@/routes/dashboard';
 
 const props = defineProps<{
     active: boolean;
@@ -68,9 +69,16 @@ const searchQuery = ref('');
 type SortColumn = 'name' | 'updated_at' | 'created_at';
 const sortColumn = ref<SortColumn | null>(null);
 const sortDirection = ref<'asc' | 'desc'>('desc');
+const currentPage = ref(1);
+const perPage = ref(12);
+const total = ref(0);
+const lastPage = ref(1);
+const from = ref<number | null>(null);
+const to = ref<number | null>(null);
 
 const dialogOpen = ref(false);
 const saving = ref(false);
+const cryptoProcessing = ref(false);
 const formError = ref<string | null>(null);
 const editingId = ref<number | null>(null);
 const formName = ref('');
@@ -108,12 +116,112 @@ const parseJsonErrors = async (response: Response): Promise<string> => {
     return `Грешка ${response.status}. Опитайте отново.`;
 };
 
-const loadNotes = async (): Promise<void> => {
+const tryParseEncryptedPayload = (
+    value: string,
+): { iv: string; value: string; mac: string } | null => {
+    const normalized = value.replace(/\s+/g, '');
+
+    if (normalized.length === 0) {
+        return null;
+    }
+
+    try {
+        const parsed = JSON.parse(atob(normalized)) as
+            | {
+                  iv?: unknown;
+                  value?: unknown;
+                  mac?: unknown;
+              }
+            | null;
+
+        if (
+            parsed &&
+            typeof parsed.iv === 'string' &&
+            typeof parsed.value === 'string' &&
+            typeof parsed.mac === 'string'
+        ) {
+            return {
+                iv: parsed.iv,
+                value: parsed.value,
+                mac: parsed.mac,
+            };
+        }
+    } catch {
+        return null;
+    }
+
+    return null;
+};
+
+const isEncryptedNote = (): boolean => tryParseEncryptedPayload(formNote.value) !== null;
+
+const toggleNoteCrypto = async (): Promise<void> => {
+    const text = formNote.value.trim();
+
+    if (text.length === 0 || cryptoProcessing.value) {
+        return;
+    }
+
+    formError.value = null;
+    cryptoProcessing.value = true;
+
+    try {
+        const endpoint = isEncryptedNote()
+            ? dashboardRoutes.crypto.decrypt.url()
+            : dashboardRoutes.crypto.encrypt.url();
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: jsonHeaders(),
+            credentials: 'same-origin',
+            body: JSON.stringify({ text: formNote.value }),
+        });
+
+        if (!response.ok) {
+            formError.value = await parseJsonErrors(response);
+
+            return;
+        }
+
+        const data = (await response.json()) as { text?: string };
+        formNote.value = data.text ?? formNote.value;
+    } catch {
+        formError.value = 'Неуспешна операция за криптиране/декриптиране.';
+    } finally {
+        cryptoProcessing.value = false;
+    }
+};
+
+type NotesApiResponse = {
+    data?: NoteRow[];
+    meta?: {
+        current_page?: number;
+        per_page?: number;
+        total?: number;
+        last_page?: number;
+        from?: number | null;
+        to?: number | null;
+    };
+};
+
+const loadNotes = async (page = currentPage.value): Promise<void> => {
     loading.value = true;
     listError.value = null;
 
     try {
-        const response = await fetch(API_BASE, {
+        const params = new URLSearchParams({
+            page: String(page),
+            per_page: String(perPage.value),
+            sort: sortColumn.value ?? 'updated_at',
+            direction: sortDirection.value,
+        });
+
+        const q = searchQuery.value.trim();
+
+        if (q.length > 0) {
+            params.set('q', q);
+        }
+
+        const response = await fetch(`${API_BASE}?${params.toString()}`, {
             headers: {
                 Accept: 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
@@ -127,8 +235,14 @@ const loadNotes = async (): Promise<void> => {
             return;
         }
 
-        const data = (await response.json()) as { data?: NoteRow[] };
+        const data = (await response.json()) as NotesApiResponse;
         notes.value = data.data ?? [];
+        currentPage.value = data.meta?.current_page ?? page;
+        perPage.value = data.meta?.per_page ?? perPage.value;
+        total.value = data.meta?.total ?? notes.value.length;
+        lastPage.value = data.meta?.last_page ?? 1;
+        from.value = data.meta?.from ?? null;
+        to.value = data.meta?.to ?? null;
     } catch {
         listError.value = 'Неуспешно зареждане на бележките.';
     } finally {
@@ -151,17 +265,22 @@ const toggleSort = (column: SortColumn): void => {
         sortColumn.value = column;
         sortDirection.value = 'asc';
 
+        void loadNotes(1);
+
         return;
     }
 
     if (sortDirection.value === 'asc') {
         sortDirection.value = 'desc';
 
+        void loadNotes(1);
+
         return;
     }
 
     sortColumn.value = null;
     sortDirection.value = 'desc';
+    void loadNotes(1);
 };
 
 const sortIcon = (column: SortColumn) => {
@@ -172,42 +291,8 @@ const sortIcon = (column: SortColumn) => {
     return sortDirection.value === 'asc' ? ArrowUp : ArrowDown;
 };
 
-const compareRows = (a: NoteRow, b: NoteRow, col: SortColumn): number => {
-    if (col === 'name') {
-        return a.name.localeCompare(b.name, 'bg', { sensitivity: 'base' });
-    }
-
-    const ta = new Date(a[col]).getTime();
-    const tb = new Date(b[col]).getTime();
-
-    return ta - tb;
-};
-
-const displayedNotes = computed(() => {
-    let rows = [...notes.value];
-    const q = searchQuery.value.trim().toLowerCase();
-
-    if (q) {
-        rows = rows.filter(
-            (r) =>
-                r.name.toLowerCase().includes(q) ||
-                (r.description?.toLowerCase().includes(q) ?? false) ||
-                r.note.toLowerCase().includes(q),
-        );
-    }
-
-    if (sortColumn.value) {
-        const col = sortColumn.value;
-        const dir = sortDirection.value;
-
-        rows.sort((a, b) => {
-            const c = compareRows(a, b, col);
-
-            return dir === 'asc' ? c : -c;
-        });
-    }
-
-    return rows;
+watch(searchQuery, () => {
+    void loadNotes(1);
 });
 
 const resetForm = (): void => {
@@ -348,6 +433,25 @@ const truncate = (text: string, max: number): string => {
 
     return `${text.slice(0, max)}…`;
 };
+
+const canGoPrev = () => currentPage.value > 1 && !loading.value;
+const canGoNext = () => currentPage.value < lastPage.value && !loading.value;
+
+const goToPreviousPage = (): void => {
+    if (!canGoPrev()) {
+        return;
+    }
+
+    void loadNotes(currentPage.value - 1);
+};
+
+const goToNextPage = (): void => {
+    if (!canGoNext()) {
+        return;
+    }
+
+    void loadNotes(currentPage.value + 1);
+};
 </script>
 
 <template>
@@ -382,6 +486,7 @@ const truncate = (text: string, max: number): string => {
                 <table class="w-full min-w-[640px] text-sm">
                     <thead class="bg-muted/40 text-left">
                         <tr>
+                            <th class="px-4 py-3 font-medium">ID</th>
                             <th class="px-4 py-3 font-medium">
                                 <Button
                                     variant="ghost"
@@ -429,7 +534,7 @@ const truncate = (text: string, max: number): string => {
                         <template v-if="loading">
                             <tr>
                                 <td
-                                    colspan="5"
+                                    colspan="6"
                                     class="px-4 py-10 text-center text-muted-foreground"
                                 >
                                     Зареждане…
@@ -438,10 +543,15 @@ const truncate = (text: string, max: number): string => {
                         </template>
                         <template v-else>
                             <tr
-                                v-for="row in displayedNotes"
+                                v-for="row in notes"
                                 :key="row.id"
                                 class="border-t border-sidebar-border/60"
                             >
+                                <td
+                                    class="px-4 py-3 whitespace-nowrap text-muted-foreground tabular-nums"
+                                >
+                                    {{ row.id }}
+                                </td>
                                 <td
                                     class="max-w-48 truncate px-4 py-3 font-medium"
                                 >
@@ -455,7 +565,7 @@ const truncate = (text: string, max: number): string => {
                                 <td
                                     class="hidden max-w-xs px-4 py-3 text-muted-foreground md:table-cell"
                                 >
-                                    {{ truncate(row.note, 80) }}
+                                    {{ truncate(row.note, 50) }}
                                 </td>
                                 <td
                                     class="px-4 py-3 whitespace-nowrap text-muted-foreground tabular-nums"
@@ -496,9 +606,9 @@ const truncate = (text: string, max: number): string => {
                                     </DropdownMenu>
                                 </td>
                             </tr>
-                            <tr v-if="displayedNotes.length === 0">
+                            <tr v-if="notes.length === 0">
                                 <td
-                                    colspan="5"
+                                    colspan="6"
                                     class="px-4 py-10 text-center text-muted-foreground"
                                 >
                                     {{
@@ -511,6 +621,35 @@ const truncate = (text: string, max: number): string => {
                         </template>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+            <p class="text-muted-foreground">
+                Показани {{ from ?? 0 }}-{{ to ?? 0 }} от {{ total }}
+            </p>
+            <div class="inline-flex items-center gap-2">
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    :disabled="!canGoPrev()"
+                    @click="goToPreviousPage"
+                >
+                    Предишна
+                </Button>
+                <span class="text-muted-foreground">
+                    Страница {{ currentPage }} / {{ lastPage }}
+                </span>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    :disabled="!canGoNext()"
+                    @click="goToNextPage"
+                >
+                    Следваща
+                </Button>
             </div>
         </div>
 
@@ -559,28 +698,60 @@ const truncate = (text: string, max: number): string => {
                             rows="8"
                             autocomplete="off"
                         />
+                        <div class="flex justify-end">
+                            <span
+                                class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                                :class="
+                                    isEncryptedNote()
+                                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                        : 'bg-muted text-muted-foreground'
+                                "
+                            >
+                                {{
+                                    isEncryptedNote()
+                                        ? 'Статус: Криптиран'
+                                        : 'Статус: Обикновен текст'
+                                }}
+                            </span>
+                        </div>
                     </div>
                     <p v-if="formError" class="text-sm text-destructive">
                         {{ formError }}
                     </p>
                 </div>
 
-                <DialogFooter class="gap-2 sm:gap-0">
+                <DialogFooter class="gap-2 sm:justify-between">
                     <Button
                         type="button"
-                        variant="outline"
-                        :disabled="saving"
-                        @click="dialogOpen = false"
+                        variant="secondary"
+                        :disabled="saving || cryptoProcessing || formNote.trim().length === 0"
+                        @click="toggleNoteCrypto"
                     >
-                        Отказ
+                        {{
+                            cryptoProcessing
+                                ? 'Обработка…'
+                                : isEncryptedNote()
+                                  ? 'Декриптирай'
+                                  : 'Криптирай'
+                        }}
                     </Button>
-                    <Button
-                        type="button"
-                        :disabled="saving"
-                        @click="submitForm"
-                    >
-                        {{ saving ? 'Запис…' : 'Запази' }}
-                    </Button>
+                    <div class="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            :disabled="saving || cryptoProcessing"
+                            @click="dialogOpen = false"
+                        >
+                            Отказ
+                        </Button>
+                        <Button
+                            type="button"
+                            :disabled="saving || cryptoProcessing"
+                            @click="submitForm"
+                        >
+                            {{ saving ? 'Запис…' : 'Запази' }}
+                        </Button>
+                    </div>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

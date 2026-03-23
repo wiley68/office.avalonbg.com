@@ -20,10 +20,36 @@ class NoteController extends Controller
     {
         $this->authorize('viewAny', Note::class);
 
-        $notes = $request->user()
-            ->notes()
-            ->latest()
-            ->get();
+        $validated = $request->validate([
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'q' => ['nullable', 'string', 'max:255'],
+            'sort' => ['nullable', 'in:name,created_at,updated_at'],
+            'direction' => ['nullable', 'in:asc,desc'],
+        ]);
+
+        $query = $request->user()->notes()->getQuery();
+
+        if (! empty($validated['q'])) {
+            $search = trim((string) $validated['q']);
+
+            $query->where(function ($builder) use ($search): void {
+                $builder
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('note', 'like', "%{$search}%");
+            });
+        }
+
+        $sortColumn = $validated['sort'] ?? 'updated_at';
+        $sortDirection = $validated['direction'] ?? 'desc';
+
+        $query
+            ->orderBy($sortColumn, $sortDirection)
+            ->orderBy('id', 'desc');
+
+        $perPage = (int) ($validated['per_page'] ?? 12);
+        $notes = $query->paginate($perPage)->withQueryString();
 
         return NoteResource::collection($notes);
     }
