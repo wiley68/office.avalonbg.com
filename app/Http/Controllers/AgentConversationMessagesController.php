@@ -100,13 +100,15 @@ class AgentConversationMessagesController extends Controller
         }
 
         DB::table('agent_message_feedback')->upsert(
-            [[
-                'message_id' => $message,
-                'user_id' => $userId,
-                'feedback' => $feedback,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]],
+            [
+                [
+                    'message_id' => $message,
+                    'user_id' => $userId,
+                    'feedback' => $feedback,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+            ],
             ['message_id', 'user_id'],
             ['feedback', 'updated_at'],
         );
@@ -148,6 +150,7 @@ class AgentConversationMessagesController extends Controller
         $context = match (true) {
             $request->routeIs('dashboard.agent.message.pdf') => AgentContext::Orchestrator,
             $request->routeIs('dashboard.notes.agent.message.pdf') => AgentContext::Notes,
+            $request->routeIs('dashboard.contacts.agent.message.pdf') => AgentContext::Contacts,
             default => throw new \LogicException(
                 'Unexpected route for agent PDF: '.$request->route()?->getName()
             ),
@@ -181,6 +184,7 @@ class AgentConversationMessagesController extends Controller
         $context = match (true) {
             $request->routeIs('dashboard.agent.conversations.destroy') => AgentContext::Orchestrator,
             $request->routeIs('dashboard.notes.agent.conversations.destroy') => AgentContext::Notes,
+            $request->routeIs('dashboard.contacts.agent.conversations.destroy') => AgentContext::Contacts,
             default => throw new \LogicException(
                 'Unexpected route for destroy all conversations: '.$request->route()?->getName()
             ),
@@ -227,6 +231,10 @@ class AgentConversationMessagesController extends Controller
 
         if ($request->routeIs('dashboard.notes.agent.conversations', 'dashboard.notes.agent.conversation.messages', 'dashboard.notes.agent.message.feedback')) {
             return AgentContext::Notes;
+        }
+
+        if ($request->routeIs('dashboard.contacts.agent.conversations', 'dashboard.contacts.agent.conversation.messages', 'dashboard.contacts.agent.message.feedback')) {
+            return AgentContext::Contacts;
         }
 
         if ($request->routeIs('dashboard.agent.message.feedback')) {

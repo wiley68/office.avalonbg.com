@@ -28,6 +28,7 @@ class StoreAgentMessageFeedbackRequest extends FormRequest
         return match (true) {
             $this->routeIs('dashboard.agent.message.feedback') => AgentContext::Orchestrator,
             $this->routeIs('dashboard.notes.agent.message.feedback') => AgentContext::Notes,
+            $this->routeIs('dashboard.contacts.agent.message.feedback') => AgentContext::Contacts,
             default => throw new \LogicException(
                 'Unexpected route for agent feedback: '.$this->route()?->getName()
             ),

@@ -64,6 +64,22 @@ return [
             ]) : [],
         ],
 
+        'service' => [
+            'driver' => 'mysql',
+            'host' => env('DB_SERVICE_HOST', '127.0.0.1'),
+            'port' => env('DB_SERVICE_PORT', '3306'),
+            'database' => env('DB_SERVICE_DATABASE', 'avalonbg_service'),
+            'username' => env('DB_SERVICE_USERNAME', 'avalonbg_bitowa'),
+            'password' => env('DB_SERVICE_PASSWORD', ''),
+            'unix_socket' => env('DB_SERVICE_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb3_general_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),
