@@ -23,15 +23,20 @@ final class AgentSseResponse
         return response()->stream(function () use ($streamable, &$conversationId) {
             try {
                 foreach ($streamable as $event) {
-                    yield 'data: ' . ((string) $event) . "\n\n";
+                    echo 'data: '.((string) $event)."\n\n";
+
+                    if (function_exists('ob_flush')) {
+                        @ob_flush();
+                    }
+                    flush();
                 }
 
-                yield 'data: ' . json_encode([
+                echo 'data: '.json_encode([
                     'type' => 'meta',
                     'conversation_id' => $conversationId,
-                ], JSON_UNESCAPED_UNICODE) . "\n\n";
+                ], JSON_UNESCAPED_UNICODE)."\n\n";
 
-                yield "data: [DONE]\n\n";
+                echo "data: [DONE]\n\n";
             } finally {
                 CurrentAgentContext::clear();
             }

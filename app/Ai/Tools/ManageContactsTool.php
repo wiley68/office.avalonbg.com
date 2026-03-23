@@ -11,12 +11,13 @@ use Illuminate\Support\Facades\Validator;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
 use Stringable;
+use Throwable;
 
 class ManageContactsTool implements Tool
 {
     public function description(): Stringable|string
     {
-        return 'Управление на контакти от service базата: list, show, create, update, delete.';
+        return 'Управление на контакти от service базата: list, count, show, create, update, delete.';
     }
 
     public function handle(Request $request): Stringable|string
@@ -24,19 +25,28 @@ class ManageContactsTool implements Tool
         $user = Auth::user();
 
         if (! $user instanceof User) {
-            return json_encode(['error' => 'Няма логнат потребител.'], JSON_UNESCAPED_UNICODE);
+            return $this->encode(['error' => 'Няма логнат потребител.']);
         }
 
-        $action = $request->string('action')->toString();
+        try {
+            $input = $this->normalizedInput($request);
+            $action = (string) ($input['action'] ?? '');
 
-        return match ($action) {
-            'list' => $this->listContacts(),
-            'show' => $this->showContact($request),
-            'create' => $this->createContact($request),
-            'update' => $this->updateContact($request),
-            'delete' => $this->deleteContact($request),
-            default => json_encode(['error' => 'Невалидна стойност за action.'], JSON_UNESCAPED_UNICODE),
-        };
+            return match ($action) {
+                'list' => $this->listContacts($input),
+                'count' => $this->countContacts(),
+                'show' => $this->showContact($input),
+                'create' => $this->createContact($input),
+                'update' => $this->updateContact($input),
+                'delete' => $this->deleteContact($input),
+                default => $this->encode(['error' => 'Невалидна стойност за action.']),
+            };
+        } catch (Throwable $e) {
+            return $this->encode([
+                'error' => 'Грешка при обработка на contacts tool.',
+                'details' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function schema(JsonSchema $schema): array
@@ -44,11 +54,15 @@ class ManageContactsTool implements Tool
         return [
             'action' => $schema
                 ->string()
-                ->enum(['list', 'show', 'create', 'update', 'delete'])
+                ->enum(['list', 'count', 'show', 'create', 'update', 'delete'])
                 ->description('Операция с контакти.')
                 ->required(),
             'id' => $schema->integer()->description('ID на контакт.'),
             'q' => $schema->string()->description('Търсене при list.'),
+            'limit' => $schema->integer()->description('Брой редове за list (по подразбиране 50, максимум 200).'),
+            'page' => $schema->integer()->description('Номер на страница за list (по подразбиране 1).'),
+            'per_page' => $schema->integer()->description('Редове на страница за list (1-200, по подразбиране 50).'),
+            'offset' => $schema->integer()->description('Offset за list (ако е зададен, има приоритет над page).'),
             'citi_id' => $schema->integer()->description('ID на населено място (citi_id).'),
             'last_name' => $schema->string()->description('Фамилия (задължителна при create).'),
             'name' => $schema->string()->description('Собствено име.'),
@@ -60,34 +74,86 @@ class ManageContactsTool implements Tool
         ];
     }
 
-    private function listContacts(): string
+    /**
+     * @param  array<string, mixed>  $input
+     */
+    private function listContacts(array $input): string
     {
-        $rows = Contact::query()->with(['citi', 'dlazhnost'])->latest('id')->limit(50)->get();
+        $perPage = max(
+            1,
+            min(
+                (int) ($input['per_page'] ?? $input['limit'] ?? 50),
+                200
+            ),
+        );
+        $page = max(1, (int) ($input['page'] ?? 1));
+        $offset = array_key_exists('offset', $input)
+            ? max(0, (int) $input['offset'])
+            : (($page - 1) * $perPage);
+        $query = Contact::query()->with(['citi', 'dlazhnost'])->latest('id');
 
-        return json_encode(
-            ContactResource::collection($rows)->resolve(),
-            JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT
+        if (! empty($input['q']) && is_string($input['q'])) {
+            $search = trim($input['q']);
+            $query->where(function ($builder) use ($search): void {
+                $builder
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('second_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('firm', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('gsm_1_m', 'like', "%{$search}%");
+            });
+        }
+
+        $total = (clone $query)->count();
+        $rows = $query->offset($offset)->limit($perPage)->get();
+        $currentPage = intdiv($offset, $perPage) + 1;
+        $lastPage = max(1, (int) ceil($total / $perPage));
+
+        return $this->encode(
+            [
+                'total' => $total,
+                'returned' => $rows->count(),
+                'page' => $currentPage,
+                'per_page' => $perPage,
+                'last_page' => $lastPage,
+                'offset' => $offset,
+                'data' => ContactResource::collection($rows)->resolve(),
+            ],
         );
     }
 
-    private function showContact(Request $request): string
+    private function countContacts(): string
     {
-        $v = Validator::make($request->all(), [
+        return $this->encode([
+            'total' => Contact::query()->count(),
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $input
+     */
+    private function showContact(array $input): string
+    {
+        $v = Validator::make($input, [
             'id' => ['required', 'integer', 'exists:service.contacts,id'],
         ]);
 
         if ($v->fails()) {
-            return json_encode(['error' => $v->errors()->first()], JSON_UNESCAPED_UNICODE);
+            return $this->encode(['error' => $v->errors()->first()]);
         }
 
-        $row = Contact::query()->with(['citi', 'dlazhnost'])->findOrFail($request->integer('id'));
+        $row = Contact::query()->with(['citi', 'dlazhnost'])->findOrFail((int) $input['id']);
 
-        return json_encode((new ContactResource($row))->resolve(), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        return $this->encode((new ContactResource($row))->resolve());
     }
 
-    private function createContact(Request $request): string
+    /**
+     * @param  array<string, mixed>  $input
+     */
+    private function createContact(array $input): string
     {
-        $v = Validator::make($request->all(), [
+        $v = Validator::make($input, [
             'citi_id' => ['required', 'integer'],
             'last_name' => ['required', 'string', 'max:24'],
             'name' => ['nullable', 'string', 'max:24'],
@@ -99,17 +165,20 @@ class ManageContactsTool implements Tool
         ]);
 
         if ($v->fails()) {
-            return json_encode(['error' => $v->errors()->first()], JSON_UNESCAPED_UNICODE);
+            return $this->encode(['error' => $v->errors()->first()]);
         }
 
         $row = Contact::query()->create($v->validated());
 
-        return json_encode((new ContactResource($row->fresh()->load(['citi', 'dlazhnost'])))->resolve(), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        return $this->encode((new ContactResource($row->fresh()->load(['citi', 'dlazhnost'])))->resolve());
     }
 
-    private function updateContact(Request $request): string
+    /**
+     * @param  array<string, mixed>  $input
+     */
+    private function updateContact(array $input): string
     {
-        $v = Validator::make($request->all(), [
+        $v = Validator::make($input, [
             'id' => ['required', 'integer', 'exists:service.contacts,id'],
             'citi_id' => ['sometimes', 'required', 'integer'],
             'last_name' => ['sometimes', 'required', 'string', 'max:24'],
@@ -122,28 +191,61 @@ class ManageContactsTool implements Tool
         ]);
 
         if ($v->fails()) {
-            return json_encode(['error' => $v->errors()->first()], JSON_UNESCAPED_UNICODE);
+            return $this->encode(['error' => $v->errors()->first()]);
         }
 
-        $row = Contact::query()->findOrFail($request->integer('id'));
+        $row = Contact::query()->findOrFail((int) $input['id']);
         $row->update(collect($v->validated())->except('id')->all());
 
-        return json_encode((new ContactResource($row->fresh()->load(['citi', 'dlazhnost'])))->resolve(), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        return $this->encode((new ContactResource($row->fresh()->load(['citi', 'dlazhnost'])))->resolve());
     }
 
-    private function deleteContact(Request $request): string
+    /**
+     * @param  array<string, mixed>  $input
+     */
+    private function deleteContact(array $input): string
     {
-        $v = Validator::make($request->all(), [
+        $v = Validator::make($input, [
             'id' => ['required', 'integer', 'exists:service.contacts,id'],
         ]);
 
         if ($v->fails()) {
-            return json_encode(['error' => $v->errors()->first()], JSON_UNESCAPED_UNICODE);
+            return $this->encode(['error' => $v->errors()->first()]);
         }
 
-        $id = $request->integer('id');
+        $id = (int) $input['id'];
         Contact::query()->findOrFail($id)->delete();
 
-        return json_encode(['ok' => true, 'id' => $id], JSON_UNESCAPED_UNICODE);
+        return $this->encode(['ok' => true, 'id' => $id]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function normalizedInput(Request $request): array
+    {
+        $input = $request->all();
+
+        if (
+            isset($input['schema_definition'])
+            && is_array($input['schema_definition'])
+        ) {
+            return $input['schema_definition'];
+        }
+
+        return $input;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function encode(array $payload): string
+    {
+        return json_encode(
+            $payload,
+            JSON_UNESCAPED_UNICODE
+            | JSON_PRETTY_PRINT
+            | JSON_INVALID_UTF8_SUBSTITUTE
+        ) ?: '{"error":"JSON encode failed"}';
     }
 }

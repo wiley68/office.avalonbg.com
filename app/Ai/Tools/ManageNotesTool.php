@@ -24,8 +24,8 @@ class ManageNotesTool implements Tool
      */
     public function description(): Stringable|string
     {
-        return 'Управление на лични бележки (notes) на логнатия потребител: list, show, create, update, delete. '
-            . 'Изисква автентикиран потребител в текущата HTTP сесия.';
+        return 'Управление на лични бележки (notes) на логнатия потребител: list, count, show, create, update, delete. '
+            .'Изисква автентикиран потребител в текущата HTTP сесия.';
     }
 
     /**
@@ -41,7 +41,8 @@ class ManageNotesTool implements Tool
         $action = $request->string('action')->toString();
 
         return match ($action) {
-            'list' => $this->listNotes($user),
+            'list' => $this->listNotes($user, $request),
+            'count' => $this->countNotes($user),
             'show' => $this->showNote($request),
             'create' => $this->createNote($user, $request),
             'update' => $this->updateNote($request),
@@ -58,9 +59,24 @@ class ManageNotesTool implements Tool
         return [
             'action' => $schema
                 ->string()
-                ->enum(['list', 'show', 'create', 'update', 'delete'])
+                ->enum(['list', 'count', 'show', 'create', 'update', 'delete'])
                 ->description('Операция: list — всички бележки; show/create/update/delete — според id и полета.')
                 ->required(),
+            'q' => $schema
+                ->string()
+                ->description('Търсене при list.'),
+            'limit' => $schema
+                ->integer()
+                ->description('Брой редове за list (по подразбиране 50, максимум 200).'),
+            'page' => $schema
+                ->integer()
+                ->description('Номер на страница за list (по подразбиране 1).'),
+            'per_page' => $schema
+                ->integer()
+                ->description('Редове на страница за list (1-200, по подразбиране 50).'),
+            'offset' => $schema
+                ->integer()
+                ->description('Offset за list (ако е зададен, има приоритет над page).'),
             'id' => $schema
                 ->integer()
                 ->description('ID на бележка (за show, update, delete).'),
@@ -76,14 +92,57 @@ class ManageNotesTool implements Tool
         ];
     }
 
-    private function listNotes(User $user): string
+    private function listNotes(User $user, Request $request): string
     {
-        $notes = $user->notes()->latest()->get();
+        $input = $request->all();
+        $perPage = max(
+            1,
+            min(
+                (int) ($input['per_page'] ?? $input['limit'] ?? 50),
+                200
+            ),
+        );
+        $page = max(1, (int) ($input['page'] ?? 1));
+        $offset = array_key_exists('offset', $input)
+            ? max(0, (int) $input['offset'])
+            : (($page - 1) * $perPage);
+
+        $query = $user->notes()->getQuery()->latest('id');
+
+        if (! empty($input['q']) && is_string($input['q'])) {
+            $search = trim($input['q']);
+            $query->where(function ($builder) use ($search): void {
+                $builder
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('note', 'like', "%{$search}%");
+            });
+        }
+
+        $total = (clone $query)->count();
+        $notes = $query->offset($offset)->limit($perPage)->get();
+        $currentPage = intdiv($offset, $perPage) + 1;
+        $lastPage = max(1, (int) ceil($total / $perPage));
 
         return json_encode(
-            NoteResource::collection($notes)->resolve(),
+            [
+                'total' => $total,
+                'returned' => $notes->count(),
+                'page' => $currentPage,
+                'per_page' => $perPage,
+                'last_page' => $lastPage,
+                'offset' => $offset,
+                'data' => NoteResource::collection($notes)->resolve(),
+            ],
             JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT
         );
+    }
+
+    private function countNotes(User $user): string
+    {
+        return json_encode([
+            'total' => $user->notes()->count(),
+        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     }
 
     private function showNote(Request $request): string

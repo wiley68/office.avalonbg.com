@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'default' => 'xai',
+    'default' => 'openai',
     'default_for_images' => 'gemini',
     /*
      * xAI (Laravel Ai XaiProvider) поддържа само текст и изображения — не embeddings, audio, transcription.

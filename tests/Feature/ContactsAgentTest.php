@@ -36,6 +36,13 @@ test('authenticated user receives sse stream from contacts agent when ai is fake
     expect($content)->toContain('"type":"meta"');
     expect($content)->toContain('conversation_id');
     expect($content)->toContain('[DONE]');
+
+    $saved = DB::table('agent_conversations')
+        ->where('user_id', $user->id)
+        ->where('context', AgentContext::Contacts->value)
+        ->exists();
+
+    expect($saved)->toBeTrue();
 });
 
 test('conversation id from notes context is rejected on contacts agent', function () {

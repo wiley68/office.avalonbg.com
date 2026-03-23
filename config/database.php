@@ -65,8 +65,7 @@ return [
                     && defined('Pdo\\Mysql::ATTR_SSL_CA')
                 )
                 ? constant('Pdo\\Mysql::ATTR_SSL_CA')
-                : PDO::MYSQL_ATTR_SSL_CA
-                => env('MYSQL_ATTR_SSL_CA'),
+                : PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 
@@ -78,8 +77,8 @@ return [
             'username' => env('DB_SERVICE_USERNAME', 'avalonbg_bitowa'),
             'password' => env('DB_SERVICE_PASSWORD', ''),
             'unix_socket' => env('DB_SERVICE_SOCKET', ''),
-            'charset' => 'utf8mb4',
-            'collation' => 'utf8mb3_general_ci',
+            'charset' => env('DB_SERVICE_CHARSET', 'utf8mb3'),
+            'collation' => env('DB_SERVICE_COLLATION', 'utf8mb3_general_ci'),
             'prefix' => '',
             'prefix_indexes' => true,
             'strict' => true,
@@ -108,8 +107,7 @@ return [
                     && defined('Pdo\\Mysql::ATTR_SSL_CA')
                 )
                 ? constant('Pdo\\Mysql::ATTR_SSL_CA')
-                : PDO::MYSQL_ATTR_SSL_CA
-                => env('MYSQL_ATTR_SSL_CA'),
+                : PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 
@@ -178,7 +176,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')) . '-database-'),
+            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],
 

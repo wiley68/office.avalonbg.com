@@ -1,13 +1,16 @@
 <?php
 
+use App\Ai\Tools\ManageContactsTool;
 use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Laravel\Ai\Tools\Request as AiToolRequest;
 use Laravel\Sanctum\Sanctum;
 
+use function Pest\Laravel\actingAs;
 use function Pest\Laravel\deleteJson;
 use function Pest\Laravel\getJson;
 use function Pest\Laravel\postJson;
@@ -116,4 +119,61 @@ test('authenticated user can update and delete contact', function () {
 
     deleteJson("/api/contacts/{$contactId}")->assertNoContent();
     getJson("/api/contacts/{$contactId}")->assertNotFound();
+});
+
+test('manage contacts tool returns total count', function () {
+    $user = User::factory()->create();
+    actingAs($user);
+
+    $cityId = (int) DB::connection('service')->table('citi')->insertGetId([
+        'name' => 'Plovdiv',
+        'postalcod' => '4000',
+    ]);
+
+    DB::connection('service')->table('contacts')->insert([
+        ['citi_id' => $cityId, 'last_name' => 'One'],
+        ['citi_id' => $cityId, 'last_name' => 'Two'],
+        ['citi_id' => $cityId, 'last_name' => 'Three'],
+    ]);
+
+    $tool = new ManageContactsTool;
+    $result = $tool->handle(new AiToolRequest(['action' => 'count']));
+    $decoded = json_decode((string) $result, true);
+
+    expect($decoded)->toBeArray()
+        ->and($decoded['total'] ?? null)->toBe(3);
+});
+
+test('manage contacts tool supports pagination for list', function () {
+    $user = User::factory()->create();
+    actingAs($user);
+
+    $cityId = (int) DB::connection('service')->table('citi')->insertGetId([
+        'name' => 'Burgas',
+        'postalcod' => '8000',
+    ]);
+
+    DB::connection('service')->table('contacts')->insert([
+        ['citi_id' => $cityId, 'last_name' => 'A'],
+        ['citi_id' => $cityId, 'last_name' => 'B'],
+        ['citi_id' => $cityId, 'last_name' => 'C'],
+        ['citi_id' => $cityId, 'last_name' => 'D'],
+        ['citi_id' => $cityId, 'last_name' => 'E'],
+    ]);
+
+    $tool = new ManageContactsTool;
+    $result = $tool->handle(new AiToolRequest([
+        'action' => 'list',
+        'page' => 2,
+        'per_page' => 2,
+    ]));
+    $decoded = json_decode((string) $result, true);
+
+    expect($decoded)->toBeArray()
+        ->and($decoded['total'] ?? null)->toBe(5)
+        ->and($decoded['returned'] ?? null)->toBe(2)
+        ->and($decoded['page'] ?? null)->toBe(2)
+        ->and($decoded['per_page'] ?? null)->toBe(2)
+        ->and($decoded['last_page'] ?? null)->toBe(3)
+        ->and(is_array($decoded['data'] ?? null))->toBeTrue();
 });

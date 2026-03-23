@@ -156,11 +156,16 @@ const loadConversations = async (): Promise<void> => {
     }
 };
 
-const loadHistory = async (): Promise<void> => {
+const sleep = (ms: number): Promise<void> =>
+    new Promise((resolve) => {
+        window.setTimeout(resolve, ms);
+    });
+
+const loadHistory = async (): Promise<boolean> => {
     if (!conversationId.value) {
         messages.value = [];
 
-        return;
+        return true;
     }
 
     try {
@@ -173,14 +178,32 @@ const loadHistory = async (): Promise<void> => {
         });
 
         if (!response.ok) {
-            return;
+            return false;
         }
 
         const data = (await response.json()) as { messages: ChatMessage[] };
         messages.value = data.messages ?? [];
         await scrollHistoryToBottom();
+
+        return true;
     } catch {
-        //
+        return false;
+    }
+};
+
+const loadHistoryWithRetry = async (): Promise<void> => {
+    const delays = [0, 120, 300, 700];
+
+    for (const delay of delays) {
+        if (delay > 0) {
+            await sleep(delay);
+        }
+
+        const loaded = await loadHistory();
+
+        if (loaded) {
+            return;
+        }
     }
 };
 
@@ -574,9 +597,29 @@ const submit = async (): Promise<void> => {
             },
         );
 
+        const assistantText = streamingAssistant.value ?? '';
         streamingAssistant.value = null;
-        await loadHistory();
-        await loadConversations();
+
+        if (conversationId.value) {
+            await loadHistoryWithRetry();
+            await loadConversations();
+        } else if (assistantText.trim().length > 0) {
+            const now = new Date().toISOString();
+            messages.value.push({
+                id: `local-user-${Date.now()}`,
+                role: 'user',
+                content: message.value,
+                created_at: now,
+            });
+            messages.value.push({
+                id: `local-assistant-${Date.now() + 1}`,
+                role: 'assistant',
+                content: assistantText,
+                created_at: now,
+            });
+            await scrollHistoryToBottom();
+        }
+
         message.value = '';
     } catch (e) {
         error.value =
