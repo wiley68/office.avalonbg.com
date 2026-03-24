@@ -68,6 +68,61 @@ test('guest cannot list contacts', function () {
     getJson('/api/contacts')->assertUnauthorized();
 });
 
+test('authenticated user can load contacts lookups', function () {
+    $user = User::factory()->create();
+    Sanctum::actingAs($user);
+
+    DB::connection('service')->table('citi')->insert([
+        'name' => 'Sofia',
+        'postalcod' => '1000',
+    ]);
+    DB::connection('service')->table('dlaznosti')->insert([
+        'name' => 'Manager',
+    ]);
+
+    getJson('/api/contacts/lookups')
+        ->assertOk()
+        ->assertJsonCount(1, 'citi')
+        ->assertJsonCount(1, 'dlazhnosti')
+        ->assertJsonPath('citi.0.name', 'Sofia')
+        ->assertJsonPath('dlazhnosti.0.name', 'Manager');
+});
+
+test('authenticated user can CRUD citi and dlazhnosti', function () {
+    $user = User::factory()->create();
+    Sanctum::actingAs($user);
+
+    $citi = postJson('/api/citi', [
+        'name' => 'Ruse',
+        'postalcod' => '7000',
+    ])->assertCreated()
+        ->json('data');
+
+    putJson('/api/citi/'.$citi['id'], [
+        'name' => 'Rousse',
+    ])->assertOk()
+        ->assertJsonPath('data.name', 'Rousse');
+
+    getJson('/api/citi')->assertOk()->assertJsonFragment(['name' => 'Rousse']);
+
+    $dlazhnost = postJson('/api/dlaznosti', [
+        'name' => 'Operator',
+    ])->assertCreated()
+        ->json('data');
+
+    putJson('/api/dlaznosti/'.$dlazhnost['id'], [
+        'name' => 'Senior Operator',
+    ])->assertOk()
+        ->assertJsonPath('data.name', 'Senior Operator');
+
+    getJson('/api/dlaznosti')
+        ->assertOk()
+        ->assertJsonFragment(['name' => 'Senior Operator']);
+
+    deleteJson('/api/citi/'.$citi['id'])->assertNoContent();
+    deleteJson('/api/dlaznosti/'.$dlazhnost['id'])->assertNoContent();
+});
+
 test('authenticated user can create and list contacts with pagination', function () {
     $user = User::factory()->create();
     Sanctum::actingAs($user);

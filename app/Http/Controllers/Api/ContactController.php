@@ -6,13 +6,32 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreContactRequest;
 use App\Http\Requests\UpdateContactRequest;
 use App\Http\Resources\ContactResource;
+use App\Models\Citi;
 use App\Models\Contact;
+use App\Models\Dlazhnost;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 
 class ContactController extends Controller
 {
+    public function lookups(): JsonResponse
+    {
+        $citi = Citi::query()
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $dlazhnosti = Dlazhnost::query()
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return response()->json([
+            'citi' => $citi,
+            'dlazhnosti' => $dlazhnosti,
+        ]);
+    }
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $validated = $request->validate([
