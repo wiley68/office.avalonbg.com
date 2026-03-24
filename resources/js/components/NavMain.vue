@@ -42,8 +42,14 @@ const organizationLabel = computed(() => {
         <SidebarGroupLabel>{{ organizationLabel }}</SidebarGroupLabel>
         <SidebarMenu>
             <template v-for="item in items" :key="item.title">
+                <div
+                    v-if="item.separator"
+                    class="px-2 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-muted-foreground/80 uppercase"
+                >
+                    {{ item.title }}
+                </div>
                 <SidebarMenuItem
-                    v-if="!item.children || item.children.length === 0"
+                    v-else-if="!item.children || item.children.length === 0"
                 >
                     <SidebarMenuButton
                         as-child

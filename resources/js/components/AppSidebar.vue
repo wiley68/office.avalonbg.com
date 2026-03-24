@@ -62,20 +62,17 @@ const mainNavItems = computed<NavItem[]>(() => {
         {
             title: 'Агенти',
             href: dashboard(),
-            icon: Users,
-            children: [
-                {
-                    title: 'Бележки',
-                    href: dashboardRoutes.notes.url(),
-                    icon: StickyNote,
-                },
-                {
-                    title: 'Контакти',
-                    href: dashboardRoutes.contacts.url(),
-                    icon: Contact,
-                },
-            ],
-            collapsibleVariant: 'agents',
+            separator: true,
+        },
+        {
+            title: 'Бележки',
+            href: dashboardRoutes.notes.url(),
+            icon: StickyNote,
+        },
+        {
+            title: 'Контакти',
+            href: dashboardRoutes.contacts.url(),
+            icon: Contact,
         },
     ];
 });

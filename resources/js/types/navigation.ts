@@ -10,6 +10,7 @@ export type NavItem = {
     title: string;
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon;
+    separator?: boolean;
     isActive?: boolean;
     children?: Array<{
         title: string;
