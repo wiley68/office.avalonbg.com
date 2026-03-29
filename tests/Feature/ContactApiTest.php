@@ -148,6 +148,26 @@ test('authenticated user can create and list contacts with pagination', function
         ->assertJsonPath('meta.total', 1);
 });
 
+test('contacts index filters by q search parameter', function () {
+    $user = User::factory()->create();
+    Sanctum::actingAs($user);
+
+    $cityId = (int) DB::connection('service')->table('citi')->insertGetId([
+        'name' => 'Sofia',
+        'postalcod' => '1000',
+    ]);
+
+    DB::connection('service')->table('contacts')->insert([
+        ['citi_id' => $cityId, 'last_name' => 'Alpha', 'firm' => 'Zebra Ltd'],
+        ['citi_id' => $cityId, 'last_name' => 'Beta', 'firm' => 'Acme Co'],
+    ]);
+
+    getJson('/api/contacts?q=Acme&per_page=10')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.firm', 'Acme Co');
+});
+
 test('authenticated user can update and delete contact', function () {
     $user = User::factory()->create();
     Sanctum::actingAs($user);

@@ -36,7 +36,7 @@ class ContactController extends Controller
     {
         $validated = $request->validate([
             'page' => ['nullable', 'integer', 'min:1'],
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:5000'],
             'q' => ['nullable', 'string', 'max:255'],
             'sort' => ['nullable', 'in:id,last_name,name,firm'],
             'direction' => ['nullable', 'in:asc,desc'],

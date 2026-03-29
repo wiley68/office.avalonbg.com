@@ -8,6 +8,7 @@ import {
     X,
 } from 'lucide-vue-next';
 import { reactive, ref, watch } from 'vue';
+import ContactSelectCombobox from '@/components/ContactSelectCombobox.vue';
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -94,14 +95,6 @@ type WarrantyDetail = {
     othersn: string | null;
 };
 
-type ContactOption = {
-    id: number;
-    name: string | null;
-    second_name: string | null;
-    last_name: string;
-    firm: string | null;
-};
-
 type WarrantiesApiResponse = {
     data?: WarrantyRow[];
     meta?: {
@@ -114,12 +107,7 @@ type WarrantiesApiResponse = {
     };
 };
 
-type ContactsListResponse = {
-    data?: ContactOption[];
-};
-
 const API_BASE = '/api/warranty-cards';
-const CONTACTS_API = '/api/contacts';
 
 const textareaClass = cn(
     'min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground',
@@ -213,9 +201,6 @@ const formError = ref<string | null>(null);
 const editingId = ref<number | null>(null);
 const loadingDetail = ref(false);
 
-const contactOptions = ref<ContactOption[]>([]);
-const contactsLoading = ref(false);
-
 const deleteTarget = ref<WarrantyRow | null>(null);
 const deleteDialogOpen = ref(false);
 const deleting = ref(false);
@@ -290,48 +275,6 @@ const nullIfEmpty = (s: string): string | null => {
     return t === '' ? null : t;
 };
 
-const contactLabel = (c: ContactOption): string => {
-    const name = [c.name, c.second_name, c.last_name].filter(Boolean).join(' ');
-    const parts = [c.firm?.trim() || null, name.trim() || null].filter(Boolean);
-
-    return parts.length > 0 ? parts.join(' — ') : `#${c.id}`;
-};
-
-const loadContactsForSelect = async (): Promise<void> => {
-    if (contactsLoading.value || contactOptions.value.length > 0) {
-        return;
-    }
-
-    contactsLoading.value = true;
-
-    try {
-        const params = new URLSearchParams({
-            page: '1',
-            per_page: '100',
-            sort: 'last_name',
-            direction: 'asc',
-        });
-        const response = await fetch(`${CONTACTS_API}?${params}`, {
-            headers: {
-                Accept: 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            credentials: 'same-origin',
-        });
-
-        if (!response.ok) {
-            return;
-        }
-
-        const data = (await response.json()) as ContactsListResponse;
-        contactOptions.value = data.data ?? [];
-    } catch {
-        //
-    } finally {
-        contactsLoading.value = false;
-    }
-};
-
 const loadWarranties = async (page = currentPage.value): Promise<void> => {
     loading.value = true;
     listError.value = null;
@@ -388,12 +331,6 @@ watch(
     },
     { immediate: true },
 );
-
-watch(dialogOpen, (open) => {
-    if (open) {
-        void loadContactsForSelect();
-    }
-});
 
 const toggleSort = (column: SortColumn): void => {
     if (sortColumn.value !== column) {
@@ -477,23 +414,6 @@ const openEdit = async (row: WarrantyRow): Promise<void> => {
 
         const json = (await response.json()) as { data: WarrantyDetail };
         applyDetailToForm(json.data);
-
-        const cid = json.data.client_id;
-
-        if (!contactOptions.value.some((c) => c.id === cid)) {
-            const cr = await fetch(`${CONTACTS_API}/${cid}`, {
-                headers: {
-                    Accept: 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                credentials: 'same-origin',
-            });
-
-            if (cr.ok) {
-                const cj = (await cr.json()) as { data: ContactOption };
-                contactOptions.value = [cj.data, ...contactOptions.value];
-            }
-        }
     } catch {
         formError.value = 'Неуспешно зареждане на записа.';
         dialogOpen.value = false;
@@ -940,32 +860,24 @@ const selectClass =
                                     class="grid grid-cols-1 gap-3 md:grid-cols-2"
                                 >
                                     <div class="space-y-2 md:col-span-2">
+                                        <Label for="warranty-product"
+                                            >Продукт</Label
+                                        >
+                                        <Input
+                                            id="warranty-product"
+                                            v-model="form.product"
+                                            maxlength="256"
+                                            autocomplete="off"
+                                        />
+                                    </div>
+                                    <div class="space-y-2 md:col-span-2">
                                         <Label for="warranty-client"
                                             >Клиент *</Label
                                         >
-                                        <select
+                                        <ContactSelectCombobox
                                             id="warranty-client"
                                             v-model="form.client_id"
-                                            :class="selectClass"
-                                            :disabled="contactsLoading"
-                                        >
-                                            <option value="">
-                                                {{
-                                                    contactsLoading
-                                                        ? 'Зареждане на контакти…'
-                                                        : 'Изберете контакт…'
-                                                }}
-                                            </option>
-                                            <option
-                                                v-for="c in contactOptions"
-                                                :key="c.id"
-                                                :value="String(c.id)"
-                                            >
-                                                {{ contactLabel(c) }} (#{{
-                                                    c.id
-                                                }})
-                                            </option>
-                                        </select>
+                                        />
                                     </div>
                                     <div class="space-y-2">
                                         <Label for="warranty-date-sell"
@@ -1010,13 +922,14 @@ const selectClass =
                                         </select>
                                     </div>
                                     <div class="space-y-2">
-                                        <Label for="warranty-product"
-                                            >Продукт</Label
+                                        <Label for="warranty-period"
+                                            >Гаранционен период
+                                            (описание)</Label
                                         >
                                         <Input
-                                            id="warranty-product"
-                                            v-model="form.product"
-                                            maxlength="256"
+                                            id="warranty-period"
+                                            v-model="form.varanty_period"
+                                            maxlength="128"
                                             autocomplete="off"
                                         />
                                     </div>
@@ -1039,18 +952,6 @@ const selectClass =
                                             id="warranty-invoice"
                                             v-model="form.invoice"
                                             maxlength="45"
-                                            autocomplete="off"
-                                        />
-                                    </div>
-                                    <div class="space-y-2 md:col-span-2">
-                                        <Label for="warranty-period"
-                                            >Гаранционен период
-                                            (описание)</Label
-                                        >
-                                        <Input
-                                            id="warranty-period"
-                                            v-model="form.varanty_period"
-                                            maxlength="128"
                                             autocomplete="off"
                                         />
                                     </div>
