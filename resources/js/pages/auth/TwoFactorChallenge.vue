@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +40,32 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
 };
 
 const code = ref<string>('');
+
+const otpFieldRef = ref<HTMLElement | null>(null);
+
+/**
+ * Реалният фокус е върху скритото input[data-input-otp]; слотовете са декоративни.
+ * При Inertia навигация HTML autofocus често не се прилага.
+ */
+const focusOtpInput = async (): Promise<void> => {
+    await nextTick();
+    const input = otpFieldRef.value?.querySelector<HTMLInputElement>(
+        'input[data-input-otp]',
+    );
+    input?.focus();
+};
+
+onMounted(() => {
+    if (!showRecoveryInput.value) {
+        void focusOtpInput();
+    }
+});
+
+watch(showRecoveryInput, async (recovery) => {
+    if (!recovery) {
+        await focusOtpInput();
+    }
+});
 </script>
 
 <template>
@@ -62,13 +88,15 @@ const code = ref<string>('');
                     <div
                         class="flex flex-col items-center justify-center space-y-3 text-center"
                     >
-                        <div class="flex w-full items-center justify-center">
+                        <div
+                            ref="otpFieldRef"
+                            class="flex w-full items-center justify-center"
+                        >
                             <InputOTP
                                 id="otp"
                                 v-model="code"
                                 :maxlength="6"
                                 :disabled="processing"
-                                autofocus
                             >
                                 <InputOTPGroup>
                                     <InputOTPSlot
