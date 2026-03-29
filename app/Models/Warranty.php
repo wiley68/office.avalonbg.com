@@ -54,6 +54,13 @@ class Warranty extends Model
 
     protected $table = 'varanty';
 
+    /**
+     * @var array<string, string>
+     */
+    protected $attributes = [
+        'iscomp' => 'No',
+    ];
+
     public $timestamps = false;
 
     /**

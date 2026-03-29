@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreWarrantyCardRequest;
+use App\Http\Requests\UpdateWarrantyCardRequest;
 use App\Http\Resources\WarrantyResource;
 use App\Models\Warranty;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 
 class WarrantyCardController extends Controller
 {
@@ -48,5 +51,35 @@ class WarrantyCardController extends Controller
         return WarrantyResource::collection(
             $query->paginate($perPage)->withQueryString()
         );
+    }
+
+    public function store(StoreWarrantyCardRequest $request): WarrantyResource
+    {
+        $row = Warranty::query()->create($request->validated());
+
+        return new WarrantyResource($row->load('contact'));
+    }
+
+    public function show(int $warranty_card): WarrantyResource
+    {
+        $row = Warranty::query()->with('contact')->findOrFail($warranty_card);
+
+        return new WarrantyResource($row);
+    }
+
+    public function update(UpdateWarrantyCardRequest $request, int $warranty_card): WarrantyResource
+    {
+        $row = Warranty::query()->findOrFail($warranty_card);
+        $row->update($request->validated());
+
+        return new WarrantyResource($row->fresh()->load('contact'));
+    }
+
+    public function destroy(int $warranty_card): Response
+    {
+        $row = Warranty::query()->findOrFail($warranty_card);
+        $row->delete();
+
+        return response()->noContent();
     }
 }

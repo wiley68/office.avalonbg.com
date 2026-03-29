@@ -13,5 +13,11 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::apiResource('contacts', ContactController::class);
     Route::apiResource('dlaznosti', DlazhnostController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::apiResource('notes', NoteController::class);
-    Route::get('warranty-cards', [WarrantyCardController::class, 'index']);
+    Route::apiResource('warranty-cards', WarrantyCardController::class)->only([
+        'index',
+        'store',
+        'show',
+        'update',
+        'destroy',
+    ]);
 });

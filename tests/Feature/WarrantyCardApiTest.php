@@ -8,7 +8,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\Sanctum;
 
+use function Pest\Laravel\deleteJson;
 use function Pest\Laravel\getJson;
+use function Pest\Laravel\postJson;
+use function Pest\Laravel\putJson;
 
 uses(RefreshDatabase::class);
 
@@ -96,6 +99,10 @@ test('guest cannot list warranty cards', function () {
     getJson('/api/warranty-cards')->assertUnauthorized();
 });
 
+test('guest cannot create warranty card', function () {
+    postJson('/api/warranty-cards', [])->assertUnauthorized();
+});
+
 test('authenticated user can list warranty cards with client label', function () {
     $user = User::factory()->create();
     Sanctum::actingAs($user);
@@ -127,4 +134,49 @@ test('authenticated user can list warranty cards with client label', function ()
         ->assertJsonPath('data.0.product', 'Лаптоп X')
         ->assertJsonPath('data.0.sernum', 'SN-001')
         ->assertJsonFragment(['client_label' => 'Тест ООД — Иван Иванов']);
+});
+
+test('authenticated user can create show update and delete warranty card', function () {
+    $user = User::factory()->create();
+    Sanctum::actingAs($user);
+
+    $citiId = (int) DB::connection('service')->table('citi')->insertGetId([
+        'name' => 'Plovdiv',
+        'postalcod' => '4000',
+    ]);
+
+    $contactId = (int) DB::connection('service')->table('contacts')->insertGetId([
+        'citi_id' => $citiId,
+        'last_name' => 'Петров',
+        'name' => 'Петър',
+        'firm' => null,
+    ]);
+
+    $created = postJson('/api/warranty-cards', [
+        'client_id' => $contactId,
+        'date_sell' => '2025-06-01 12:00:00',
+        'service' => 'при клиента',
+        'obsluzvane' => '8-16',
+        'product' => 'Монитор',
+        'sernum' => 'MON-99',
+        'iscomp' => 'No',
+    ])->assertCreated()
+        ->json('data');
+
+    expect($created['id'])->toBeInt();
+
+    getJson('/api/warranty-cards/'.$created['id'])
+        ->assertOk()
+        ->assertJsonPath('data.product', 'Монитор')
+        ->assertJsonPath('data.sernum', 'MON-99');
+
+    putJson('/api/warranty-cards/'.$created['id'], [
+        'product' => 'Монитор 27"',
+        'sernum' => 'MON-100',
+    ])->assertOk()
+        ->assertJsonPath('data.product', 'Монитор 27"');
+
+    deleteJson('/api/warranty-cards/'.$created['id'])->assertNoContent();
+
+    getJson('/api/warranty-cards/'.$created['id'])->assertNotFound();
 });
