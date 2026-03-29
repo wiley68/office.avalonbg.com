@@ -5,6 +5,7 @@ import {
     ArrowUpDown,
     MoreHorizontal,
     Plus,
+    X,
 } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import {
@@ -19,6 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogDescription,
     DialogFooter,
@@ -810,273 +812,396 @@ defineExpose({
         </div>
 
         <Dialog v-model:open="dialogOpen">
-            <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle>
-                        {{
-                            editingId === null
-                                ? 'Нов контакт'
-                                : 'Редакция на контакт'
-                        }}
-                    </DialogTitle>
-                    <DialogDescription>
-                        Минимално задължителни полета: Фамилия, Населено място.
-                    </DialogDescription>
+            <DialogContent
+                :show-close-button="false"
+                class="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl"
+            >
+                <DialogHeader
+                    class="sticky top-0 z-20 shrink-0 space-y-0 border-b border-border bg-background px-6 pt-6 pb-4 text-left sm:text-left"
+                >
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0 flex-1 space-y-2">
+                            <DialogTitle>
+                                {{
+                                    editingId === null
+                                        ? 'Нов контакт'
+                                        : 'Редакция на контакт'
+                                }}
+                            </DialogTitle>
+                            <DialogDescription>
+                                Минимално задължителни полета: Фамилия, Населено
+                                място.
+                            </DialogDescription>
+                        </div>
+                        <DialogClose as-child>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                class="h-9 w-9 shrink-0"
+                                aria-label="Затвори"
+                            >
+                                <X class="h-4 w-4" />
+                            </Button>
+                        </DialogClose>
+                    </div>
                 </DialogHeader>
 
-                <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-                    <div class="space-y-2">
-                        <Label for="manual-contact-name">Име</Label>
-                        <Input
-                            id="manual-contact-name"
-                            v-model="formName"
-                            maxlength="24"
-                        />
-                    </div>
-                    <div class="space-y-2">
-                        <Label for="manual-contact-second-name">Презиме</Label>
-                        <Input
-                            id="manual-contact-second-name"
-                            v-model="formSecondName"
-                            maxlength="24"
-                        />
-                    </div>
-                    <div class="space-y-2">
-                        <Label for="manual-contact-last-name">Фамилия *</Label>
-                        <Input
-                            id="manual-contact-last-name"
-                            v-model="formLastName"
-                            maxlength="24"
-                        />
-                    </div>
-                    <div class="space-y-2">
-                        <Label for="manual-contact-citi-id"
-                            >Населено място *</Label
-                        >
-                        <select
-                            id="manual-contact-citi-id"
-                            v-model="formCitiId"
-                            class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs ring-offset-background focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
-                        >
-                            <option value="">Изберете населено място…</option>
-                            <option
-                                v-for="city in citiOptions"
-                                :key="city.id"
-                                :value="String(city.id)"
+                <div
+                    class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4"
+                >
+                    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <div class="space-y-2">
+                            <Label for="manual-contact-name">Име</Label>
+                            <Input
+                                id="manual-contact-name"
+                                v-model="formName"
+                                maxlength="24"
+                            />
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="manual-contact-second-name"
+                                >Презиме</Label
                             >
-                                {{ city.name }} (#{{ city.id }})
-                            </option>
-                        </select>
-                    </div>
-                    <div class="space-y-2">
-                        <Label for="manual-contact-dlazhnost">Длъжност</Label>
-                        <select
-                            id="manual-contact-dlazhnost"
-                            v-model="formDlazhnostId"
-                            class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs ring-offset-background focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
-                        >
-                            <option value="">Без длъжност</option>
-                            <option
-                                v-for="role in dlazhnostiOptions"
-                                :key="role.id"
-                                :value="String(role.id)"
+                            <Input
+                                id="manual-contact-second-name"
+                                v-model="formSecondName"
+                                maxlength="24"
+                            />
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="manual-contact-last-name"
+                                >Фамилия *</Label
                             >
-                                {{ role.name }} (#{{ role.id }})
-                            </option>
-                        </select>
-                    </div>
-                    <div class="space-y-2 md:col-span-1">
-                        <Label for="manual-contact-gsm"
-                            >Телефон (gsm_1_m)</Label
-                        >
-                        <Input
-                            id="manual-contact-gsm"
-                            v-model="formGsm"
-                            maxlength="128"
-                        />
-                    </div>
-                    <div class="space-y-2">
-                        <Label for="manual-contact-email">Имейл</Label>
-                        <Input
-                            id="manual-contact-email"
-                            v-model="formEmail"
-                            maxlength="45"
-                        />
-                    </div>
-                    <div class="space-y-2 md:col-span-2">
-                        <Label for="manual-contact-note">Бележка</Label>
-                        <textarea
-                            id="manual-contact-note"
-                            v-model="formNote"
-                            :class="textareaClass"
-                            rows="6"
-                        />
+                            <Input
+                                id="manual-contact-last-name"
+                                v-model="formLastName"
+                                maxlength="24"
+                            />
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="manual-contact-citi-id"
+                                >Населено място *</Label
+                            >
+                            <select
+                                id="manual-contact-citi-id"
+                                v-model="formCitiId"
+                                class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs ring-offset-background focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                            >
+                                <option value="">
+                                    Изберете населено място…
+                                </option>
+                                <option
+                                    v-for="city in citiOptions"
+                                    :key="city.id"
+                                    :value="String(city.id)"
+                                >
+                                    {{ city.name }} (#{{ city.id }})
+                                </option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="manual-contact-dlazhnost"
+                                >Длъжност</Label
+                            >
+                            <select
+                                id="manual-contact-dlazhnost"
+                                v-model="formDlazhnostId"
+                                class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs ring-offset-background focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                            >
+                                <option value="">Без длъжност</option>
+                                <option
+                                    v-for="role in dlazhnostiOptions"
+                                    :key="role.id"
+                                    :value="String(role.id)"
+                                >
+                                    {{ role.name }} (#{{ role.id }})
+                                </option>
+                            </select>
+                        </div>
+                        <div class="space-y-2 md:col-span-1">
+                            <Label for="manual-contact-gsm"
+                                >Телефон (gsm_1_m)</Label
+                            >
+                            <Input
+                                id="manual-contact-gsm"
+                                v-model="formGsm"
+                                maxlength="128"
+                            />
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="manual-contact-email">Имейл</Label>
+                            <Input
+                                id="manual-contact-email"
+                                v-model="formEmail"
+                                maxlength="45"
+                            />
+                        </div>
+                        <div class="space-y-2 md:col-span-2">
+                            <Label for="manual-contact-note">Бележка</Label>
+                            <textarea
+                                id="manual-contact-note"
+                                v-model="formNote"
+                                :class="textareaClass"
+                                rows="6"
+                            />
+                        </div>
                     </div>
                 </div>
 
-                <p v-if="formError" class="text-sm text-destructive">
-                    {{ formError }}
-                </p>
-
-                <DialogFooter class="gap-2 sm:gap-2">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        :disabled="saving"
-                        @click="dialogOpen = false"
+                <div
+                    class="sticky bottom-0 z-20 shrink-0 border-t border-border bg-background px-6 py-4"
+                >
+                    <p v-if="formError" class="mb-3 text-sm text-destructive">
+                        {{ formError }}
+                    </p>
+                    <DialogFooter
+                        class="flex flex-row flex-wrap justify-end gap-2 p-0 sm:flex-row"
                     >
-                        Отказ
-                    </Button>
-                    <Button
-                        type="button"
-                        :disabled="saving"
-                        @click="submitForm"
-                    >
-                        {{ saving ? 'Запис…' : 'Запази' }}
-                    </Button>
-                </DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            :disabled="saving"
+                            @click="dialogOpen = false"
+                        >
+                            Отказ
+                        </Button>
+                        <Button
+                            type="button"
+                            :disabled="saving"
+                            @click="submitForm"
+                        >
+                            {{ saving ? 'Запис…' : 'Запази' }}
+                        </Button>
+                    </DialogFooter>
+                </div>
             </DialogContent>
         </Dialog>
 
         <Dialog v-model:open="citiDialogOpen">
-            <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-xl">
-                <DialogHeader>
-                    <DialogTitle>Управление на населени места</DialogTitle>
-                    <DialogDescription>
-                        Добавяне, редакция и изтриване на записи в `citi`.
-                    </DialogDescription>
-                </DialogHeader>
-                <div
-                    class="grid grid-cols-1 gap-2 md:grid-cols-[1fr_120px_auto]"
+            <DialogContent
+                :show-close-button="false"
+                class="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl"
+            >
+                <DialogHeader
+                    class="sticky top-0 z-20 shrink-0 space-y-0 border-b border-border bg-background px-6 pt-6 pb-4 text-left sm:text-left"
                 >
-                    <Input
-                        v-model="citiName"
-                        placeholder="Име на населено място"
-                    />
-                    <Input
-                        v-model="citiPostal"
-                        placeholder="ПК"
-                        maxlength="4"
-                    />
-                    <Button
-                        type="button"
-                        :disabled="citiLoading"
-                        @click="saveCiti"
-                    >
-                        {{ citiEditingId ? 'Обнови' : 'Добави' }}
-                    </Button>
-                </div>
-                <p v-if="citiError" class="text-sm text-destructive">
-                    {{ citiError }}
-                </p>
-                <div class="max-h-[40vh] overflow-auto rounded-md border">
-                    <table class="w-full text-sm">
-                        <thead class="bg-muted/40 text-left">
-                            <tr>
-                                <th class="px-3 py-2 font-medium">ID</th>
-                                <th class="px-3 py-2 font-medium">Име</th>
-                                <th class="px-3 py-2 text-right font-medium">
-                                    Действия
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr
-                                v-for="row in citiOptions"
-                                :key="row.id"
-                                class="border-t border-sidebar-border/60"
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0 flex-1 space-y-2">
+                            <DialogTitle
+                                >Управление на населени места</DialogTitle
                             >
-                                <td class="px-3 py-2">{{ row.id }}</td>
-                                <td class="px-3 py-2">{{ row.name }}</td>
-                                <td class="px-3 py-2 text-right">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        type="button"
-                                        @click="editCiti(row)"
-                                        >Ред.</Button
+                            <DialogDescription>
+                                Добавяне, редакция и изтриване на записи в
+                                `citi`.
+                            </DialogDescription>
+                        </div>
+                        <DialogClose as-child>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                class="h-9 w-9 shrink-0"
+                                aria-label="Затвори"
+                            >
+                                <X class="h-4 w-4" />
+                            </Button>
+                        </DialogClose>
+                    </div>
+                </DialogHeader>
+
+                <div
+                    class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4"
+                >
+                    <div
+                        class="grid grid-cols-1 gap-2 md:grid-cols-[1fr_120px_auto]"
+                    >
+                        <Input
+                            v-model="citiName"
+                            placeholder="Име на населено място"
+                        />
+                        <Input
+                            v-model="citiPostal"
+                            placeholder="ПК"
+                            maxlength="4"
+                        />
+                        <Button
+                            type="button"
+                            :disabled="citiLoading"
+                            @click="saveCiti"
+                        >
+                            {{ citiEditingId ? 'Обнови' : 'Добави' }}
+                        </Button>
+                    </div>
+                    <p v-if="citiError" class="mt-3 text-sm text-destructive">
+                        {{ citiError }}
+                    </p>
+                    <div class="mt-4 overflow-x-auto rounded-md border">
+                        <table class="w-full text-sm">
+                            <thead class="bg-muted/40 text-left">
+                                <tr>
+                                    <th class="px-3 py-2 font-medium">ID</th>
+                                    <th class="px-3 py-2 font-medium">Име</th>
+                                    <th
+                                        class="px-3 py-2 text-right font-medium"
                                     >
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        type="button"
-                                        class="text-destructive"
-                                        @click="removeCiti(row.id)"
-                                    >
-                                        Изтр.
-                                    </Button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                        Действия
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr
+                                    v-for="row in citiOptions"
+                                    :key="row.id"
+                                    class="border-t border-sidebar-border/60"
+                                >
+                                    <td class="px-3 py-2">{{ row.id }}</td>
+                                    <td class="px-3 py-2">{{ row.name }}</td>
+                                    <td class="px-3 py-2 text-right">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            type="button"
+                                            @click="editCiti(row)"
+                                            >Ред.</Button
+                                        >
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            type="button"
+                                            class="text-destructive"
+                                            @click="removeCiti(row.id)"
+                                        >
+                                            Изтр.
+                                        </Button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div
+                    class="sticky bottom-0 z-20 shrink-0 border-t border-border bg-background px-6 py-4"
+                >
+                    <DialogFooter class="flex flex-row justify-end gap-2 p-0">
+                        <DialogClose as-child>
+                            <Button type="button" variant="outline">
+                                Затвори
+                            </Button>
+                        </DialogClose>
+                    </DialogFooter>
                 </div>
             </DialogContent>
         </Dialog>
 
         <Dialog v-model:open="dlazhnostiDialogOpen">
-            <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-xl">
-                <DialogHeader>
-                    <DialogTitle>Управление на длъжности</DialogTitle>
-                    <DialogDescription>
-                        Добавяне, редакция и изтриване на записи в `dlaznosti`.
-                    </DialogDescription>
-                </DialogHeader>
-                <div class="grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto]">
-                    <Input
-                        v-model="dlazhnostName"
-                        placeholder="Име на длъжност"
-                    />
-                    <Button
-                        type="button"
-                        :disabled="dlazhnostiLoading"
-                        @click="saveDlazhnost"
-                    >
-                        {{ dlazhnostEditingId ? 'Обнови' : 'Добави' }}
-                    </Button>
-                </div>
-                <p v-if="dlazhnostiError" class="text-sm text-destructive">
-                    {{ dlazhnostiError }}
-                </p>
-                <div class="max-h-[40vh] overflow-auto rounded-md border">
-                    <table class="w-full text-sm">
-                        <thead class="bg-muted/40 text-left">
-                            <tr>
-                                <th class="px-3 py-2 font-medium">ID</th>
-                                <th class="px-3 py-2 font-medium">Име</th>
-                                <th class="px-3 py-2 text-right font-medium">
-                                    Действия
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr
-                                v-for="row in dlazhnostiOptions"
-                                :key="row.id"
-                                class="border-t border-sidebar-border/60"
+            <DialogContent
+                :show-close-button="false"
+                class="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl"
+            >
+                <DialogHeader
+                    class="sticky top-0 z-20 shrink-0 space-y-0 border-b border-border bg-background px-6 pt-6 pb-4 text-left sm:text-left"
+                >
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0 flex-1 space-y-2">
+                            <DialogTitle>Управление на длъжности</DialogTitle>
+                            <DialogDescription>
+                                Добавяне, редакция и изтриване на записи в
+                                `dlaznosti`.
+                            </DialogDescription>
+                        </div>
+                        <DialogClose as-child>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                class="h-9 w-9 shrink-0"
+                                aria-label="Затвори"
                             >
-                                <td class="px-3 py-2">{{ row.id }}</td>
-                                <td class="px-3 py-2">{{ row.name }}</td>
-                                <td class="px-3 py-2 text-right">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        type="button"
-                                        @click="editDlazhnost(row)"
-                                        >Ред.</Button
+                                <X class="h-4 w-4" />
+                            </Button>
+                        </DialogClose>
+                    </div>
+                </DialogHeader>
+
+                <div
+                    class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4"
+                >
+                    <div class="grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto]">
+                        <Input
+                            v-model="dlazhnostName"
+                            placeholder="Име на длъжност"
+                        />
+                        <Button
+                            type="button"
+                            :disabled="dlazhnostiLoading"
+                            @click="saveDlazhnost"
+                        >
+                            {{ dlazhnostEditingId ? 'Обнови' : 'Добави' }}
+                        </Button>
+                    </div>
+                    <p
+                        v-if="dlazhnostiError"
+                        class="mt-3 text-sm text-destructive"
+                    >
+                        {{ dlazhnostiError }}
+                    </p>
+                    <div class="mt-4 overflow-x-auto rounded-md border">
+                        <table class="w-full text-sm">
+                            <thead class="bg-muted/40 text-left">
+                                <tr>
+                                    <th class="px-3 py-2 font-medium">ID</th>
+                                    <th class="px-3 py-2 font-medium">Име</th>
+                                    <th
+                                        class="px-3 py-2 text-right font-medium"
                                     >
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        type="button"
-                                        class="text-destructive"
-                                        @click="removeDlazhnost(row.id)"
-                                    >
-                                        Изтр.
-                                    </Button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                        Действия
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr
+                                    v-for="row in dlazhnostiOptions"
+                                    :key="row.id"
+                                    class="border-t border-sidebar-border/60"
+                                >
+                                    <td class="px-3 py-2">{{ row.id }}</td>
+                                    <td class="px-3 py-2">{{ row.name }}</td>
+                                    <td class="px-3 py-2 text-right">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            type="button"
+                                            @click="editDlazhnost(row)"
+                                            >Ред.</Button
+                                        >
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            type="button"
+                                            class="text-destructive"
+                                            @click="removeDlazhnost(row.id)"
+                                        >
+                                            Изтр.
+                                        </Button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div
+                    class="sticky bottom-0 z-20 shrink-0 border-t border-border bg-background px-6 py-4"
+                >
+                    <DialogFooter class="flex flex-row justify-end gap-2 p-0">
+                        <DialogClose as-child>
+                            <Button type="button" variant="outline">
+                                Затвори
+                            </Button>
+                        </DialogClose>
+                    </DialogFooter>
                 </div>
             </DialogContent>
         </Dialog>

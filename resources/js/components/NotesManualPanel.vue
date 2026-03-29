@@ -5,6 +5,7 @@ import {
     ArrowUpDown,
     MoreHorizontal,
     Plus,
+    X,
 } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import {
@@ -19,6 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogDescription,
     DialogFooter,
@@ -666,109 +668,144 @@ defineExpose({
         </div>
 
         <Dialog v-model:open="dialogOpen">
-            <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-                <DialogHeader>
-                    <DialogTitle>
-                        {{
-                            editingId === null
-                                ? 'Нова бележка'
-                                : 'Редакция на бележка'
-                        }}
-                    </DialogTitle>
-                    <DialogDescription>
-                        Полетата следват същите правила като при агента: име до
-                        40 знака, описание до 120 знака, задължително
-                        съдържание.
-                    </DialogDescription>
+            <DialogContent
+                :show-close-button="false"
+                class="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
+            >
+                <DialogHeader
+                    class="sticky top-0 z-20 shrink-0 space-y-0 border-b border-border bg-background px-6 pt-6 pb-4 text-left sm:text-left"
+                >
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0 flex-1 space-y-2">
+                            <DialogTitle>
+                                {{
+                                    editingId === null
+                                        ? 'Нова бележка'
+                                        : 'Редакция на бележка'
+                                }}
+                            </DialogTitle>
+                            <DialogDescription>
+                                Полетата следват същите правила като при агента:
+                                име до 40 знака, описание до 120 знака,
+                                задължително съдържание.
+                            </DialogDescription>
+                        </div>
+                        <DialogClose as-child>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                class="h-9 w-9 shrink-0"
+                                aria-label="Затвори"
+                            >
+                                <X class="h-4 w-4" />
+                            </Button>
+                        </DialogClose>
+                    </div>
                 </DialogHeader>
 
-                <div class="space-y-3">
-                    <div class="space-y-2">
-                        <Label for="manual-note-name">Име</Label>
-                        <Input
-                            id="manual-note-name"
-                            v-model="formName"
-                            maxlength="40"
-                            autocomplete="off"
-                        />
-                    </div>
-                    <div class="space-y-2">
-                        <Label for="manual-note-description">Описание</Label>
-                        <Input
-                            id="manual-note-description"
-                            v-model="formDescription"
-                            maxlength="120"
-                            autocomplete="off"
-                        />
-                    </div>
-                    <div class="space-y-2">
-                        <Label for="manual-note-body">Бележка</Label>
-                        <textarea
-                            id="manual-note-body"
-                            v-model="formNote"
-                            :class="textareaClass"
-                            rows="8"
-                            autocomplete="off"
-                        />
-                        <div class="flex justify-end">
-                            <span
-                                class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-                                :class="
-                                    isEncryptedNote()
-                                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
-                                        : 'bg-muted text-muted-foreground'
-                                "
+                <div
+                    class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4"
+                >
+                    <div class="space-y-3">
+                        <div class="space-y-2">
+                            <Label for="manual-note-name">Име</Label>
+                            <Input
+                                id="manual-note-name"
+                                v-model="formName"
+                                maxlength="40"
+                                autocomplete="off"
+                            />
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="manual-note-description"
+                                >Описание</Label
                             >
-                                {{
-                                    isEncryptedNote()
-                                        ? 'Статус: Криптиран'
-                                        : 'Статус: Обикновен текст'
-                                }}
-                            </span>
+                            <Input
+                                id="manual-note-description"
+                                v-model="formDescription"
+                                maxlength="120"
+                                autocomplete="off"
+                            />
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="manual-note-body">Бележка</Label>
+                            <textarea
+                                id="manual-note-body"
+                                v-model="formNote"
+                                :class="textareaClass"
+                                rows="8"
+                                autocomplete="off"
+                            />
+                            <div class="flex justify-end">
+                                <span
+                                    class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                                    :class="
+                                        isEncryptedNote()
+                                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                            : 'bg-muted text-muted-foreground'
+                                    "
+                                >
+                                    {{
+                                        isEncryptedNote()
+                                            ? 'Статус: Криптиран'
+                                            : 'Статус: Обикновен текст'
+                                    }}
+                                </span>
+                            </div>
                         </div>
                     </div>
-                    <p v-if="formError" class="text-sm text-destructive">
-                        {{ formError }}
-                    </p>
                 </div>
 
-                <DialogFooter class="gap-2 sm:justify-between">
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        :disabled="
-                            saving ||
-                            cryptoProcessing ||
-                            formNote.trim().length === 0
-                        "
-                        @click="toggleNoteCrypto"
+                <div
+                    class="sticky bottom-0 z-20 shrink-0 border-t border-border bg-background px-6 py-4"
+                >
+                    <p v-if="formError" class="mb-3 text-sm text-destructive">
+                        {{ formError }}
+                    </p>
+                    <DialogFooter
+                        class="flex flex-col gap-2 p-0 sm:flex-row sm:items-center sm:justify-between"
                     >
-                        {{
-                            cryptoProcessing
-                                ? 'Обработка…'
-                                : isEncryptedNote()
-                                  ? 'Декриптирай'
-                                  : 'Криптирай'
-                        }}
-                    </Button>
-                    <div class="flex items-center gap-2">
                         <Button
                             type="button"
-                            variant="outline"
-                            :disabled="saving || cryptoProcessing"
-                            @click="dialogOpen = false"
+                            variant="secondary"
+                            class="w-full sm:w-auto"
+                            :disabled="
+                                saving ||
+                                cryptoProcessing ||
+                                formNote.trim().length === 0
+                            "
+                            @click="toggleNoteCrypto"
                         >
-                            Отказ
+                            {{
+                                cryptoProcessing
+                                    ? 'Обработка…'
+                                    : isEncryptedNote()
+                                      ? 'Декриптирай'
+                                      : 'Криптирай'
+                            }}
                         </Button>
-                        <Button
-                            type="button"
-                            :disabled="saving || cryptoProcessing"
-                            @click="submitForm"
+                        <div
+                            class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:justify-end"
                         >
-                            {{ saving ? 'Запис…' : 'Запази' }}
-                        </Button>
-                    </div>
-                </DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                :disabled="saving || cryptoProcessing"
+                                @click="dialogOpen = false"
+                            >
+                                Отказ
+                            </Button>
+                            <Button
+                                type="button"
+                                :disabled="saving || cryptoProcessing"
+                                @click="submitForm"
+                            >
+                                {{ saving ? 'Запис…' : 'Запази' }}
+                            </Button>
+                        </div>
+                    </DialogFooter>
+                </div>
             </DialogContent>
         </Dialog>
 

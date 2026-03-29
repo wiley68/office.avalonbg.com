@@ -5,6 +5,7 @@ import {
     ArrowUpDown,
     MoreHorizontal,
     Plus,
+    X,
 } from 'lucide-vue-next';
 import { reactive, ref, watch } from 'vue';
 import {
@@ -19,6 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogDescription,
     DialogFooter,
@@ -33,6 +35,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
 
 const props = defineProps<{
@@ -174,6 +177,21 @@ function defaultFormState(): Record<string, string> {
 }
 
 const form = reactive(defaultFormState());
+
+const clearHardwareFormFields = (): void => {
+    for (const p of hwPairs) {
+        form[p.name] = '';
+        form[p.sn] = '';
+    }
+};
+
+const setIscompFromToggle = (on: boolean): void => {
+    form.iscomp = on ? 'Yes' : 'No';
+
+    if (!on) {
+        clearHardwareFormFields();
+    }
+};
 
 const warranties = ref<WarrantyRow[]>([]);
 const loading = ref(false);
@@ -418,10 +436,15 @@ const applyDetailToForm = (d: WarrantyDetail): void => {
     form.note = d.note ?? '';
     form.iscomp = d.iscomp ?? 'No';
 
-    for (const p of hwPairs) {
-        form[p.name] =
-            (d[p.name as keyof WarrantyDetail] as string | null) ?? '';
-        form[p.sn] = (d[p.sn as keyof WarrantyDetail] as string | null) ?? '';
+    if (form.iscomp === 'Yes') {
+        for (const p of hwPairs) {
+            form[p.name] =
+                (d[p.name as keyof WarrantyDetail] as string | null) ?? '';
+            form[p.sn] =
+                (d[p.sn as keyof WarrantyDetail] as string | null) ?? '';
+        }
+    } else {
+        clearHardwareFormFields();
     }
 };
 
@@ -860,232 +883,281 @@ const selectClass =
         </div>
 
         <Dialog v-model:open="dialogOpen">
-            <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-                <DialogHeader>
-                    <DialogTitle>
-                        {{
-                            editingId === null
-                                ? 'Нова гаранционна карта'
-                                : `Редакция на карта #${editingId}`
-                        }}
-                    </DialogTitle>
-                    <DialogDescription>
-                        Задължителни: клиент, дата на издаване, тип обслужване,
-                        време за реакция. Останалите полета са по избор.
-                    </DialogDescription>
+            <DialogContent
+                :show-close-button="false"
+                class="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl"
+            >
+                <DialogHeader
+                    class="sticky top-0 z-20 shrink-0 space-y-0 border-b border-border bg-background px-6 pt-6 pb-4 text-left sm:text-left"
+                >
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0 flex-1 space-y-2">
+                            <DialogTitle>
+                                {{
+                                    editingId === null
+                                        ? 'Нова гаранционна карта'
+                                        : `Редакция на карта #${editingId}`
+                                }}
+                            </DialogTitle>
+                            <DialogDescription>
+                                Задължителни: клиент, дата на издаване, тип
+                                обслужване, време за реакция. Останалите полета
+                                са по избор.
+                            </DialogDescription>
+                        </div>
+                        <DialogClose as-child>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                class="h-9 w-9 shrink-0"
+                                aria-label="Затвори"
+                            >
+                                <X class="h-4 w-4" />
+                            </Button>
+                        </DialogClose>
+                    </div>
                 </DialogHeader>
 
                 <div
-                    v-if="loadingDetail"
-                    class="py-8 text-center text-sm text-muted-foreground"
+                    class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4"
                 >
-                    Зареждане на данни…
-                </div>
-                <template v-else>
-                    <div class="space-y-6">
-                        <div>
-                            <h3
-                                class="mb-3 text-sm font-medium text-foreground"
-                            >
-                                Основни данни
-                            </h3>
-                            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-                                <div class="space-y-2 md:col-span-2">
-                                    <Label for="warranty-client"
-                                        >Клиент *</Label
-                                    >
-                                    <select
-                                        id="warranty-client"
-                                        v-model="form.client_id"
-                                        :class="selectClass"
-                                        :disabled="contactsLoading"
-                                    >
-                                        <option value="">
-                                            {{
-                                                contactsLoading
-                                                    ? 'Зареждане на контакти…'
-                                                    : 'Изберете контакт…'
-                                            }}
-                                        </option>
-                                        <option
-                                            v-for="c in contactOptions"
-                                            :key="c.id"
-                                            :value="String(c.id)"
+                    <div
+                        v-if="loadingDetail"
+                        class="py-8 text-center text-sm text-muted-foreground"
+                    >
+                        Зареждане на данни…
+                    </div>
+                    <template v-else>
+                        <div class="space-y-6">
+                            <div>
+                                <h3
+                                    class="mb-3 text-sm font-medium text-foreground"
+                                >
+                                    Основни данни
+                                </h3>
+                                <div
+                                    class="grid grid-cols-1 gap-3 md:grid-cols-2"
+                                >
+                                    <div class="space-y-2 md:col-span-2">
+                                        <Label for="warranty-client"
+                                            >Клиент *</Label
                                         >
-                                            {{ contactLabel(c) }} (#{{ c.id }})
-                                        </option>
-                                    </select>
-                                </div>
-                                <div class="space-y-2">
-                                    <Label for="warranty-date-sell"
-                                        >Дата на издаване *</Label
-                                    >
-                                    <Input
-                                        id="warranty-date-sell"
-                                        v-model="form.date_sell_local"
-                                        type="datetime-local"
-                                        autocomplete="off"
-                                    />
-                                </div>
-                                <div class="space-y-2">
-                                    <Label for="warranty-service"
-                                        >Тип обслужване *</Label
-                                    >
-                                    <select
-                                        id="warranty-service"
-                                        v-model="form.service"
-                                        :class="selectClass"
-                                    >
-                                        <option value="в сервиз">
-                                            в сервиз
-                                        </option>
-                                        <option value="при клиента">
-                                            при клиента
-                                        </option>
-                                    </select>
-                                </div>
-                                <div class="space-y-2">
-                                    <Label for="warranty-obsluzvane"
-                                        >Време за реакция *</Label
-                                    >
-                                    <select
-                                        id="warranty-obsluzvane"
-                                        v-model="form.obsluzvane"
-                                        :class="selectClass"
-                                    >
-                                        <option value="4-8">4–8</option>
-                                        <option value="8-16">8–16</option>
-                                        <option value="8-32">8–32</option>
-                                    </select>
-                                </div>
-                                <div class="space-y-2">
-                                    <Label for="warranty-product"
-                                        >Продукт</Label
-                                    >
-                                    <Input
-                                        id="warranty-product"
-                                        v-model="form.product"
-                                        maxlength="256"
-                                        autocomplete="off"
-                                    />
-                                </div>
-                                <div class="space-y-2">
-                                    <Label for="warranty-sernum"
-                                        >Сериен номер (карта)</Label
-                                    >
-                                    <Input
-                                        id="warranty-sernum"
-                                        v-model="form.sernum"
-                                        maxlength="128"
-                                        autocomplete="off"
-                                    />
-                                </div>
-                                <div class="space-y-2">
-                                    <Label for="warranty-invoice"
-                                        >Фактура</Label
-                                    >
-                                    <Input
-                                        id="warranty-invoice"
-                                        v-model="form.invoice"
-                                        maxlength="45"
-                                        autocomplete="off"
-                                    />
-                                </div>
-                                <div class="space-y-2 md:col-span-2">
-                                    <Label for="warranty-period"
-                                        >Гаранционен период (описание)</Label
-                                    >
-                                    <Input
-                                        id="warranty-period"
-                                        v-model="form.varanty_period"
-                                        maxlength="128"
-                                        autocomplete="off"
-                                    />
-                                </div>
-                                <div class="space-y-2 md:col-span-2">
-                                    <Label for="warranty-note">Бележка</Label>
-                                    <textarea
-                                        id="warranty-note"
-                                        v-model="form.note"
-                                        :class="textareaClass"
-                                        rows="4"
-                                    />
-                                </div>
-                                <div class="space-y-2">
-                                    <Label for="warranty-iscomp"
-                                        >Компютър (изделие)</Label
-                                    >
-                                    <select
-                                        id="warranty-iscomp"
-                                        v-model="form.iscomp"
-                                        :class="selectClass"
-                                    >
-                                        <option value="No">Не</option>
-                                        <option value="Yes">Да</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h3
-                                class="mb-3 text-sm font-medium text-foreground"
-                            >
-                                Конфигурация и серийни номера
-                            </h3>
-                            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <template v-for="p in hwPairs" :key="p.name">
+                                        <select
+                                            id="warranty-client"
+                                            v-model="form.client_id"
+                                            :class="selectClass"
+                                            :disabled="contactsLoading"
+                                        >
+                                            <option value="">
+                                                {{
+                                                    contactsLoading
+                                                        ? 'Зареждане на контакти…'
+                                                        : 'Изберете контакт…'
+                                                }}
+                                            </option>
+                                            <option
+                                                v-for="c in contactOptions"
+                                                :key="c.id"
+                                                :value="String(c.id)"
+                                            >
+                                                {{ contactLabel(c) }} (#{{
+                                                    c.id
+                                                }})
+                                            </option>
+                                        </select>
+                                    </div>
                                     <div class="space-y-2">
-                                        <Label :for="`w-${p.name}`">{{
-                                            p.label
-                                        }}</Label>
+                                        <Label for="warranty-date-sell"
+                                            >Дата на издаване *</Label
+                                        >
                                         <Input
-                                            :id="`w-${p.name}`"
-                                            v-model="form[p.name]"
+                                            id="warranty-date-sell"
+                                            v-model="form.date_sell_local"
+                                            type="datetime-local"
+                                            autocomplete="off"
+                                        />
+                                    </div>
+                                    <div class="space-y-2">
+                                        <Label for="warranty-service"
+                                            >Тип обслужване *</Label
+                                        >
+                                        <select
+                                            id="warranty-service"
+                                            v-model="form.service"
+                                            :class="selectClass"
+                                        >
+                                            <option value="в сервиз">
+                                                в сервиз
+                                            </option>
+                                            <option value="при клиента">
+                                                при клиента
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <Label for="warranty-obsluzvane"
+                                            >Време за реакция *</Label
+                                        >
+                                        <select
+                                            id="warranty-obsluzvane"
+                                            v-model="form.obsluzvane"
+                                            :class="selectClass"
+                                        >
+                                            <option value="4-8">4–8</option>
+                                            <option value="8-16">8–16</option>
+                                            <option value="8-32">8–32</option>
+                                        </select>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <Label for="warranty-product"
+                                            >Продукт</Label
+                                        >
+                                        <Input
+                                            id="warranty-product"
+                                            v-model="form.product"
+                                            maxlength="256"
+                                            autocomplete="off"
+                                        />
+                                    </div>
+                                    <div class="space-y-2">
+                                        <Label for="warranty-sernum"
+                                            >Сериен номер (карта)</Label
+                                        >
+                                        <Input
+                                            id="warranty-sernum"
+                                            v-model="form.sernum"
                                             maxlength="128"
                                             autocomplete="off"
                                         />
                                     </div>
                                     <div class="space-y-2">
-                                        <Label :for="`w-${p.sn}`"
-                                            >Сериен № ({{
-                                                p.label.toLowerCase()
-                                            }})</Label
+                                        <Label for="warranty-invoice"
+                                            >Фактура</Label
                                         >
                                         <Input
-                                            :id="`w-${p.sn}`"
-                                            v-model="form[p.sn]"
+                                            id="warranty-invoice"
+                                            v-model="form.invoice"
                                             maxlength="45"
                                             autocomplete="off"
                                         />
                                     </div>
-                                </template>
+                                    <div class="space-y-2 md:col-span-2">
+                                        <Label for="warranty-period"
+                                            >Гаранционен период
+                                            (описание)</Label
+                                        >
+                                        <Input
+                                            id="warranty-period"
+                                            v-model="form.varanty_period"
+                                            maxlength="128"
+                                            autocomplete="off"
+                                        />
+                                    </div>
+                                    <div class="space-y-2 md:col-span-2">
+                                        <Label for="warranty-note"
+                                            >Бележка</Label
+                                        >
+                                        <textarea
+                                            id="warranty-note"
+                                            v-model="form.note"
+                                            :class="textareaClass"
+                                            rows="4"
+                                        />
+                                    </div>
+                                    <div class="space-y-2">
+                                        <Label for="warranty-iscomp"
+                                            >Компютър (изделие)</Label
+                                        >
+                                        <Toggle
+                                            id="warranty-iscomp"
+                                            variant="outline"
+                                            class="h-9 min-w-28 justify-center px-3"
+                                            :model-value="form.iscomp === 'Yes'"
+                                            @update:model-value="
+                                                setIscompFromToggle
+                                            "
+                                        >
+                                            {{
+                                                form.iscomp === 'Yes'
+                                                    ? 'Да'
+                                                    : 'Не'
+                                            }}
+                                        </Toggle>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-if="form.iscomp === 'Yes'">
+                                <h3
+                                    class="mb-3 text-sm font-medium text-foreground"
+                                >
+                                    Конфигурация и серийни номера
+                                </h3>
+                                <div
+                                    class="grid grid-cols-1 gap-4 md:grid-cols-2"
+                                >
+                                    <template
+                                        v-for="p in hwPairs"
+                                        :key="p.name"
+                                    >
+                                        <div class="space-y-2">
+                                            <Label :for="`w-${p.name}`">{{
+                                                p.label
+                                            }}</Label>
+                                            <Input
+                                                :id="`w-${p.name}`"
+                                                v-model="form[p.name]"
+                                                maxlength="128"
+                                                autocomplete="off"
+                                            />
+                                        </div>
+                                        <div class="space-y-2">
+                                            <Label :for="`w-${p.sn}`"
+                                                >Сериен № ({{
+                                                    p.label.toLowerCase()
+                                                }})</Label
+                                            >
+                                            <Input
+                                                :id="`w-${p.sn}`"
+                                                v-model="form[p.sn]"
+                                                maxlength="45"
+                                                autocomplete="off"
+                                            />
+                                        </div>
+                                    </template>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </template>
+                    </template>
+                </div>
 
-                <p v-if="formError" class="text-sm text-destructive">
-                    {{ formError }}
-                </p>
-
-                <DialogFooter class="gap-2 sm:gap-2">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        :disabled="saving || loadingDetail"
-                        @click="dialogOpen = false"
+                <div
+                    class="sticky bottom-0 z-20 shrink-0 border-t border-border bg-background px-6 py-4"
+                >
+                    <p v-if="formError" class="mb-3 text-sm text-destructive">
+                        {{ formError }}
+                    </p>
+                    <DialogFooter
+                        class="flex flex-row flex-wrap justify-end gap-2 p-0 sm:flex-row"
                     >
-                        Отказ
-                    </Button>
-                    <Button
-                        type="button"
-                        :disabled="saving || loadingDetail"
-                        @click="submitForm"
-                    >
-                        {{ saving ? 'Запис…' : 'Запази' }}
-                    </Button>
-                </DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            :disabled="saving || loadingDetail"
+                            @click="dialogOpen = false"
+                        >
+                            Отказ
+                        </Button>
+                        <Button
+                            type="button"
+                            :disabled="saving || loadingDetail"
+                            @click="submitForm"
+                        >
+                            {{ saving ? 'Запис…' : 'Запази' }}
+                        </Button>
+                    </DialogFooter>
+                </div>
             </DialogContent>
         </Dialog>
 
