@@ -1,0 +1,153 @@
+<script setup lang="ts">
+import { Head } from '@inertiajs/vue3';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import AgentChatPanel from '@/components/AgentChatPanel.vue';
+import WarrantiesManualPanel from '@/components/WarrantiesManualPanel.vue';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { dashboard } from '@/routes';
+import dashboardRoutes from '@/routes/dashboard';
+import type { BreadcrumbItem } from '@/types';
+
+const messagesUrl = (id: string) =>
+    dashboardRoutes.warranties.agent.conversation.messages.url(id);
+const feedbackUrl = (id: string) =>
+    dashboardRoutes.warranties.agent.message.feedback.url(id);
+const emailUrl = (id: string) =>
+    dashboardRoutes.warranties.agent.message.email.url(id);
+const pdfUrl = (id: string) =>
+    dashboardRoutes.warranties.agent.message.pdf.url(id);
+
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Композитор',
+        href: dashboard(),
+    },
+    {
+        title: 'Гаранционни карти',
+        href: dashboardRoutes.warranties.url(),
+    },
+];
+
+const VIEW_MODE_KEY = 'office-warranties-view-mode';
+
+type ViewMode = 'agent' | 'manual';
+
+const viewMode = ref<ViewMode>('agent');
+
+const agentChatPanelRef = ref<InstanceType<typeof AgentChatPanel> | null>(null);
+const manualPanelRef = ref<InstanceType<typeof WarrantiesManualPanel> | null>(
+    null,
+);
+
+const focusForCurrentViewMode = (): void => {
+    if (viewMode.value === 'agent') {
+        agentChatPanelRef.value?.focusMessageInput();
+    } else {
+        manualPanelRef.value?.focusSearchQuery();
+    }
+};
+
+onMounted(() => {
+    const stored = sessionStorage.getItem(VIEW_MODE_KEY);
+    const beforeRestore = viewMode.value;
+
+    if (stored === 'manual' || stored === 'agent') {
+        viewMode.value = stored;
+    }
+
+    if (viewMode.value === beforeRestore) {
+        void nextTick(() => {
+            focusForCurrentViewMode();
+        });
+    }
+});
+
+watch(viewMode, (v) => {
+    sessionStorage.setItem(VIEW_MODE_KEY, v);
+    void nextTick(() => {
+        focusForCurrentViewMode();
+    });
+});
+
+const pageDescription = computed(() =>
+    viewMode.value === 'agent'
+        ? 'Работа с гаранционни карти (varanty) от service базата чрез агент. Историята на разговора се пази на сървъра; „Нов разговор“ започва изчистен контекст.'
+        : 'Преглед на гаранционни карти без агент — директно от service базата (само списък).',
+);
+</script>
+
+<template>
+    <Head title="Агент — гаранционни карти" />
+
+    <AppLayout
+        :breadcrumbs="breadcrumbs"
+        page-title="Гаранционни карти"
+        :page-description="pageDescription"
+    >
+        <template #pageActions>
+            <div class="flex h-full items-center gap-2 pl-2">
+                <div class="h-6 w-px bg-gray-200 dark:bg-gray-700"></div>
+                <div
+                    class="inline-flex rounded-md border border-input bg-background p-0.5 shadow-xs"
+                    role="group"
+                    aria-label="Режим на гаранционни карти"
+                >
+                    <button
+                        type="button"
+                        :class="[
+                            'rounded px-2.5 py-1 text-xs font-medium transition-colors',
+                            viewMode === 'agent'
+                                ? 'bg-muted text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground',
+                        ]"
+                        @click="viewMode = 'agent'"
+                    >
+                        Агент
+                    </button>
+                    <button
+                        type="button"
+                        :class="[
+                            'rounded px-2.5 py-1 text-xs font-medium transition-colors',
+                            viewMode === 'manual'
+                                ? 'bg-muted text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground',
+                        ]"
+                        @click="viewMode = 'manual'"
+                    >
+                        Ръчно
+                    </button>
+                </div>
+            </div>
+        </template>
+
+        <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <div
+                v-show="viewMode === 'agent'"
+                class="flex min-h-0 flex-1 flex-col overflow-hidden"
+            >
+                <AgentChatPanel
+                    ref="agentChatPanelRef"
+                    :post-url="dashboardRoutes.warranties.agent.url()"
+                    :messages-url="messagesUrl"
+                    :conversations-url="
+                        dashboardRoutes.warranties.agent.conversations.url()
+                    "
+                    :delete-all-conversations-url="
+                        dashboardRoutes.warranties.agent.conversations.destroy.url()
+                    "
+                    :feedback-url="feedbackUrl"
+                    :email-url="emailUrl"
+                    :pdf-url="pdfUrl"
+                    session-key="office-warranties-agent"
+                    textarea-id="warranties-agent-message"
+                    placeholder="Например: Списък карти за клиент с id 5. / Покажи гаранционна карта с id 12."
+                />
+            </div>
+            <WarrantiesManualPanel
+                ref="manualPanelRef"
+                v-show="viewMode === 'manual'"
+                :active="viewMode === 'manual'"
+            />
+        </div>
+    </AppLayout>
+</template>

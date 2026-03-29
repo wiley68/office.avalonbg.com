@@ -9,6 +9,7 @@ use App\Http\Controllers\NotesAgentController;
 use App\Http\Controllers\NotesExportDownloadController;
 use App\Http\Controllers\Office\TextCryptoController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WarrantiesAgentController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
@@ -76,6 +77,23 @@ Route::middleware(['auth', 'verified', 'admin.agent.block'])->group(function () 
         ->name('dashboard.contacts.agent.message.email');
     Route::get('dashboard/contacts/agent/messages/{message}/pdf', [AgentConversationMessagesController::class, 'pdf'])
         ->name('dashboard.contacts.agent.message.pdf');
+
+    Route::inertia('dashboard/warranties', 'office/WarrantiesAgent')->name('dashboard.warranties');
+    Route::post('dashboard/warranties/agent', [WarrantiesAgentController::class, 'store'])
+        ->middleware('agent.context:warranties')
+        ->name('dashboard.warranties.agent');
+    Route::get('dashboard/warranties/agent/conversations', [AgentConversationMessagesController::class, 'index'])
+        ->name('dashboard.warranties.agent.conversations');
+    Route::delete('dashboard/warranties/agent/conversations', [AgentConversationMessagesController::class, 'destroyAll'])
+        ->name('dashboard.warranties.agent.conversations.destroy');
+    Route::get('dashboard/warranties/agent/conversations/{conversation}/messages', [AgentConversationMessagesController::class, 'show'])
+        ->name('dashboard.warranties.agent.conversation.messages');
+    Route::post('dashboard/warranties/agent/messages/{message}/feedback', [AgentConversationMessagesController::class, 'feedback'])
+        ->name('dashboard.warranties.agent.message.feedback');
+    Route::post('dashboard/warranties/agent/messages/{message}/email', [AgentConversationMessagesController::class, 'email'])
+        ->name('dashboard.warranties.agent.message.email');
+    Route::get('dashboard/warranties/agent/messages/{message}/pdf', [AgentConversationMessagesController::class, 'pdf'])
+        ->name('dashboard.warranties.agent.message.pdf');
 });
 
 Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
@@ -88,4 +106,4 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
         ->name('dashboard.admin.export');
 });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';
