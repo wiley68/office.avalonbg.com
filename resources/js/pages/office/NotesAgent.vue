@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import AgentChatPanel from '@/components/AgentChatPanel.vue';
 import NotesManualPanel from '@/components/NotesManualPanel.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -33,16 +33,37 @@ type ViewMode = 'agent' | 'manual';
 
 const viewMode = ref<ViewMode>('agent');
 
+const agentChatPanelRef = ref<InstanceType<typeof AgentChatPanel> | null>(null);
+const manualPanelRef = ref<InstanceType<typeof NotesManualPanel> | null>(null);
+
+const focusForCurrentViewMode = (): void => {
+    if (viewMode.value === 'agent') {
+        agentChatPanelRef.value?.focusMessageInput();
+    } else {
+        manualPanelRef.value?.focusSearchQuery();
+    }
+};
+
 onMounted(() => {
     const stored = sessionStorage.getItem(VIEW_MODE_KEY);
+    const beforeRestore = viewMode.value;
 
     if (stored === 'manual' || stored === 'agent') {
         viewMode.value = stored;
+    }
+
+    if (viewMode.value === beforeRestore) {
+        void nextTick(() => {
+            focusForCurrentViewMode();
+        });
     }
 });
 
 watch(viewMode, (v) => {
     sessionStorage.setItem(VIEW_MODE_KEY, v);
+    void nextTick(() => {
+        focusForCurrentViewMode();
+    });
 });
 
 const pageDescription = computed(() =>
@@ -102,6 +123,7 @@ const pageDescription = computed(() =>
                 class="flex min-h-0 flex-1 flex-col overflow-hidden"
             >
                 <AgentChatPanel
+                    ref="agentChatPanelRef"
                     :post-url="dashboardRoutes.notes.agent.url()"
                     :messages-url="messagesUrl"
                     :conversations-url="
@@ -119,6 +141,7 @@ const pageDescription = computed(() =>
                 />
             </div>
             <NotesManualPanel
+                ref="manualPanelRef"
                 v-show="viewMode === 'manual'"
                 :active="viewMode === 'manual'"
             />

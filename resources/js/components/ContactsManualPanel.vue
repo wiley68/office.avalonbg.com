@@ -571,12 +571,27 @@ const goToNextPage = (): void => {
 
     void loadContacts(currentPage.value + 1);
 };
+
+const searchFieldRoot = ref<HTMLElement | null>(null);
+
+const focusSearchQuery = (): void => {
+    const input = searchFieldRoot.value?.querySelector<HTMLInputElement>(
+        'input[data-slot="input"]',
+    );
+    input?.focus({ preventScroll: true });
+};
+
+defineExpose({
+    focusSearchQuery,
+});
 </script>
 
 <template>
     <div class="flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-4 md:p-6">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div class="w-full min-w-0 sm:max-w-sm">
+        <div
+            class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+        >
+            <div ref="searchFieldRoot" class="w-full min-w-0 sm:max-w-sm">
                 <Input
                     v-model="searchQuery"
                     type="search"
@@ -587,10 +602,18 @@ const goToNextPage = (): void => {
                 />
             </div>
             <div class="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" @click="citiDialogOpen = true">
+                <Button
+                    type="button"
+                    variant="outline"
+                    @click="citiDialogOpen = true"
+                >
                     Населени места
                 </Button>
-                <Button type="button" variant="outline" @click="dlazhnostiDialogOpen = true">
+                <Button
+                    type="button"
+                    variant="outline"
+                    @click="dlazhnostiDialogOpen = true"
+                >
                     Длъжности
                 </Button>
                 <Button type="button" class="shrink-0" @click="openCreate">
@@ -604,7 +627,9 @@ const goToNextPage = (): void => {
             {{ listError }}
         </p>
 
-        <div class="overflow-hidden rounded-lg border border-sidebar-border/70 bg-background">
+        <div
+            class="overflow-hidden rounded-lg border border-sidebar-border/70 bg-background"
+        >
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[880px] text-sm">
                     <thead class="bg-muted/40 text-left">
@@ -618,7 +643,10 @@ const goToNextPage = (): void => {
                                     @click="toggleSort('id')"
                                 >
                                     ID
-                                    <component :is="sortIcon('id')" class="h-3.5 w-3.5 opacity-70" />
+                                    <component
+                                        :is="sortIcon('id')"
+                                        class="h-3.5 w-3.5 opacity-70"
+                                    />
                                 </Button>
                             </th>
                             <th class="px-4 py-3 font-medium">
@@ -630,7 +658,10 @@ const goToNextPage = (): void => {
                                     @click="toggleSort('last_name')"
                                 >
                                     Име
-                                    <component :is="sortIcon('last_name')" class="h-3.5 w-3.5 opacity-70" />
+                                    <component
+                                        :is="sortIcon('last_name')"
+                                        class="h-3.5 w-3.5 opacity-70"
+                                    />
                                 </Button>
                             </th>
                             <th class="px-4 py-3 font-medium">
@@ -642,18 +673,26 @@ const goToNextPage = (): void => {
                                     @click="toggleSort('firm')"
                                 >
                                     Фирма
-                                    <component :is="sortIcon('firm')" class="h-3.5 w-3.5 opacity-70" />
+                                    <component
+                                        :is="sortIcon('firm')"
+                                        class="h-3.5 w-3.5 opacity-70"
+                                    />
                                 </Button>
                             </th>
                             <th class="px-4 py-3 font-medium">Имейл</th>
                             <th class="px-4 py-3 font-medium">Телефон</th>
-                            <th class="px-4 py-3 text-right font-medium">Управление</th>
+                            <th class="px-4 py-3 text-right font-medium">
+                                Управление
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
                         <template v-if="loading">
                             <tr>
-                                <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">
+                                <td
+                                    colspan="6"
+                                    class="px-4 py-10 text-center text-muted-foreground"
+                                >
                                     Зареждане…
                                 </td>
                             </tr>
@@ -664,31 +703,53 @@ const goToNextPage = (): void => {
                                 :key="row.id"
                                 class="border-t border-sidebar-border/60"
                             >
-                                <td class="px-4 py-3 whitespace-nowrap text-muted-foreground tabular-nums">
+                                <td
+                                    class="px-4 py-3 whitespace-nowrap text-muted-foreground tabular-nums"
+                                >
                                     {{ row.id }}
                                 </td>
-                                <td class="max-w-56 truncate px-4 py-3 font-medium">
+                                <td
+                                    class="max-w-56 truncate px-4 py-3 font-medium"
+                                >
                                     {{ fullName(row) || '—' }}
                                 </td>
-                                <td class="max-w-56 truncate px-4 py-3 text-muted-foreground">
+                                <td
+                                    class="max-w-56 truncate px-4 py-3 text-muted-foreground"
+                                >
                                     {{ row.firm ?? '—' }}
                                 </td>
-                                <td class="max-w-56 truncate px-4 py-3 text-muted-foreground">
+                                <td
+                                    class="max-w-56 truncate px-4 py-3 text-muted-foreground"
+                                >
                                     {{ row.email ?? '—' }}
                                 </td>
-                                <td class="max-w-40 truncate px-4 py-3 text-muted-foreground">
+                                <td
+                                    class="max-w-40 truncate px-4 py-3 text-muted-foreground"
+                                >
                                     {{ row.gsm_1_m ?? '—' }}
                                 </td>
                                 <td class="px-4 py-3 text-right">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger as-child>
-                                            <Button variant="ghost" size="icon" type="button" class="h-8 w-8">
-                                                <span class="sr-only">Действия</span>
-                                                <MoreHorizontal class="h-4 w-4" />
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                type="button"
+                                                class="h-8 w-8"
+                                            >
+                                                <span class="sr-only"
+                                                    >Действия</span
+                                                >
+                                                <MoreHorizontal
+                                                    class="h-4 w-4"
+                                                />
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            <DropdownMenuItem class="cursor-pointer" @select="openEdit(row)">
+                                            <DropdownMenuItem
+                                                class="cursor-pointer"
+                                                @select="openEdit(row)"
+                                            >
                                                 Редакция
                                             </DropdownMenuItem>
                                             <DropdownMenuItem
@@ -702,7 +763,10 @@ const goToNextPage = (): void => {
                                 </td>
                             </tr>
                             <tr v-if="contacts.length === 0">
-                                <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">
+                                <td
+                                    colspan="6"
+                                    class="px-4 py-10 text-center text-muted-foreground"
+                                >
                                     {{
                                         searchQuery.trim().length > 0
                                             ? 'Няма резултати за това търсене.'
@@ -721,11 +785,25 @@ const goToNextPage = (): void => {
                 Показани {{ from ?? 0 }}-{{ to ?? 0 }} от {{ total }}
             </p>
             <div class="inline-flex items-center gap-2">
-                <Button type="button" variant="outline" size="sm" :disabled="!canGoPrev()" @click="goToPreviousPage">
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    :disabled="!canGoPrev()"
+                    @click="goToPreviousPage"
+                >
                     Предишна
                 </Button>
-                <span class="text-muted-foreground">Страница {{ currentPage }} / {{ lastPage }}</span>
-                <Button type="button" variant="outline" size="sm" :disabled="!canGoNext()" @click="goToNextPage">
+                <span class="text-muted-foreground"
+                    >Страница {{ currentPage }} / {{ lastPage }}</span
+                >
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    :disabled="!canGoNext()"
+                    @click="goToNextPage"
+                >
                     Следваща
                 </Button>
             </div>
@@ -735,7 +813,11 @@ const goToNextPage = (): void => {
             <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>
-                        {{ editingId === null ? 'Нов контакт' : 'Редакция на контакт' }}
+                        {{
+                            editingId === null
+                                ? 'Нов контакт'
+                                : 'Редакция на контакт'
+                        }}
                     </DialogTitle>
                     <DialogDescription>
                         Минимално задължителни полета: Фамилия, Населено място.
@@ -745,18 +827,32 @@ const goToNextPage = (): void => {
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <div class="space-y-2">
                         <Label for="manual-contact-name">Име</Label>
-                        <Input id="manual-contact-name" v-model="formName" maxlength="24" />
+                        <Input
+                            id="manual-contact-name"
+                            v-model="formName"
+                            maxlength="24"
+                        />
                     </div>
                     <div class="space-y-2">
                         <Label for="manual-contact-second-name">Презиме</Label>
-                        <Input id="manual-contact-second-name" v-model="formSecondName" maxlength="24" />
+                        <Input
+                            id="manual-contact-second-name"
+                            v-model="formSecondName"
+                            maxlength="24"
+                        />
                     </div>
                     <div class="space-y-2">
                         <Label for="manual-contact-last-name">Фамилия *</Label>
-                        <Input id="manual-contact-last-name" v-model="formLastName" maxlength="24" />
+                        <Input
+                            id="manual-contact-last-name"
+                            v-model="formLastName"
+                            maxlength="24"
+                        />
                     </div>
                     <div class="space-y-2">
-                        <Label for="manual-contact-citi-id">Населено място *</Label>
+                        <Label for="manual-contact-citi-id"
+                            >Населено място *</Label
+                        >
                         <select
                             id="manual-contact-citi-id"
                             v-model="formCitiId"
@@ -790,16 +886,31 @@ const goToNextPage = (): void => {
                         </select>
                     </div>
                     <div class="space-y-2 md:col-span-1">
-                        <Label for="manual-contact-gsm">Телефон (gsm_1_m)</Label>
-                        <Input id="manual-contact-gsm" v-model="formGsm" maxlength="128" />
+                        <Label for="manual-contact-gsm"
+                            >Телефон (gsm_1_m)</Label
+                        >
+                        <Input
+                            id="manual-contact-gsm"
+                            v-model="formGsm"
+                            maxlength="128"
+                        />
                     </div>
                     <div class="space-y-2">
                         <Label for="manual-contact-email">Имейл</Label>
-                        <Input id="manual-contact-email" v-model="formEmail" maxlength="45" />
+                        <Input
+                            id="manual-contact-email"
+                            v-model="formEmail"
+                            maxlength="45"
+                        />
                     </div>
                     <div class="space-y-2 md:col-span-2">
                         <Label for="manual-contact-note">Бележка</Label>
-                        <textarea id="manual-contact-note" v-model="formNote" :class="textareaClass" rows="6" />
+                        <textarea
+                            id="manual-contact-note"
+                            v-model="formNote"
+                            :class="textareaClass"
+                            rows="6"
+                        />
                     </div>
                 </div>
 
@@ -808,10 +919,19 @@ const goToNextPage = (): void => {
                 </p>
 
                 <DialogFooter class="gap-2 sm:gap-2">
-                    <Button type="button" variant="outline" :disabled="saving" @click="dialogOpen = false">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        :disabled="saving"
+                        @click="dialogOpen = false"
+                    >
                         Отказ
                     </Button>
-                    <Button type="button" :disabled="saving" @click="submitForm">
+                    <Button
+                        type="button"
+                        :disabled="saving"
+                        @click="submitForm"
+                    >
                         {{ saving ? 'Запис…' : 'Запази' }}
                     </Button>
                 </DialogFooter>
@@ -826,21 +946,38 @@ const goToNextPage = (): void => {
                         Добавяне, редакция и изтриване на записи в `citi`.
                     </DialogDescription>
                 </DialogHeader>
-                <div class="grid grid-cols-1 gap-2 md:grid-cols-[1fr_120px_auto]">
-                    <Input v-model="citiName" placeholder="Име на населено място" />
-                    <Input v-model="citiPostal" placeholder="ПК" maxlength="4" />
-                    <Button type="button" :disabled="citiLoading" @click="saveCiti">
+                <div
+                    class="grid grid-cols-1 gap-2 md:grid-cols-[1fr_120px_auto]"
+                >
+                    <Input
+                        v-model="citiName"
+                        placeholder="Име на населено място"
+                    />
+                    <Input
+                        v-model="citiPostal"
+                        placeholder="ПК"
+                        maxlength="4"
+                    />
+                    <Button
+                        type="button"
+                        :disabled="citiLoading"
+                        @click="saveCiti"
+                    >
                         {{ citiEditingId ? 'Обнови' : 'Добави' }}
                     </Button>
                 </div>
-                <p v-if="citiError" class="text-sm text-destructive">{{ citiError }}</p>
+                <p v-if="citiError" class="text-sm text-destructive">
+                    {{ citiError }}
+                </p>
                 <div class="max-h-[40vh] overflow-auto rounded-md border">
                     <table class="w-full text-sm">
                         <thead class="bg-muted/40 text-left">
                             <tr>
                                 <th class="px-3 py-2 font-medium">ID</th>
                                 <th class="px-3 py-2 font-medium">Име</th>
-                                <th class="px-3 py-2 font-medium text-right">Действия</th>
+                                <th class="px-3 py-2 text-right font-medium">
+                                    Действия
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -852,7 +989,13 @@ const goToNextPage = (): void => {
                                 <td class="px-3 py-2">{{ row.id }}</td>
                                 <td class="px-3 py-2">{{ row.name }}</td>
                                 <td class="px-3 py-2 text-right">
-                                    <Button variant="ghost" size="sm" type="button" @click="editCiti(row)">Ред.</Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        type="button"
+                                        @click="editCiti(row)"
+                                        >Ред.</Button
+                                    >
                                     <Button
                                         variant="ghost"
                                         size="sm"
@@ -879,19 +1022,30 @@ const goToNextPage = (): void => {
                     </DialogDescription>
                 </DialogHeader>
                 <div class="grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto]">
-                    <Input v-model="dlazhnostName" placeholder="Име на длъжност" />
-                    <Button type="button" :disabled="dlazhnostiLoading" @click="saveDlazhnost">
+                    <Input
+                        v-model="dlazhnostName"
+                        placeholder="Име на длъжност"
+                    />
+                    <Button
+                        type="button"
+                        :disabled="dlazhnostiLoading"
+                        @click="saveDlazhnost"
+                    >
                         {{ dlazhnostEditingId ? 'Обнови' : 'Добави' }}
                     </Button>
                 </div>
-                <p v-if="dlazhnostiError" class="text-sm text-destructive">{{ dlazhnostiError }}</p>
+                <p v-if="dlazhnostiError" class="text-sm text-destructive">
+                    {{ dlazhnostiError }}
+                </p>
                 <div class="max-h-[40vh] overflow-auto rounded-md border">
                     <table class="w-full text-sm">
                         <thead class="bg-muted/40 text-left">
                             <tr>
                                 <th class="px-3 py-2 font-medium">ID</th>
                                 <th class="px-3 py-2 font-medium">Име</th>
-                                <th class="px-3 py-2 font-medium text-right">Действия</th>
+                                <th class="px-3 py-2 text-right font-medium">
+                                    Действия
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -903,7 +1057,13 @@ const goToNextPage = (): void => {
                                 <td class="px-3 py-2">{{ row.id }}</td>
                                 <td class="px-3 py-2">{{ row.name }}</td>
                                 <td class="px-3 py-2 text-right">
-                                    <Button variant="ghost" size="sm" type="button" @click="editDlazhnost(row)">Ред.</Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        type="button"
+                                        @click="editDlazhnost(row)"
+                                        >Ред.</Button
+                                    >
                                     <Button
                                         variant="ghost"
                                         size="sm"
@@ -926,12 +1086,21 @@ const goToNextPage = (): void => {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Изтриване на контакт</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Сигурни ли сте, че искате да изтриете контакт #{{ deleteTarget?.id ?? '' }}?
+                        Сигурни ли сте, че искате да изтриете контакт #{{
+                            deleteTarget?.id ?? ''
+                        }}?
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel :disabled="deleting">Отказ</AlertDialogCancel>
-                    <Button type="button" variant="destructive" :disabled="deleting" @click="confirmDelete">
+                    <AlertDialogCancel :disabled="deleting"
+                        >Отказ</AlertDialogCancel
+                    >
+                    <Button
+                        type="button"
+                        variant="destructive"
+                        :disabled="deleting"
+                        @click="confirmDelete"
+                    >
                         {{ deleting ? 'Изтриване…' : 'Изтрий' }}
                     </Button>
                 </AlertDialogFooter>

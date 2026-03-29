@@ -629,6 +629,10 @@ const submit = async (): Promise<void> => {
         sending.value = false;
     }
 };
+
+defineExpose({
+    focusMessageInput,
+});
 </script>
 
 <template>

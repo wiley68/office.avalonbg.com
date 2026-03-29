@@ -126,13 +126,11 @@ const tryParseEncryptedPayload = (
     }
 
     try {
-        const parsed = JSON.parse(atob(normalized)) as
-            | {
-                  iv?: unknown;
-                  value?: unknown;
-                  mac?: unknown;
-              }
-            | null;
+        const parsed = JSON.parse(atob(normalized)) as {
+            iv?: unknown;
+            value?: unknown;
+            mac?: unknown;
+        } | null;
 
         if (
             parsed &&
@@ -153,7 +151,8 @@ const tryParseEncryptedPayload = (
     return null;
 };
 
-const isEncryptedNote = (): boolean => tryParseEncryptedPayload(formNote.value) !== null;
+const isEncryptedNote = (): boolean =>
+    tryParseEncryptedPayload(formNote.value) !== null;
 
 const toggleNoteCrypto = async (): Promise<void> => {
     const text = formNote.value.trim();
@@ -452,6 +451,19 @@ const goToNextPage = (): void => {
 
     void loadNotes(currentPage.value + 1);
 };
+
+const searchFieldRoot = ref<HTMLElement | null>(null);
+
+const focusSearchQuery = (): void => {
+    const input = searchFieldRoot.value?.querySelector<HTMLInputElement>(
+        'input[data-slot="input"]',
+    );
+    input?.focus({ preventScroll: true });
+};
+
+defineExpose({
+    focusSearchQuery,
+});
 </script>
 
 <template>
@@ -459,7 +471,7 @@ const goToNextPage = (): void => {
         <div
             class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
         >
-            <div class="w-full min-w-0 sm:max-w-sm">
+            <div ref="searchFieldRoot" class="w-full min-w-0 sm:max-w-sm">
                 <Input
                     v-model="searchQuery"
                     type="search"
@@ -724,7 +736,11 @@ const goToNextPage = (): void => {
                     <Button
                         type="button"
                         variant="secondary"
-                        :disabled="saving || cryptoProcessing || formNote.trim().length === 0"
+                        :disabled="
+                            saving ||
+                            cryptoProcessing ||
+                            formNote.trim().length === 0
+                        "
                         @click="toggleNoteCrypto"
                     >
                         {{
