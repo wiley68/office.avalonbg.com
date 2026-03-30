@@ -10,6 +10,7 @@ use App\Http\Controllers\NotesExportDownloadController;
 use App\Http\Controllers\Office\TextCryptoController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WarrantiesAgentController;
+use App\Http\Controllers\WarrantyCardPrintController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
@@ -79,6 +80,8 @@ Route::middleware(['auth', 'verified', 'admin.agent.block'])->group(function () 
         ->name('dashboard.contacts.agent.message.pdf');
 
     Route::inertia('dashboard/warranties', 'office/WarrantiesAgent')->name('dashboard.warranties');
+    Route::get('dashboard/warranties/{warranty}/print', WarrantyCardPrintController::class)
+        ->name('dashboard.warranties.print');
     Route::post('dashboard/warranties/agent', [WarrantiesAgentController::class, 'store'])
         ->middleware('agent.context:warranties')
         ->name('dashboard.warranties.agent');
@@ -106,4 +109,4 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
         ->name('dashboard.admin.export');
 });
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';

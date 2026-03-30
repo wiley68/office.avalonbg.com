@@ -526,6 +526,10 @@ const requestDelete = (row: WarrantyRow): void => {
     deleteDialogOpen.value = true;
 };
 
+const openPrint = (row: WarrantyRow): void => {
+    window.open(`/dashboard/warranties/${row.id}/print`, '_blank', 'noopener');
+};
+
 const confirmDelete = async (): Promise<void> => {
     if (!deleteTarget.value) {
         return;
@@ -744,6 +748,12 @@ const selectClass =
                                                 @select="requestDelete(row)"
                                             >
                                                 Изтриване
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                class="cursor-pointer"
+                                                @select="openPrint(row)"
+                                            >
+                                                Печат
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -1040,23 +1050,36 @@ const selectClass =
                         {{ formError }}
                     </p>
                     <DialogFooter
-                        class="flex flex-row flex-wrap justify-end gap-2 p-0 sm:flex-row"
+                        class="flex flex-row flex-wrap items-center justify-between gap-2 p-0 sm:flex-row"
                     >
-                        <Button
-                            type="button"
-                            variant="outline"
-                            :disabled="saving || loadingDetail"
-                            @click="dialogOpen = false"
-                        >
-                            Отказ
-                        </Button>
-                        <Button
-                            type="button"
-                            :disabled="saving || loadingDetail"
-                            @click="submitForm"
-                        >
-                            {{ saving ? 'Запис…' : 'Запази' }}
-                        </Button>
+                        <div class="flex flex-row items-center gap-2">
+                            <Button
+                                v-if="editingId !== null"
+                                type="button"
+                                variant="outline"
+                                :disabled="saving || loadingDetail"
+                                @click="openPrint({ id: editingId } as WarrantyRow)"
+                            >
+                                Печат
+                            </Button>
+                        </div>
+                        <div class="flex flex-row flex-wrap justify-end gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                :disabled="saving || loadingDetail"
+                                @click="dialogOpen = false"
+                            >
+                                Отказ
+                            </Button>
+                            <Button
+                                type="button"
+                                :disabled="saving || loadingDetail"
+                                @click="submitForm"
+                            >
+                                {{ saving ? 'Запис…' : 'Запази' }}
+                            </Button>
+                        </div>
                     </DialogFooter>
                 </div>
             </DialogContent>
