@@ -25,7 +25,7 @@ class ServiceCardController extends Controller
         ]);
 
         $query = ServiceCard::query()
-            ->with(['contact', 'rakovoditel', 'serviseproblemtechnik', 'saobshtilclient']);
+            ->with(['contact', 'rakovoditel', 'serviseproblemtechnik', 'saobshtilclient', 'soldProducts']);
 
         if (! empty($validated['q'])) {
             $search = trim((string) $validated['q']);
@@ -65,14 +65,14 @@ class ServiceCardController extends Controller
         $row = ServiceCard::query()->create($request->validated());
 
         return new ServiceCardResource(
-            $row->load(['contact', 'rakovoditel', 'serviseproblemtechnik', 'saobshtilclient'])
+            $row->load(['contact', 'rakovoditel', 'serviseproblemtechnik', 'saobshtilclient', 'soldProducts'])
         );
     }
 
     public function show(int $service_card): ServiceCardResource
     {
         $row = ServiceCard::query()
-            ->with(['contact', 'rakovoditel', 'serviseproblemtechnik', 'saobshtilclient'])
+            ->with(['contact', 'rakovoditel', 'serviseproblemtechnik', 'saobshtilclient', 'soldProducts'])
             ->findOrFail($service_card);
 
         return new ServiceCardResource($row);
@@ -84,7 +84,7 @@ class ServiceCardController extends Controller
         $row->update($request->validated());
 
         return new ServiceCardResource(
-            $row->fresh()->load(['contact', 'rakovoditel', 'serviseproblemtechnik', 'saobshtilclient'])
+            $row->fresh()->load(['contact', 'rakovoditel', 'serviseproblemtechnik', 'saobshtilclient', 'soldProducts'])
         );
     }
 

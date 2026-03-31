@@ -65,6 +65,16 @@ beforeEach(function (): void {
         $table->string('clientopisanie', 512)->nullable();
         $table->string('etap', 64);
     });
+
+    Schema::connection('service')->create('ceni', function (Blueprint $table): void {
+        $table->increments('id');
+        $table->string('name', 256);
+        $table->decimal('price', 10, 2)->unsigned();
+        $table->unsignedInteger('project_id');
+        $table->string('vat', 3)->default('Yes');
+        $table->unsignedInteger('broi')->default(1);
+        $table->decimal('ed_cena', 10, 2)->unsigned();
+    });
 });
 
 test('guest cannot list service cards', function (): void {
@@ -139,16 +149,70 @@ test('authenticated user can create show update and delete service card', functi
         'etap' => 'Диагностика',
     ])->assertCreated()->json('data');
 
-    getJson('/api/service-cards/'.$created['id'])
+    getJson('/api/service-cards/' . $created['id'])
         ->assertOk()
         ->assertJsonPath('data.product', 'Принтер');
 
-    putJson('/api/service-cards/'.$created['id'], [
+    putJson('/api/service-cards/' . $created['id'], [
         'product' => 'Принтер Laser',
         'etap' => 'Извършва се ремонта',
     ])->assertOk()
         ->assertJsonPath('data.product', 'Принтер Laser');
 
-    deleteJson('/api/service-cards/'.$created['id'])->assertNoContent();
-    getJson('/api/service-cards/'.$created['id'])->assertNotFound();
+    deleteJson('/api/service-cards/' . $created['id'])->assertNoContent();
+    getJson('/api/service-cards/' . $created['id'])->assertNotFound();
+});
+
+test('authenticated user can manage sold products for service card', function (): void {
+    $user = User::factory()->create();
+    Sanctum::actingAs($user);
+
+    $cityId = (int) DB::connection('service')->table('citi')->insertGetId([
+        'name' => 'Varna',
+        'postalcod' => '9000',
+    ]);
+    $contactId = (int) DB::connection('service')->table('contacts')->insertGetId([
+        'citi_id' => $cityId,
+        'name' => 'Георги',
+        'last_name' => 'Стоянов',
+    ]);
+    $memberId = (int) DB::connection('service')->table('members')->insertGetId([
+        'username' => 'member2',
+        'email' => 'member2@example.com',
+    ]);
+    $cardId = (int) DB::connection('service')->table('projects')->insertGetId([
+        'datecard' => '2026-03-20 09:00:00',
+        'name' => $contactId,
+        'special' => 'Нормална поръчка',
+        'product' => 'Компютър',
+        'varanty' => 'Извън гаранционен',
+        'serviseproblemtechnik_id' => $memberId,
+        'datepredavane' => '2026-03-22 13:00:00',
+        'saobshtilclient_id' => $memberId,
+        'etap' => 'Диагностика',
+    ]);
+
+    $product = postJson("/api/service-cards/{$cardId}/products", [
+        'name' => 'RAM 8GB',
+        'price' => 120,
+        'vat' => 'Yes',
+        'broi' => 2,
+        'ed_cena' => 60,
+    ])->assertCreated()->json('data');
+
+    getJson("/api/service-cards/{$cardId}/products")
+        ->assertOk()
+        ->assertJsonPath('data.0.name', 'RAM 8GB');
+
+    putJson("/api/service-cards/{$cardId}/products/{$product['id']}", [
+        'name' => 'RAM 16GB',
+        'broi' => 1,
+        'ed_cena' => 95,
+        'price' => 95,
+        'vat' => 'Yes',
+    ])->assertOk()
+        ->assertJsonPath('data.name', 'RAM 16GB');
+
+    deleteJson("/api/service-cards/{$cardId}/products/{$product['id']}")
+        ->assertNoContent();
 });

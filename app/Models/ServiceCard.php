@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'rakovoditel_id',
@@ -71,5 +72,13 @@ class ServiceCard extends Model
     public function saobshtilclient(): BelongsTo
     {
         return $this->belongsTo(Member::class, 'saobshtilclient_id');
+    }
+
+    /**
+     * @return HasMany<ServiceCardProduct, $this>
+     */
+    public function soldProducts(): HasMany
+    {
+        return $this->hasMany(ServiceCardProduct::class, 'project_id');
     }
 }

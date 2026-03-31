@@ -60,6 +60,16 @@ beforeEach(function (): void {
         $table->string('clientopisanie', 512)->nullable();
         $table->string('etap', 64);
     });
+
+    Schema::connection('service')->create('ceni', function (Blueprint $table): void {
+        $table->increments('id');
+        $table->string('name', 256);
+        $table->decimal('price', 10, 2)->unsigned();
+        $table->unsignedInteger('project_id');
+        $table->string('vat', 3)->default('Yes');
+        $table->unsignedInteger('broi')->default(1);
+        $table->decimal('ed_cena', 10, 2)->unsigned();
+    });
 });
 
 test('authenticated user can open printable service card', function (): void {

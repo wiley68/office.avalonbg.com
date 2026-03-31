@@ -66,6 +66,17 @@ type ServiceCardDetail = {
     saobshtilclient_id: number;
     clientopisanie: string | null;
     etap: string;
+    sold_products?: ServiceCardProductRow[];
+};
+
+type ServiceCardProductRow = {
+    id: number;
+    name: string;
+    price: string;
+    project_id: number;
+    vat: 'Yes' | 'No';
+    broi: number;
+    ed_cena: string;
 };
 
 type ServiceCardsApiResponse = {
@@ -150,6 +161,17 @@ const loadingDetail = ref(false);
 const deleteTarget = ref<ServiceCardRow | null>(null);
 const deleteDialogOpen = ref(false);
 const deleting = ref(false);
+const soldProducts = ref<ServiceCardProductRow[]>([]);
+const productSaving = ref(false);
+const productError = ref<string | null>(null);
+const productEditingId = ref<number | null>(null);
+const productForm = reactive({
+    name: '',
+    price: '',
+    vat: 'Yes' as 'Yes' | 'No',
+    broi: '1',
+    ed_cena: '',
+});
 
 const parseJsonErrors = async (response: Response): Promise<string> => {
     try {
@@ -316,6 +338,18 @@ const resetForm = (): void => {
     Object.assign(form, defaultFormState());
     editingId.value = null;
     formError.value = null;
+    soldProducts.value = [];
+    resetProductForm();
+};
+
+const resetProductForm = (): void => {
+    productEditingId.value = null;
+    productForm.name = '';
+    productForm.price = '';
+    productForm.vat = 'Yes';
+    productForm.broi = '1';
+    productForm.ed_cena = '';
+    productError.value = null;
 };
 
 const applyDetailToForm = (d: ServiceCardDetail): void => {
@@ -333,6 +367,8 @@ const applyDetailToForm = (d: ServiceCardDetail): void => {
     form.saobshtilclient_id = String(d.saobshtilclient_id);
     form.clientopisanie = d.clientopisanie ?? '';
     form.etap = d.etap;
+    soldProducts.value = d.sold_products ?? [];
+    resetProductForm();
 };
 
 const openCreate = (): void => {
@@ -452,6 +488,102 @@ const requestDelete = (row: ServiceCardRow): void => {
 
 const openPrint = (row: ServiceCardRow): void => {
     window.open(`/dashboard/service-cards/${row.id}/print`, '_blank', 'noopener');
+};
+
+const openProductCreate = (): void => {
+    resetProductForm();
+};
+
+const openProductEdit = (row: ServiceCardProductRow): void => {
+    productEditingId.value = row.id;
+    productForm.name = row.name;
+    productForm.price = String(row.price);
+    productForm.vat = row.vat;
+    productForm.broi = String(row.broi);
+    productForm.ed_cena = String(row.ed_cena);
+    productError.value = null;
+};
+
+const deleteProduct = async (row: ServiceCardProductRow): Promise<void> => {
+    if (editingId.value === null) {
+        return;
+    }
+
+    const response = await fetch(
+        `${API_BASE}/${editingId.value}/products/${row.id}`,
+        {
+            method: 'DELETE',
+            headers: jsonHeaders(),
+            credentials: 'same-origin',
+        },
+    );
+
+    if (!response.ok && response.status !== 204) {
+        productError.value = await parseJsonErrors(response);
+
+        return;
+    }
+
+    soldProducts.value = soldProducts.value.filter((p) => p.id !== row.id);
+};
+
+const saveProduct = async (): Promise<void> => {
+    if (editingId.value === null) {
+        productError.value = 'Първо запишете сервизната карта.';
+
+        return;
+    }
+
+    productSaving.value = true;
+    productError.value = null;
+
+    try {
+        const payload = {
+            name: productForm.name.trim(),
+            price: Number(productForm.price),
+            vat: productForm.vat,
+            broi: Number(productForm.broi),
+            ed_cena: Number(productForm.ed_cena),
+        };
+
+        const isEdit = productEditingId.value !== null;
+        const url = isEdit
+            ? `${API_BASE}/${editingId.value}/products/${productEditingId.value}`
+            : `${API_BASE}/${editingId.value}/products`;
+        const response = await fetch(url, {
+            method: isEdit ? 'PUT' : 'POST',
+            headers: jsonHeaders(),
+            credentials: 'same-origin',
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            productError.value = await parseJsonErrors(response);
+
+            return;
+        }
+
+        const json = (await response.json()) as { data?: ServiceCardProductRow };
+        const saved = json.data;
+
+        if (!saved) {
+            return;
+        }
+
+        if (isEdit) {
+            soldProducts.value = soldProducts.value.map((p) =>
+                p.id === saved.id ? saved : p,
+            );
+        } else {
+            soldProducts.value = [...soldProducts.value, saved];
+        }
+
+        resetProductForm();
+    } catch {
+        productError.value = 'Неуспешно записване на продукт.';
+    } finally {
+        productSaving.value = false;
+    }
 };
 
 const confirmDelete = async (): Promise<void> => {
@@ -913,6 +1045,184 @@ defineExpose({
                                     v-model="form.clientopisanie"
                                     maxlength="512"
                                 />
+                            </div>
+                            <div class="space-y-3 md:col-span-2">
+                                <div class="flex items-center justify-between">
+                                    <Label class="text-sm font-medium"
+                                        >Продадени продукти</Label
+                                    >
+                                    <Button
+                                        v-if="editingId !== null"
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        @click="openProductCreate"
+                                    >
+                                        Добави продукт
+                                    </Button>
+                                </div>
+                                <p
+                                    v-if="editingId === null"
+                                    class="text-sm text-muted-foreground"
+                                >
+                                    Първо запишете сервизната карта, за да
+                                    добавяте продадени продукти.
+                                </p>
+                                <div
+                                    v-else
+                                    class="overflow-hidden rounded-md border border-border/70"
+                                >
+                                    <table class="w-full text-sm">
+                                        <thead class="bg-muted/40 text-left">
+                                            <tr>
+                                                <th class="px-3 py-2 font-medium">
+                                                    Продукт
+                                                </th>
+                                                <th class="px-3 py-2 font-medium">
+                                                    Кол.
+                                                </th>
+                                                <th class="px-3 py-2 font-medium">
+                                                    Ед. цена
+                                                </th>
+                                                <th class="px-3 py-2 font-medium">
+                                                    Цена
+                                                </th>
+                                                <th
+                                                    class="px-3 py-2 text-right font-medium"
+                                                >
+                                                    Действия
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr
+                                                v-for="p in soldProducts"
+                                                :key="p.id"
+                                                class="border-t border-border/50"
+                                            >
+                                                <td class="px-3 py-2">
+                                                    {{ p.name }}
+                                                </td>
+                                                <td class="px-3 py-2">
+                                                    {{ p.broi }}
+                                                </td>
+                                                <td class="px-3 py-2">
+                                                    {{ p.ed_cena }}
+                                                </td>
+                                                <td class="px-3 py-2">
+                                                    {{ p.price }}
+                                                </td>
+                                                <td class="px-3 py-2 text-right">
+                                                    <div
+                                                        class="inline-flex items-center gap-2"
+                                                    >
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            @click="
+                                                                openProductEdit(
+                                                                    p,
+                                                                )
+                                                            "
+                                                        >
+                                                            Редактирай
+                                                        </Button>
+                                                        <Button
+                                                            type="button"
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            @click="
+                                                                deleteProduct(p)
+                                                            "
+                                                        >
+                                                            Изтрий
+                                                        </Button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <tr
+                                                v-if="soldProducts.length === 0"
+                                                class="border-t border-border/50"
+                                            >
+                                                <td
+                                                    colspan="5"
+                                                    class="px-3 py-4 text-center text-muted-foreground"
+                                                >
+                                                    Няма добавени продукти.
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div
+                                    v-if="editingId !== null"
+                                    class="grid grid-cols-1 gap-2 rounded-md border border-dashed border-border p-3 md:grid-cols-6"
+                                >
+                                    <Input
+                                        v-model="productForm.name"
+                                        class="md:col-span-2"
+                                        placeholder="Име на продукт"
+                                    />
+                                    <Input
+                                        v-model="productForm.broi"
+                                        type="number"
+                                        min="1"
+                                        placeholder="Брой"
+                                    />
+                                    <Input
+                                        v-model="productForm.ed_cena"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="Ед. цена"
+                                    />
+                                    <Input
+                                        v-model="productForm.price"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="Крайна цена"
+                                    />
+                                    <select
+                                        v-model="productForm.vat"
+                                        :class="selectClass"
+                                    >
+                                        <option value="Yes">ДДС: Да</option>
+                                        <option value="No">ДДС: Не</option>
+                                    </select>
+                                    <div class="md:col-span-6 flex items-center gap-2">
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            :disabled="productSaving"
+                                            @click="saveProduct"
+                                        >
+                                            {{
+                                                productSaving
+                                                    ? 'Запис...'
+                                                    : productEditingId === null
+                                                      ? 'Добави продукт'
+                                                      : 'Запази продукта'
+                                            }}
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            :disabled="productSaving"
+                                            @click="resetProductForm"
+                                        >
+                                            Изчисти
+                                        </Button>
+                                    </div>
+                                    <p
+                                        v-if="productError"
+                                        class="md:col-span-6 text-sm text-destructive"
+                                    >
+                                        {{ productError }}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </template>

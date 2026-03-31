@@ -38,6 +38,9 @@ class ServiceCardResource extends JsonResource
             'rakovoditel_label' => $this->whenLoaded('rakovoditel', fn () => $this->memberLabel($this->rakovoditel)),
             'serviseproblemtechnik_label' => $this->whenLoaded('serviseproblemtechnik', fn () => $this->memberLabel($this->serviseproblemtechnik)),
             'saobshtilclient_label' => $this->whenLoaded('saobshtilclient', fn () => $this->memberLabel($this->saobshtilclient)),
+            'sold_products' => ServiceCardProductResource::collection(
+                $this->whenLoaded('soldProducts')
+            ),
         ];
     }
 
