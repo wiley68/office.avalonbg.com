@@ -30,7 +30,7 @@ class AgentConversationMessagesController extends Controller
             ->get(['id', 'title', 'updated_at']);
 
         return response()->json([
-            'conversations' => $rows->map(fn($row) => [
+            'conversations' => $rows->map(fn ($row) => [
                 'id' => $row->id,
                 'title' => $row->title,
                 'updated_at' => $row->updated_at,
@@ -69,7 +69,7 @@ class AgentConversationMessagesController extends Controller
             ->get(['m.id', 'm.role', 'm.content', 'm.created_at', 'f.feedback']);
 
         return response()->json([
-            'messages' => $rows->map(fn($row) => [
+            'messages' => $rows->map(fn ($row) => [
                 'id' => $row->id,
                 'role' => $row->role,
                 'content' => $row->content,
@@ -152,8 +152,9 @@ class AgentConversationMessagesController extends Controller
             $request->routeIs('dashboard.notes.agent.message.pdf') => AgentContext::Notes,
             $request->routeIs('dashboard.contacts.agent.message.pdf') => AgentContext::Contacts,
             $request->routeIs('dashboard.warranties.agent.message.pdf') => AgentContext::Warranties,
+            $request->routeIs('dashboard.service-cards.agent.message.pdf') => AgentContext::ServiceCards,
             default => throw new \LogicException(
-                'Unexpected route for agent PDF: ' . $request->route()?->getName()
+                'Unexpected route for agent PDF: '.$request->route()?->getName()
             ),
         };
 
@@ -187,8 +188,9 @@ class AgentConversationMessagesController extends Controller
             $request->routeIs('dashboard.notes.agent.conversations.destroy') => AgentContext::Notes,
             $request->routeIs('dashboard.contacts.agent.conversations.destroy') => AgentContext::Contacts,
             $request->routeIs('dashboard.warranties.agent.conversations.destroy') => AgentContext::Warranties,
+            $request->routeIs('dashboard.service-cards.agent.conversations.destroy') => AgentContext::ServiceCards,
             default => throw new \LogicException(
-                'Unexpected route for destroy all conversations: ' . $request->route()?->getName()
+                'Unexpected route for destroy all conversations: '.$request->route()?->getName()
             ),
         };
 
@@ -243,12 +245,16 @@ class AgentConversationMessagesController extends Controller
             return AgentContext::Warranties;
         }
 
+        if ($request->routeIs('dashboard.service-cards.agent.conversations', 'dashboard.service-cards.agent.conversation.messages', 'dashboard.service-cards.agent.message.feedback')) {
+            return AgentContext::ServiceCards;
+        }
+
         if ($request->routeIs('dashboard.agent.message.feedback')) {
             return AgentContext::Orchestrator;
         }
 
         throw new \LogicException(
-            'Unknown agent conversation route: ' . $request->route()?->getName()
+            'Unknown agent conversation route: '.$request->route()?->getName()
         );
     }
 }

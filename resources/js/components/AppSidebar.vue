@@ -8,6 +8,7 @@ import {
     LayoutGrid,
     StickyNote,
     Contact,
+    Wrench,
     Table,
     Users,
 } from 'lucide-vue-next';
@@ -79,6 +80,11 @@ const mainNavItems = computed<NavItem[]>(() => {
             title: 'Гаранционни карти',
             href: dashboardRoutes.warranties.url(),
             icon: BadgeCheck,
+        },
+        {
+            title: 'Сервизни карти',
+            href: '/dashboard/service-cards',
+            icon: Wrench,
         },
     ];
 });

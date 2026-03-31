@@ -31,8 +31,9 @@ class StoreAgentMessageEmailRequest extends FormRequest
             $this->routeIs('dashboard.notes.agent.message.email') => AgentContext::Notes,
             $this->routeIs('dashboard.contacts.agent.message.email') => AgentContext::Contacts,
             $this->routeIs('dashboard.warranties.agent.message.email') => AgentContext::Warranties,
+            $this->routeIs('dashboard.service-cards.agent.message.email') => AgentContext::ServiceCards,
             default => throw new \LogicException(
-                'Unexpected route for agent email: ' . $this->route()?->getName()
+                'Unexpected route for agent email: '.$this->route()?->getName()
             ),
         };
     }

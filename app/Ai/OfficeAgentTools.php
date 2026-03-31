@@ -7,6 +7,7 @@ use App\Ai\Tools\ManageCitiTool;
 use App\Ai\Tools\ManageContactsTool;
 use App\Ai\Tools\ManageDlazhnostiTool;
 use App\Ai\Tools\ManageNotesTool;
+use App\Ai\Tools\ManageServiceCardsTool;
 use App\Ai\Tools\ManageWarrantiesTool;
 use App\Ai\Tools\SendAgentResponseEmailTool;
 use Laravel\Ai\Contracts\Tool;
@@ -28,6 +29,7 @@ final class OfficeAgentTools
             app(ManageNotesTool::class),
             app(ManageContactsTool::class),
             app(ManageWarrantiesTool::class),
+            app(ManageServiceCardsTool::class),
             app(ManageCitiTool::class),
             app(ManageDlazhnostiTool::class),
             app(ExportNotesToXlsxTool::class),
@@ -74,6 +76,20 @@ final class OfficeAgentTools
     {
         return [
             app(ManageWarrantiesTool::class),
+            app(ManageContactsTool::class),
+            app(SendAgentResponseEmailTool::class),
+        ];
+    }
+
+    /**
+     * Само инструменти за модул „сервизни карти“.
+     *
+     * @return list<Tool>
+     */
+    public static function forServiceCards(): array
+    {
+        return [
+            app(ManageServiceCardsTool::class),
             app(ManageContactsTool::class),
             app(SendAgentResponseEmailTool::class),
         ];

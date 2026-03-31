@@ -8,4 +8,5 @@ enum AgentContext: string
     case Notes = 'notes';
     case Contacts = 'contacts';
     case Warranties = 'warranties';
+    case ServiceCards = 'service-cards';
 }

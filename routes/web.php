@@ -8,6 +8,8 @@ use App\Http\Controllers\DashboardAgentController;
 use App\Http\Controllers\NotesAgentController;
 use App\Http\Controllers\NotesExportDownloadController;
 use App\Http\Controllers\Office\TextCryptoController;
+use App\Http\Controllers\ServiceCardPrintController;
+use App\Http\Controllers\ServiceCardsAgentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WarrantiesAgentController;
 use App\Http\Controllers\WarrantyCardPrintController;
@@ -97,6 +99,25 @@ Route::middleware(['auth', 'verified', 'admin.agent.block'])->group(function () 
         ->name('dashboard.warranties.agent.message.email');
     Route::get('dashboard/warranties/agent/messages/{message}/pdf', [AgentConversationMessagesController::class, 'pdf'])
         ->name('dashboard.warranties.agent.message.pdf');
+
+    Route::inertia('dashboard/service-cards', 'office/ServiceCardsAgent')->name('dashboard.service-cards');
+    Route::get('dashboard/service-cards/{serviceCard}/print', ServiceCardPrintController::class)
+        ->name('dashboard.service-cards.print');
+    Route::post('dashboard/service-cards/agent', [ServiceCardsAgentController::class, 'store'])
+        ->middleware('agent.context:service-cards')
+        ->name('dashboard.service-cards.agent');
+    Route::get('dashboard/service-cards/agent/conversations', [AgentConversationMessagesController::class, 'index'])
+        ->name('dashboard.service-cards.agent.conversations');
+    Route::delete('dashboard/service-cards/agent/conversations', [AgentConversationMessagesController::class, 'destroyAll'])
+        ->name('dashboard.service-cards.agent.conversations.destroy');
+    Route::get('dashboard/service-cards/agent/conversations/{conversation}/messages', [AgentConversationMessagesController::class, 'show'])
+        ->name('dashboard.service-cards.agent.conversation.messages');
+    Route::post('dashboard/service-cards/agent/messages/{message}/feedback', [AgentConversationMessagesController::class, 'feedback'])
+        ->name('dashboard.service-cards.agent.message.feedback');
+    Route::post('dashboard/service-cards/agent/messages/{message}/email', [AgentConversationMessagesController::class, 'email'])
+        ->name('dashboard.service-cards.agent.message.email');
+    Route::get('dashboard/service-cards/agent/messages/{message}/pdf', [AgentConversationMessagesController::class, 'pdf'])
+        ->name('dashboard.service-cards.agent.message.pdf');
 });
 
 Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
