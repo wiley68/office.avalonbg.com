@@ -92,7 +92,7 @@ const deleteDialogOpen = ref(false);
 const deleting = ref(false);
 
 const textareaClass = cn(
-    'min-h-[140px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground',
+    'min-h-[220px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground',
     'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
     'outline-none disabled:cursor-not-allowed disabled:opacity-50',
 );
@@ -670,7 +670,7 @@ defineExpose({
         <Dialog v-model:open="dialogOpen">
             <DialogContent
                 :show-close-button="false"
-                class="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
+                class="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-5xl"
             >
                 <DialogHeader
                     class="sticky top-0 z-20 shrink-0 space-y-0 border-b border-border bg-background px-6 pt-6 pb-4 text-left sm:text-left"
@@ -734,7 +734,7 @@ defineExpose({
                                 id="manual-note-body"
                                 v-model="formNote"
                                 :class="textareaClass"
-                                rows="8"
+                                rows="12"
                                 autocomplete="off"
                             />
                             <div class="flex justify-end">
