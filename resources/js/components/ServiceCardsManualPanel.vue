@@ -862,7 +862,7 @@ defineExpose({
         <Dialog v-model:open="dialogOpen">
             <DialogContent
                 :show-close-button="false"
-                class="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl"
+                class="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-5xl"
             >
                 <DialogHeader
                     class="sticky top-0 z-20 shrink-0 space-y-0 border-b border-border bg-background px-6 pt-6 pb-4 text-left sm:text-left"
@@ -1082,10 +1082,13 @@ defineExpose({
                                                     Кол.
                                                 </th>
                                                 <th class="px-3 py-2 font-medium">
-                                                    Ед. цена
+                                                    Цена
                                                 </th>
                                                 <th class="px-3 py-2 font-medium">
-                                                    Цена
+                                                    Общо
+                                                </th>
+                                                <th class="px-3 py-2 font-medium">
+                                                    ДДС
                                                 </th>
                                                 <th
                                                     class="px-3 py-2 text-right font-medium"
@@ -1112,6 +1115,13 @@ defineExpose({
                                                 <td class="px-3 py-2">
                                                     {{ p.price }}
                                                 </td>
+                                                <td class="px-3 py-2">
+                                                    {{
+                                                        p.vat === 'Yes'
+                                                            ? 'Да'
+                                                            : 'Не'
+                                                    }}
+                                                </td>
                                                 <td class="px-3 py-2 text-right">
                                                     <div
                                                         class="inline-flex items-center gap-2"
@@ -1119,24 +1129,48 @@ defineExpose({
                                                         <Button
                                                             type="button"
                                                             variant="outline"
-                                                            size="sm"
+                                                            size="icon"
+                                                            class="h-8 w-8"
+                                                            title="Редактиране на продукта"
                                                             @click="
                                                                 openProductEdit(
                                                                     p,
                                                                 )
                                                             "
                                                         >
-                                                            Редактирай
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                viewBox="0 0 24 24"
+                                                                class="h-4 w-4"
+                                                                aria-hidden="true"
+                                                            >
+                                                                <title>pencil</title>
+                                                                <path
+                                                                    d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"
+                                                                />
+                                                            </svg>
                                                         </Button>
                                                         <Button
                                                             type="button"
                                                             variant="destructive"
-                                                            size="sm"
+                                                            size="icon"
+                                                            class="h-8 w-8"
+                                                            title="Изтрий продукта"
                                                             @click="
                                                                 deleteProduct(p)
                                                             "
                                                         >
-                                                            Изтрий
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                viewBox="0 0 24 24"
+                                                                class="h-4 w-4"
+                                                                aria-hidden="true"
+                                                            >
+                                                                <title>delete</title>
+                                                                <path
+                                                                    d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"
+                                                                />
+                                                            </svg>
                                                         </Button>
                                                     </div>
                                                 </td>
@@ -1146,7 +1180,7 @@ defineExpose({
                                                 class="border-t border-border/50"
                                             >
                                                 <td
-                                                    colspan="5"
+                                                    colspan="6"
                                                     class="px-3 py-4 text-center text-muted-foreground"
                                                 >
                                                     Няма добавени продукти.
