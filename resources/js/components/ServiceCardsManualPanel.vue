@@ -903,9 +903,25 @@ defineExpose({
                     </div>
                     <template v-else>
                         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-                            <div class="space-y-2 md:col-span-2">
+                            <div class="space-y-2">
                                 <Label>Клиент *</Label>
                                 <ContactSelectCombobox v-model="form.name" />
+                            </div>
+                            <div class="space-y-2">
+                                <Label>Приела сервизната карта (опционално)</Label>
+                                <select
+                                    v-model="form.rakovoditel_id"
+                                    :class="selectClass"
+                                >
+                                    <option value="">—</option>
+                                    <option
+                                        v-for="m in memberOptions"
+                                        :key="m.id"
+                                        :value="String(m.id)"
+                                    >
+                                        {{ m.username }} (#{{ m.id }})
+                                    </option>
+                                </select>
                             </div>
                             <div class="space-y-2">
                                 <Label>Дата на приемане *</Label>
@@ -980,22 +996,6 @@ defineExpose({
                                 </select>
                             </div>
                             <div class="space-y-2 md:col-span-2">
-                                <Label>Ръководител (опционално)</Label>
-                                <select
-                                    v-model="form.rakovoditel_id"
-                                    :class="selectClass"
-                                >
-                                    <option value="">—</option>
-                                    <option
-                                        v-for="m in memberOptions"
-                                        :key="m.id"
-                                        :value="String(m.id)"
-                                    >
-                                        {{ m.username }} (#{{ m.id }})
-                                    </option>
-                                </select>
-                            </div>
-                            <div class="space-y-2 md:col-span-2">
                                 <Label>Етап *</Label>
                                 <select v-model="form.etap" :class="selectClass">
                                     <option value="Приета за сервиз">
@@ -1015,16 +1015,16 @@ defineExpose({
                                     </option>
                                 </select>
                             </div>
-                            <div class="space-y-2 md:col-span-2">
-                                <Label>Проблем</Label>
+                            <div class="space-y-2">
+                                <Label>Проблем приемане</Label>
                                 <textarea
                                     v-model="form.problem"
                                     :class="textareaClass"
                                     rows="3"
                                 />
                             </div>
-                            <div class="space-y-2 md:col-span-2">
-                                <Label>Сервизен проблем</Label>
+                            <div class="space-y-2">
+                                <Label>Установен проблем</Label>
                                 <textarea
                                     v-model="form.serviseproblem"
                                     :class="textareaClass"
@@ -1032,7 +1032,7 @@ defineExpose({
                                 />
                             </div>
                             <div class="space-y-2 md:col-span-2">
-                                <Label>Допълнително към клиента</Label>
+                                <Label>За клиента</Label>
                                 <textarea
                                     v-model="form.dopclient"
                                     :class="textareaClass"
