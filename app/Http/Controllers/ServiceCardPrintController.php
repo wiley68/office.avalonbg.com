@@ -10,7 +10,7 @@ class ServiceCardPrintController extends Controller
     public function __invoke(int $serviceCard): View
     {
         $card = ServiceCard::query()
-            ->with(['contact', 'rakovoditel', 'serviseproblemtechnik', 'saobshtilclient'])
+            ->with(['contact.citi', 'rakovoditel', 'serviseproblemtechnik', 'saobshtilclient'])
             ->findOrFail($serviceCard);
 
         $contact = $card->contact;

@@ -9,6 +9,7 @@ use App\Http\Controllers\NotesAgentController;
 use App\Http\Controllers\NotesExportDownloadController;
 use App\Http\Controllers\Office\TextCryptoController;
 use App\Http\Controllers\ServiceCardPrintController;
+use App\Http\Controllers\ServiceCardPrintReleaseController;
 use App\Http\Controllers\ServiceCardsAgentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WarrantiesAgentController;
@@ -103,6 +104,8 @@ Route::middleware(['auth', 'verified', 'admin.agent.block'])->group(function () 
     Route::inertia('dashboard/service-cards', 'office/ServiceCardsAgent')->name('dashboard.service-cards');
     Route::get('dashboard/service-cards/{serviceCard}/print', ServiceCardPrintController::class)
         ->name('dashboard.service-cards.print');
+    Route::get('dashboard/service-cards/{serviceCard}/print-release', ServiceCardPrintReleaseController::class)
+        ->name('dashboard.service-cards.print-release');
     Route::post('dashboard/service-cards/agent', [ServiceCardsAgentController::class, 'store'])
         ->middleware('agent.context:service-cards')
         ->name('dashboard.service-cards.agent');

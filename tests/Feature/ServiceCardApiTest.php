@@ -100,7 +100,7 @@ test('authenticated user can list service cards with labels', function (): void 
         'email' => 'tech@example.com',
     ]);
 
-    DB::connection('service')->table('projects')->insert([
+    $projectId = (int) DB::connection('service')->table('projects')->insertGetId([
         'datecard' => '2026-03-20 10:00:00',
         'name' => $contactId,
         'special' => 'Нормална поръчка',
@@ -112,11 +112,33 @@ test('authenticated user can list service cards with labels', function (): void 
         'etap' => 'Приета за сервиз',
     ]);
 
+    DB::connection('service')->table('ceni')->insert([
+        [
+            'name' => 'Част А',
+            'price' => 10.5,
+            'project_id' => $projectId,
+            'vat' => 'Yes',
+            'broi' => 1,
+            'ed_cena' => 10.5,
+        ],
+        [
+            'name' => 'Част Б',
+            'price' => 25,
+            'project_id' => $projectId,
+            'vat' => 'No',
+            'broi' => 1,
+            'ed_cena' => 25,
+        ],
+    ]);
+
     getJson('/api/service-cards')
         ->assertOk()
         ->assertJsonPath('data.0.product', 'Лаптоп')
         ->assertJsonPath('data.0.contact_label', 'Тест ООД — Иван Петров')
-        ->assertJsonPath('data.0.serviseproblemtechnik_label', 'tech');
+        ->assertJsonPath('data.0.serviseproblemtechnik_label', 'tech')
+        ->assertJsonCount(2, 'data.0.sold_products')
+        ->assertJsonPath('data.0.sold_products.0.price', '10.50')
+        ->assertJsonPath('data.0.sold_products.1.price', '25.00');
 });
 
 test('authenticated user can create show update and delete service card', function (): void {
@@ -149,18 +171,18 @@ test('authenticated user can create show update and delete service card', functi
         'etap' => 'Диагностика',
     ])->assertCreated()->json('data');
 
-    getJson('/api/service-cards/' . $created['id'])
+    getJson('/api/service-cards/'.$created['id'])
         ->assertOk()
         ->assertJsonPath('data.product', 'Принтер');
 
-    putJson('/api/service-cards/' . $created['id'], [
+    putJson('/api/service-cards/'.$created['id'], [
         'product' => 'Принтер Laser',
         'etap' => 'Извършва се ремонта',
     ])->assertOk()
         ->assertJsonPath('data.product', 'Принтер Laser');
 
-    deleteJson('/api/service-cards/' . $created['id'])->assertNoContent();
-    getJson('/api/service-cards/' . $created['id'])->assertNotFound();
+    deleteJson('/api/service-cards/'.$created['id'])->assertNoContent();
+    getJson('/api/service-cards/'.$created['id'])->assertNotFound();
 });
 
 test('authenticated user can manage sold products for service card', function (): void {

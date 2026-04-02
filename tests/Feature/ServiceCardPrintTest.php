@@ -101,7 +101,90 @@ test('authenticated user can open printable service card', function (): void {
 
     get(route('dashboard.service-cards.print', ['serviceCard' => $serviceCardId]))
         ->assertOk()
-        ->assertSee('Сервизна карта №', false)
+        ->assertSee('СК №', false)
+        ->assertSee('000001', false)
+        ->assertSee('Квитанция (за постъпване в сервиз)', false)
         ->assertSee('UPS', false)
         ->assertSee('Иван Иванов', false);
+});
+
+test('release print is forbidden when service card etap is not completed repair', function (): void {
+    $user = User::factory()->create();
+    actingAs($user);
+
+    $cityId = (int) DB::connection('service')->table('citi')->insertGetId(['name' => 'GO']);
+    $contactId = (int) DB::connection('service')->table('contacts')->insertGetId([
+        'citi_id' => $cityId,
+        'name' => 'Иван',
+        'last_name' => 'Иванов',
+        'firm' => 'Фирма',
+    ]);
+    $memberId = (int) DB::connection('service')->table('members')->insertGetId([
+        'username' => 'tech',
+        'email' => 'tech@example.com',
+    ]);
+    $serviceCardId = (int) DB::connection('service')->table('projects')->insertGetId([
+        'datecard' => '2026-03-20 09:00:00',
+        'name' => $contactId,
+        'special' => 'Нормална поръчка',
+        'product' => 'UPS',
+        'varanty' => 'Гаранционен',
+        'serviseproblemtechnik_id' => $memberId,
+        'datepredavane' => '2026-03-20 12:00:00',
+        'saobshtilclient_id' => $memberId,
+        'etap' => 'Приета за сервиз',
+    ]);
+
+    get(route('dashboard.service-cards.print-release', ['serviceCard' => $serviceCardId]))
+        ->assertForbidden();
+});
+
+test('authenticated user can open release print when etap is completed repair', function (): void {
+    $user = User::factory()->create();
+    actingAs($user);
+
+    $cityId = (int) DB::connection('service')->table('citi')->insertGetId(['name' => 'GO']);
+    $contactId = (int) DB::connection('service')->table('contacts')->insertGetId([
+        'citi_id' => $cityId,
+        'name' => 'Петър',
+        'last_name' => 'Петров',
+        'firm' => 'Тест ООД',
+    ]);
+    $memberId = (int) DB::connection('service')->table('members')->insertGetId([
+        'username' => 'монтьор',
+        'email' => 'm@example.com',
+    ]);
+    $serviceCardId = (int) DB::connection('service')->table('projects')->insertGetId([
+        'rakovoditel_id' => $memberId,
+        'datecard' => '2026-03-20 09:00:00',
+        'name' => $contactId,
+        'special' => 'Нормална поръчка',
+        'product' => 'Монитор',
+        'varanty' => 'Извън гаранционен',
+        'problem' => 'Няма образ',
+        'serviseproblem' => 'Сменен кабел',
+        'serviseproblemtechnik_id' => $memberId,
+        'dopclient' => 'Гаранция 30 дни',
+        'datepredavane' => '2026-03-25 12:00:00',
+        'saobshtilclient_id' => $memberId,
+        'etap' => 'Приключен ремонт',
+    ]);
+
+    DB::connection('service')->table('ceni')->insert([
+        'name' => 'Кабел HDMI',
+        'price' => 15.5,
+        'project_id' => $serviceCardId,
+        'vat' => 'Yes',
+        'broi' => 1,
+        'ed_cena' => 15.5,
+    ]);
+
+    get(route('dashboard.service-cards.print-release', ['serviceCard' => $serviceCardId]))
+        ->assertOk()
+        ->assertSee('Извършени услуги', false)
+        ->assertSee('Кабел HDMI', false)
+        ->assertSee('15.50', false)
+        ->assertSee('Обща цена (евро)', false)
+        ->assertSee('Продукта е предаден', false)
+        ->assertSee('Петър Петров', false);
 });

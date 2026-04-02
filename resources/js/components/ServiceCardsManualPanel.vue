@@ -32,6 +32,9 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -48,6 +51,7 @@ type ServiceCardRow = {
     datecard: string | null;
     etap: string;
     contact_label: string | null;
+    sold_products?: ServiceCardProductRow[];
 };
 
 type ServiceCardDetail = {
@@ -79,6 +83,31 @@ type ServiceCardProductRow = {
     ed_cena: string;
 };
 
+const formatSoldProductsTotal = (row: ServiceCardRow): string => {
+    const items = row.sold_products;
+
+    if (items === undefined || items.length === 0) {
+        return '—';
+    }
+
+    let sum = 0;
+
+    for (const p of items) {
+        const n = Number(p.price);
+
+        if (!Number.isFinite(n)) {
+            continue;
+        }
+
+        sum += n;
+    }
+
+    return sum.toLocaleString('bg-BG', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+};
+
 type ServiceCardsApiResponse = {
     data?: ServiceCardRow[];
     meta?: {
@@ -97,6 +126,11 @@ type MemberOption = {
 };
 
 const API_BASE = '/api/service-cards';
+
+const ETAP_COMPLETED_REPAIR = 'Приключен ремонт';
+
+const canPrintRelease = (row: ServiceCardRow): boolean =>
+    row.etap === ETAP_COMPLETED_REPAIR;
 
 const textareaClass = cn(
     'min-h-[90px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground',
@@ -486,8 +520,32 @@ const requestDelete = (row: ServiceCardRow): void => {
     deleteDialogOpen.value = true;
 };
 
-const openPrint = (row: ServiceCardRow): void => {
+const openPrintAcceptance = (row: ServiceCardRow): void => {
     window.open(`/dashboard/service-cards/${row.id}/print`, '_blank', 'noopener');
+};
+
+const openPrintRelease = (row: ServiceCardRow): void => {
+    if (!canPrintRelease(row)) {
+        return;
+    }
+
+    window.open(
+        `/dashboard/service-cards/${row.id}/print-release`,
+        '_blank',
+        'noopener',
+    );
+};
+
+const openPrintReleaseFromDialog = (): void => {
+    if (editingId.value === null || form.etap !== ETAP_COMPLETED_REPAIR) {
+        return;
+    }
+
+    window.open(
+        `/dashboard/service-cards/${editingId.value}/print-release`,
+        '_blank',
+        'noopener',
+    );
 };
 
 const openProductCreate = (): void => {
@@ -737,6 +795,9 @@ defineExpose({
                                     />
                                 </Button>
                             </th>
+                            <th class="px-4 py-3 text-right font-medium tabular-nums">
+                                Цена
+                            </th>
                             <th class="px-4 py-3 text-right font-medium">
                                 Управление
                             </th>
@@ -745,7 +806,7 @@ defineExpose({
                     <tbody>
                         <tr v-if="loading">
                             <td
-                                colspan="6"
+                                colspan="7"
                                 class="px-4 py-10 text-center text-muted-foreground"
                             >
                                 Зареждане…
@@ -772,6 +833,11 @@ defineExpose({
                                 <td class="px-4 py-3 whitespace-nowrap">
                                     {{ formatDate(row.datecard) }}
                                 </td>
+                                <td
+                                    class="px-4 py-3 text-right tabular-nums text-muted-foreground"
+                                >
+                                    {{ formatSoldProductsTotal(row) }}
+                                </td>
                                 <td class="px-4 py-3 text-right">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger as-child>
@@ -788,12 +854,38 @@ defineExpose({
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            <DropdownMenuItem
-                                                class="cursor-pointer"
-                                                @select="openPrint(row)"
-                                            >
-                                                Печат
-                                            </DropdownMenuItem>
+                                            <DropdownMenuSub>
+                                                <DropdownMenuSubTrigger
+                                                    class="cursor-pointer"
+                                                >
+                                                    Печат
+                                                </DropdownMenuSubTrigger>
+                                                <DropdownMenuSubContent>
+                                                    <DropdownMenuItem
+                                                        class="cursor-pointer"
+                                                        @select="
+                                                            openPrintAcceptance(
+                                                                row,
+                                                            )
+                                                        "
+                                                    >
+                                                        При приемане
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        class="cursor-pointer"
+                                                        :disabled="
+                                                            !canPrintRelease(
+                                                                row,
+                                                            )
+                                                        "
+                                                        @select="
+                                                            openPrintRelease(row)
+                                                        "
+                                                    >
+                                                        При издаване
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuSubContent>
+                                            </DropdownMenuSub>
                                             <DropdownMenuItem
                                                 class="cursor-pointer"
                                                 @select="openEdit(row)"
@@ -812,7 +904,7 @@ defineExpose({
                             </tr>
                             <tr v-if="warranties.length === 0">
                                 <td
-                                    colspan="6"
+                                    colspan="7"
                                     class="px-4 py-10 text-center text-muted-foreground"
                                 >
                                     Няма сервизни карти.
@@ -1271,16 +1363,33 @@ defineExpose({
                     <DialogFooter
                         class="flex flex-row flex-wrap items-center justify-between gap-2 p-0 sm:flex-row"
                     >
-                        <div class="flex flex-row items-center gap-2">
-                            <Button
-                                v-if="editingId !== null"
-                                type="button"
-                                variant="outline"
-                                :disabled="saving || loadingDetail"
-                                @click="openPrint({ id: editingId } as ServiceCardRow)"
-                            >
-                                Печат
-                            </Button>
+                        <div class="flex flex-row flex-wrap items-center gap-2">
+                            <template v-if="editingId !== null">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    :disabled="saving || loadingDetail"
+                                    @click="
+                                        openPrintAcceptance({
+                                            id: editingId,
+                                        } as ServiceCardRow)
+                                    "
+                                >
+                                    Печат при приемане
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    :disabled="
+                                        saving ||
+                                        loadingDetail ||
+                                        form.etap !== ETAP_COMPLETED_REPAIR
+                                    "
+                                    @click="openPrintReleaseFromDialog"
+                                >
+                                    Печат при издаване
+                                </Button>
+                            </template>
                         </div>
                         <div class="flex flex-row flex-wrap justify-end gap-2">
                             <Button

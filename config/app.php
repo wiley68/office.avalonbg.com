@@ -33,6 +33,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Шапка за печат на сервизна карта (издаване на продукт)
+    |--------------------------------------------------------------------------
+    */
+
+    'service_card_letterhead' => [
+        'company_name' => env('SERVICE_CARD_LETTERHEAD_COMPANY', 'Авалон ООД'),
+        'logo_url' => env('SERVICE_CARD_LETTERHEAD_LOGO_URL'),
+        'address_lines' => env('SERVICE_CARD_LETTERHEAD_ADDRESS_LINES', implode("\n", [
+            'Горна Оряховица, ул. Патриарх Евтимий №27',
+            'Тел./Факс: (0619) 22218 / (0619) 99929',
+            'e-mail: home@avalonbg.com    www.avalonbg.com',
+        ])),
+        'website' => env('SERVICE_CARD_LETTERHEAD_WEBSITE', 'www.avalonbg.com'),
+        'tagline' => env('SERVICE_CARD_LETTERHEAD_TAGLINE', 'Computer systems & Consulting service'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Secret key for office text crypto (non-admin tool)
     |--------------------------------------------------------------------------
     |
