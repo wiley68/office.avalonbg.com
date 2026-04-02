@@ -62,6 +62,16 @@ beforeEach(function (): void {
         $table->text('note')->nullable();
         $table->string('firm', 256)->nullable();
     });
+
+    Schema::connection('service')->create('varanty', function (Blueprint $table): void {
+        $table->increments('id');
+        $table->unsignedInteger('client_id');
+    });
+
+    Schema::connection('service')->create('projects', function (Blueprint $table): void {
+        $table->increments('id');
+        $table->unsignedInteger('name');
+    });
 });
 
 test('guest cannot list contacts', function () {
@@ -98,7 +108,7 @@ test('authenticated user can CRUD citi and dlazhnosti', function () {
     ])->assertCreated()
         ->json('data');
 
-    putJson('/api/citi/'.$citi['id'], [
+    putJson('/api/citi/' . $citi['id'], [
         'name' => 'Rousse',
     ])->assertOk()
         ->assertJsonPath('data.name', 'Rousse');
@@ -110,7 +120,7 @@ test('authenticated user can CRUD citi and dlazhnosti', function () {
     ])->assertCreated()
         ->json('data');
 
-    putJson('/api/dlaznosti/'.$dlazhnost['id'], [
+    putJson('/api/dlaznosti/' . $dlazhnost['id'], [
         'name' => 'Senior Operator',
     ])->assertOk()
         ->assertJsonPath('data.name', 'Senior Operator');
@@ -119,8 +129,8 @@ test('authenticated user can CRUD citi and dlazhnosti', function () {
         ->assertOk()
         ->assertJsonFragment(['name' => 'Senior Operator']);
 
-    deleteJson('/api/citi/'.$citi['id'])->assertNoContent();
-    deleteJson('/api/dlaznosti/'.$dlazhnost['id'])->assertNoContent();
+    deleteJson('/api/citi/' . $citi['id'])->assertNoContent();
+    deleteJson('/api/dlaznosti/' . $dlazhnost['id'])->assertNoContent();
 });
 
 test('authenticated user can create and list contacts with pagination', function () {
@@ -251,4 +261,127 @@ test('manage contacts tool supports pagination for list', function () {
         ->and($decoded['per_page'] ?? null)->toBe(2)
         ->and($decoded['last_page'] ?? null)->toBe(3)
         ->and(is_array($decoded['data'] ?? null))->toBeTrue();
+});
+
+test('manage contacts tool lists contacts without cards', function () {
+    $user = User::factory()->create();
+    actingAs($user);
+
+    $cityId = (int) DB::connection('service')->table('citi')->insertGetId([
+        'name' => 'Burgas',
+        'postalcod' => '8000',
+    ]);
+
+    $noCardsId = (int) DB::connection('service')->table('contacts')->insertGetId([
+        'citi_id' => $cityId,
+        'name' => 'NoCard',
+        'second_name' => 'Test',
+        'last_name' => 'Person',
+        'gsm_1_m' => '0888123456',
+    ]);
+
+    $warrantyOnlyId = (int) DB::connection('service')->table('contacts')->insertGetId([
+        'citi_id' => $cityId,
+        'name' => 'Warranty',
+        'last_name' => 'Holder',
+    ]);
+
+    $serviceOnlyId = (int) DB::connection('service')->table('contacts')->insertGetId([
+        'citi_id' => $cityId,
+        'name' => 'Service',
+        'last_name' => 'Holder',
+    ]);
+
+    DB::connection('service')->table('varanty')->insert([
+        'client_id' => $warrantyOnlyId,
+    ]);
+    DB::connection('service')->table('projects')->insert([
+        'name' => $serviceOnlyId,
+    ]);
+
+    $tool = new ManageContactsTool;
+    $result = $tool->handle(new AiToolRequest([
+        'action' => 'list_without_cards',
+    ]));
+    $decoded = json_decode((string) $result, true);
+
+    expect($decoded)->toBeArray()
+        ->and($decoded['total'] ?? null)->toBe(1)
+        ->and($decoded['returned'] ?? null)->toBe(1)
+        ->and($decoded['data'][0]['id'] ?? null)->toBe($noCardsId)
+        ->and($decoded['data'][0]['phone'] ?? null)->toBe('0888123456');
+});
+
+test('manage contacts tool counts contacts without cards', function () {
+    $user = User::factory()->create();
+    actingAs($user);
+
+    $cityId = (int) DB::connection('service')->table('citi')->insertGetId([
+        'name' => 'Varna',
+        'postalcod' => '9000',
+    ]);
+
+    $noCardsA = (int) DB::connection('service')->table('contacts')->insertGetId([
+        'citi_id' => $cityId,
+        'name' => 'Free',
+        'last_name' => 'One',
+    ]);
+    $noCardsB = (int) DB::connection('service')->table('contacts')->insertGetId([
+        'citi_id' => $cityId,
+        'name' => 'Free',
+        'last_name' => 'Two',
+    ]);
+    $warrantyOnly = (int) DB::connection('service')->table('contacts')->insertGetId([
+        'citi_id' => $cityId,
+        'name' => 'Used',
+        'last_name' => 'Warranty',
+    ]);
+
+    DB::connection('service')->table('varanty')->insert([
+        'client_id' => $warrantyOnly,
+    ]);
+
+    DB::connection('service')->table('projects')->insert([
+        'name' => $noCardsB,
+    ]);
+
+    $tool = new ManageContactsTool;
+    $result = $tool->handle(new AiToolRequest([
+        'action' => 'count_without_cards',
+    ]));
+    $decoded = json_decode((string) $result, true);
+
+    expect($decoded)->toBeArray()
+        ->and($decoded['total'] ?? null)->toBe(1);
+});
+
+test('manage contacts tool allows per_page above 200', function () {
+    $user = User::factory()->create();
+    actingAs($user);
+
+    $cityId = (int) DB::connection('service')->table('citi')->insertGetId([
+        'name' => 'Burgas',
+        'postalcod' => '8000',
+    ]);
+
+    DB::connection('service')->table('contacts')->insert([
+        ['citi_id' => $cityId, 'last_name' => 'A'],
+        ['citi_id' => $cityId, 'last_name' => 'B'],
+        ['citi_id' => $cityId, 'last_name' => 'C'],
+    ]);
+
+    $tool = new ManageContactsTool;
+    $result = $tool->handle(new AiToolRequest([
+        'action' => 'list',
+        'page' => 1,
+        'per_page' => 500,
+    ]));
+    $decoded = json_decode((string) $result, true);
+
+    expect($decoded)->toBeArray()
+        ->and($decoded['total'] ?? null)->toBe(3)
+        ->and($decoded['returned'] ?? null)->toBe(3)
+        ->and($decoded['page'] ?? null)->toBe(1)
+        ->and($decoded['per_page'] ?? null)->toBe(500)
+        ->and($decoded['last_page'] ?? null)->toBe(1);
 });

@@ -71,9 +71,9 @@ class ManageWarrantiesTool implements Tool
             'id' => $schema->integer()->description('ID на запис в varanty.'),
             'client_id' => $schema->integer()->description('ID на контакт (contacts).'),
             'q' => $schema->string()->description('Търсене при list (продукт, сериен, име на контакт).'),
-            'limit' => $schema->integer()->description('Брой редове за list (по подразбиране 50, максимум 200).'),
+            'limit' => $schema->integer()->description('Брой редове за list (по подразбиране 50, максимум 5000).'),
             'page' => $schema->integer()->description('Номер на страница за list.'),
-            'per_page' => $schema->integer()->description('Редове на страница за list (1–200).'),
+            'per_page' => $schema->integer()->description('Редове на страница за list (1–5000).'),
             'offset' => $schema->integer()->description('Offset за list (ако е зададен, има приоритет над page).'),
             'date_sell' => $schema->string()->description('Дата на продажба / издаване (ISO или Y-m-d).'),
             'service' => $schema->string()->description('Тип обслужване: „в сервиз“ или „при клиента“.'),
@@ -126,7 +126,7 @@ class ManageWarrantiesTool implements Tool
             1,
             min(
                 (int) ($input['per_page'] ?? $input['limit'] ?? 50),
-                200
+                5000
             ),
         );
         $page = max(1, (int) ($input['page'] ?? 1));

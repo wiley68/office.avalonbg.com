@@ -76,9 +76,9 @@ class ManageServiceCardsTool implements Tool
                 ->required(),
             'id' => $schema->integer()->description('ID на сервизна карта (projects.id).'),
             'q' => $schema->string()->description('Търсене в list (продукт, проблем, контакт, техник).'),
-            'limit' => $schema->integer()->description('Брой редове за list (по подразбиране 50, максимум 200).'),
+            'limit' => $schema->integer()->description('Брой редове за list (по подразбиране 50, максимум 5000).'),
             'page' => $schema->integer()->description('Номер на страница за list.'),
-            'per_page' => $schema->integer()->description('Редове на страница за list (1–200).'),
+            'per_page' => $schema->integer()->description('Редове на страница за list (1–5000).'),
             'offset' => $schema->integer()->description('Offset за list (ако е зададен, има приоритет над page).'),
             'rakovoditel_id' => $schema->integer()->description('ID на ръководител (members.id), optional.'),
             'datecard' => $schema->string()->description('Дата на създаване/приемане (ISO или Y-m-d H:i:s).'),
@@ -102,7 +102,7 @@ class ManageServiceCardsTool implements Tool
      */
     private function listCards(array $input): string
     {
-        $perPage = max(1, min((int) ($input['per_page'] ?? $input['limit'] ?? 50), 200));
+        $perPage = max(1, min((int) ($input['per_page'] ?? $input['limit'] ?? 50), 5000));
         $page = max(1, (int) ($input['page'] ?? 1));
         $offset = array_key_exists('offset', $input)
             ? max(0, (int) $input['offset'])

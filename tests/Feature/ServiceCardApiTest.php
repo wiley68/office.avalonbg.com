@@ -1,13 +1,16 @@
 <?php
 
+use App\Ai\Tools\ManageServiceCardsTool;
 use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Laravel\Ai\Tools\Request as AiToolRequest;
 use Laravel\Sanctum\Sanctum;
 
+use function Pest\Laravel\actingAs;
 use function Pest\Laravel\deleteJson;
 use function Pest\Laravel\getJson;
 use function Pest\Laravel\postJson;
@@ -237,4 +240,74 @@ test('authenticated user can manage sold products for service card', function ()
 
     deleteJson("/api/service-cards/{$cardId}/products/{$product['id']}")
         ->assertNoContent();
+});
+
+test('manage service cards tool allows per_page above 200', function (): void {
+    $user = User::factory()->create();
+    actingAs($user);
+
+    $cityId = (int) DB::connection('service')->table('citi')->insertGetId([
+        'name' => 'Sofia',
+        'postalcod' => '1000',
+    ]);
+
+    $contactId = (int) DB::connection('service')->table('contacts')->insertGetId([
+        'citi_id' => $cityId,
+        'name' => 'Ivan',
+        'last_name' => 'Petrov',
+    ]);
+
+    $memberId = (int) DB::connection('service')->table('members')->insertGetId([
+        'username' => 'm1',
+        'email' => 'm1@example.com',
+    ]);
+
+    DB::connection('service')->table('projects')->insert([
+        [
+            'datecard' => '2026-03-20 09:00:00',
+            'name' => $contactId,
+            'special' => 'Нормална поръчка',
+            'product' => 'Printer 1',
+            'varanty' => 'Гаранционен',
+            'serviseproblemtechnik_id' => $memberId,
+            'datepredavane' => '2026-03-21 12:00:00',
+            'saobshtilclient_id' => $memberId,
+            'etap' => 'Диагностика',
+        ],
+        [
+            'datecard' => '2026-03-20 10:00:00',
+            'name' => $contactId,
+            'special' => 'Нормална поръчка',
+            'product' => 'Printer 2',
+            'varanty' => 'Гаранционен',
+            'serviseproblemtechnik_id' => $memberId,
+            'datepredavane' => '2026-03-21 13:00:00',
+            'saobshtilclient_id' => $memberId,
+            'etap' => 'Диагностика',
+        ],
+        [
+            'datecard' => '2026-03-20 11:00:00',
+            'name' => $contactId,
+            'special' => 'Нормална поръчка',
+            'product' => 'Printer 3',
+            'varanty' => 'Гаранционен',
+            'serviseproblemtechnik_id' => $memberId,
+            'datepredavane' => '2026-03-21 14:00:00',
+            'saobshtilclient_id' => $memberId,
+            'etap' => 'Диагностика',
+        ],
+    ]);
+
+    $tool = new ManageServiceCardsTool;
+    $result = $tool->handle(new AiToolRequest([
+        'action' => 'list',
+        'per_page' => 500,
+        'page' => 1,
+    ]));
+
+    $decoded = json_decode((string) $result, true);
+
+    expect($decoded)->toBeArray()
+        ->and($decoded['per_page'] ?? null)->toBe(500)
+        ->and($decoded['returned'] ?? null)->toBe(3);
 });
