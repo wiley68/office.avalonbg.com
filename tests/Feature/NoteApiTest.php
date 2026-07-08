@@ -7,150 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Ai\Tools\Request as AiToolRequest;
 use Laravel\Sanctum\Sanctum;
 
-use function Pest\Laravel\actingAs;
-use function Pest\Laravel\deleteJson;
-use function Pest\Laravel\getJson;
-use function Pest\Laravel\postJson;
-use function Pest\Laravel\putJson;
-
 uses(RefreshDatabase::class);
-
-test('guest cannot list notes', function () {
-    getJson('/api/notes')->assertUnauthorized();
-});
-
-test('session api request without referer authenticates with xhr header on same host', function () {
-    $owner = User::factory()->create();
-    Note::factory()->for($owner)->create(['name' => 'Mine', 'note' => 'A']);
-
-    actingAs($owner);
-
-    $response = getJson('/api/notes', [
-        'X-Requested-With' => 'XMLHttpRequest',
-    ]);
-
-    $response->assertOk();
-    $response->assertJsonCount(1, 'data');
-    $response->assertJsonFragment(['name' => 'Mine']);
-});
-
-test('authenticated user can list only own notes', function () {
-    $owner = User::factory()->create();
-    $other = User::factory()->create();
-    Note::factory()->for($owner)->create(['name' => 'Mine', 'note' => 'A']);
-    Note::factory()->for($other)->create(['name' => 'Theirs', 'note' => 'B']);
-
-    Sanctum::actingAs($owner);
-
-    $response = getJson('/api/notes');
-
-    $response->assertOk();
-    $response->assertJsonCount(1, 'data');
-    $response->assertJsonFragment(['name' => 'Mine']);
-    $response->assertJsonMissing(['name' => 'Theirs']);
-});
-
-test('notes index uses pagination metadata', function () {
-    $user = User::factory()->create();
-
-    Note::factory()->count(15)->for($user)->create();
-
-    Sanctum::actingAs($user);
-
-    $response = getJson('/api/notes?per_page=10&page=2');
-
-    $response->assertOk();
-    $response->assertJsonCount(5, 'data');
-    $response->assertJsonPath('meta.current_page', 2);
-    $response->assertJsonPath('meta.per_page', 10);
-    $response->assertJsonPath('meta.last_page', 2);
-    $response->assertJsonPath('meta.total', 15);
-});
-
-test('authenticated user can create a note', function () {
-    Sanctum::actingAs(User::factory()->create());
-
-    postJson('/api/notes', [
-        'name' => 'Заглавие',
-        'description' => 'Кратко',
-        'note' => 'Пълно съдържание на бележката.',
-    ])
-        ->assertCreated()
-        ->assertJsonFragment([
-            'name' => 'Заглавие',
-            'description' => 'Кратко',
-            'note' => 'Пълно съдържание на бележката.',
-        ]);
-});
-
-test('authenticated user can create a note without optional description', function () {
-    Sanctum::actingAs(User::factory()->create());
-
-    postJson('/api/notes', [
-        'name' => 'Само заглавие',
-        'note' => 'Съдържание.',
-    ])
-        ->assertCreated()
-        ->assertJsonFragment([
-            'name' => 'Само заглавие',
-            'note' => 'Съдържание.',
-        ])
-        ->assertJsonPath('data.description', null);
-});
-
-test('user cannot view another users note', function () {
-    $owner = User::factory()->create();
-    $intruder = User::factory()->create();
-    $note = Note::factory()->for($owner)->create();
-
-    Sanctum::actingAs($intruder);
-
-    getJson('/api/notes/'.$note->id)->assertForbidden();
-});
-
-test('user cannot update another users note', function () {
-    $owner = User::factory()->create();
-    $intruder = User::factory()->create();
-    $note = Note::factory()->for($owner)->create();
-
-    Sanctum::actingAs($intruder);
-
-    putJson('/api/notes/'.$note->id, [
-        'name' => 'Hack',
-        'note' => 'No',
-    ])->assertForbidden();
-});
-
-test('user cannot delete another users note', function () {
-    $owner = User::factory()->create();
-    $intruder = User::factory()->create();
-    $note = Note::factory()->for($owner)->create();
-
-    Sanctum::actingAs($intruder);
-
-    deleteJson('/api/notes/'.$note->id)->assertForbidden();
-});
-
-test('owner can show update and delete own note', function () {
-    $owner = User::factory()->create();
-    $note = Note::factory()->for($owner)->create([
-        'name' => 'Original',
-        'note' => 'Text',
-    ]);
-
-    Sanctum::actingAs($owner);
-
-    getJson('/api/notes/'.$note->id)->assertOk()->assertJsonFragment(['name' => 'Original']);
-
-    putJson('/api/notes/'.$note->id, [
-        'name' => 'Updated',
-        'note' => 'New body',
-    ])->assertOk()->assertJsonFragment(['name' => 'Updated']);
-
-    deleteJson('/api/notes/'.$note->id)->assertNoContent();
-
-    getJson('/api/notes/'.$note->id)->assertNotFound();
-});
 
 test('manage notes tool returns error when not authenticated', function () {
     $tool = new ManageNotesTool;
@@ -206,4 +63,54 @@ test('manage notes tool supports pagination for list', function () {
         ->and($decoded['per_page'] ?? null)->toBe(2)
         ->and($decoded['last_page'] ?? null)->toBe(3)
         ->and(is_array($decoded['data'] ?? null))->toBeTrue();
+});
+
+test('manage notes tool owner can show update and delete own note', function () {
+    $owner = User::factory()->create();
+    $note = Note::factory()->for($owner)->create([
+        'name' => 'Original',
+        'note' => 'Text',
+    ]);
+
+    Sanctum::actingAs($owner);
+
+    $tool = new ManageNotesTool;
+
+    $show = json_decode((string) $tool->handle(new AiToolRequest([
+        'action' => 'show',
+        'id' => $note->id,
+    ])), true);
+    expect($show['name'] ?? null)->toBe('Original');
+
+    $update = json_decode((string) $tool->handle(new AiToolRequest([
+        'action' => 'update',
+        'id' => $note->id,
+        'name' => 'Updated',
+        'note' => 'New body',
+    ])), true);
+    expect($update['name'] ?? null)->toBe('Updated');
+
+    $delete = json_decode((string) $tool->handle(new AiToolRequest([
+        'action' => 'delete',
+        'id' => $note->id,
+    ])), true);
+    expect($delete['ok'] ?? null)->toBeTrue();
+
+    expect(Note::query()->find($note->id))->toBeNull();
+});
+
+test('manage notes tool user cannot show another users note', function () {
+    $owner = User::factory()->create();
+    $intruder = User::factory()->create();
+    $note = Note::factory()->for($owner)->create();
+
+    Sanctum::actingAs($intruder);
+
+    $tool = new ManageNotesTool;
+    $result = $tool->handle(new AiToolRequest([
+        'action' => 'show',
+        'id' => $note->id,
+    ]));
+
+    expect($result)->toContain('error');
 });

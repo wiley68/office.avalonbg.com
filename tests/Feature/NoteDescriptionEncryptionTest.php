@@ -1,15 +1,16 @@
 <?php
 
+use App\Ai\Tools\ManageNotesTool;
 use App\Models\Note;
 use App\Models\User;
 use App\Services\TextCryptoService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Laravel\Ai\Tools\Request as AiToolRequest;
 use Laravel\Sanctum\Sanctum;
 
 use function Pest\Laravel\actingAs;
-use function Pest\Laravel\getJson;
 use function Pest\Laravel\postJson;
 
 uses(RefreshDatabase::class);
@@ -26,32 +27,40 @@ test('note body is stored as plain text by default', function () {
 
     Sanctum::actingAs($user);
 
-    getJson('/api/notes/'.$note->id)
-        ->assertOk()
-        ->assertJsonFragment(['note' => $plain]);
+    $tool = new ManageNotesTool;
+    $result = json_decode((string) $tool->handle(new AiToolRequest([
+        'action' => 'show',
+        'id' => $note->id,
+    ])), true);
+
+    expect($result['note'] ?? null)->toBe($plain);
 });
 
-test('note body can be saved as encrypted payload and later decrypted', function () {
+test('note body can be saved as encrypted payload via agent tool', function () {
     $user = User::factory()->create();
     $plain = 'Тайно съдържание за криптиране.';
     $cipher = app(TextCryptoService::class)->encryptPlainText($plain);
 
     Sanctum::actingAs($user);
 
-    $created = postJson('/api/notes', [
+    $tool = new ManageNotesTool;
+    $created = json_decode((string) $tool->handle(new AiToolRequest([
+        'action' => 'create',
         'name' => 'Crypto',
-        'description' => null,
         'note' => $cipher,
-    ])->assertCreated();
+    ])), true);
 
-    $noteId = (int) $created->json('data.id');
+    $noteId = (int) ($created['id'] ?? 0);
+    expect($noteId)->toBeGreaterThan(0);
 
     $raw = DB::table('notes')->where('id', $noteId)->value('note');
     expect($raw)->toBe($cipher);
 
-    getJson('/api/notes/'.$noteId)
-        ->assertOk()
-        ->assertJsonPath('data.note', $cipher);
+    $shown = json_decode((string) $tool->handle(new AiToolRequest([
+        'action' => 'show',
+        'id' => $noteId,
+    ])), true);
+    expect($shown['note'] ?? null)->toBe($cipher);
 });
 
 test('decrypt endpoint supports legacy app key payloads', function () {

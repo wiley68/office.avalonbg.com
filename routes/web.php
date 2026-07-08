@@ -5,7 +5,6 @@ use App\Http\Controllers\Admin\DataExportController;
 use App\Http\Controllers\AgentConversationMessagesController;
 use App\Http\Controllers\DashboardAgentController;
 use App\Http\Controllers\NotesAgentController;
-use App\Http\Controllers\NotesExportController;
 use App\Http\Controllers\NotesExportDownloadController;
 use App\Http\Controllers\Office\TextCryptoController;
 use App\Http\Controllers\UserController;
@@ -42,8 +41,6 @@ Route::middleware(['auth', 'verified', 'admin.agent.block'])->group(function () 
         ->name('dashboard.agent.message.pdf');
 
     Route::inertia('dashboard/notes', 'office/NotesAgent')->name('dashboard.notes');
-    Route::post('dashboard/notes/export', NotesExportController::class)
-        ->name('dashboard.notes.export');
     Route::get('dashboard/notes/export/{token}', NotesExportDownloadController::class)
         ->name('dashboard.notes.export.download');
     Route::post('dashboard/notes/agent', [NotesAgentController::class, 'store'])
