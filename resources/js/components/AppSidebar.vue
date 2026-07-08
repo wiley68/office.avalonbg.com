@@ -11,7 +11,6 @@ import {
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
-import EncryptionDialog from '@/components/EncryptionDialog.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -101,10 +100,6 @@ const footerNavItems = computed<NavItem[]>(() => [
         </SidebarContent>
 
         <SidebarFooter>
-            <EncryptionDialog
-                v-if="!page.props.auth.user?.is_admin"
-                placement="sidebar"
-            />
             <NavFooter :items="footerNavItems" />
             <NavUser />
         </SidebarFooter>

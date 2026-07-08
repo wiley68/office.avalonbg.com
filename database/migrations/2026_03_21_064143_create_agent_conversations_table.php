@@ -13,10 +13,14 @@ return new class extends AiMigration {
         Schema::create('agent_conversations', function (Blueprint $table) {
             $table->string('id', 36)->primary();
             $table->foreignId('user_id')->nullable();
+            $table->string('context', 32)->default('orchestrator');
             $table->string('title');
             $table->timestamps();
 
-            $table->index(['user_id', 'updated_at']);
+            $table->index(
+                ['user_id', 'context', 'updated_at'],
+                'agent_conversations_user_context_updated_idx'
+            );
         });
 
         Schema::create('agent_conversation_messages', function (Blueprint $table) {

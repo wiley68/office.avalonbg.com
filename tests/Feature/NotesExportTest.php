@@ -3,10 +3,8 @@
 use App\Ai\Tools\ExportNotesToXlsxTool;
 use App\Models\Note;
 use App\Models\User;
-use App\Services\TextCryptoService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Ai\Tools\Request as AiToolRequest;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -36,36 +34,6 @@ test('export tool returns download url and file downloads once for owner', funct
     $first->assertHeaderContains('content-type', 'spreadsheetml');
 
     get($result['download_url'])->assertNotFound();
-});
-
-test('export decrypts encrypted note body in xlsx', function () {
-    $user = User::factory()->create();
-    $plain = 'Тайно съдържание за експорт.';
-    $cipher = app(TextCryptoService::class)->encryptPlainText($plain);
-
-    Note::factory()->for($user)->create([
-        'name' => 'Crypto',
-        'note' => $cipher,
-    ]);
-
-    actingAs($user);
-
-    $tool = app(ExportNotesToXlsxTool::class);
-    $result = json_decode($tool->handle(new AiToolRequest([])), true);
-
-    $download = get($result['download_url']);
-    $download->assertOk();
-
-    $tempPath = tempnam(sys_get_temp_dir(), 'notes_export_test_');
-    expect($tempPath)->not->toBeFalse();
-    unlink($tempPath);
-    $xlsxPath = $tempPath.'.xlsx';
-    file_put_contents($xlsxPath, $download->streamedContent());
-
-    $sheet = IOFactory::load($xlsxPath)->getActiveSheet();
-    expect($sheet->getCell('D2')->getValue())->toBe($plain);
-
-    @unlink($xlsxPath);
 });
 
 test('another user cannot download export with token', function () {
