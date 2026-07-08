@@ -31,6 +31,11 @@ return [
      */
     'shop_url' => env('APP_SHOP_URL', 'https://avalonbg.com'),
 
+    /**
+     * Контактен имейл — показва се на началната страница.
+     */
+    'contact_email' => env('APP_CONTACT_EMAIL', 'home@avalonbg.com'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
+import TextLink from '@/components/TextLink.vue';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { dashboard, login } from '@/routes';
 </script>
 
 <template>
-    <Head title="Welcome">
+    <Head :title="$page.props.name">
         <link rel="preconnect" href="https://rsms.me/" />
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
     </Head>
@@ -20,27 +23,71 @@ import { dashboard, login } from '@/routes';
                     :href="dashboard()"
                     class="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
                 >
-                    Dashboard
+                    Контролен панел
                 </Link>
                 <template v-else>
                     <Link
                         :href="login()"
                         class="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                     >
-                        Log in
+                        Влез в системата
                     </Link>
                 </template>
             </nav>
         </header>
-        <div
-            class="flex w-full items-center justify-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0"
-        >
-            <main class="w-full max-w-2xl overflow-hidden rounded-lg bg-white p-8 shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] dark:bg-[#161615] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]">
-                <img
-                    src="/images/logo.png"
-                    alt="Logo"
-                    class="mx-auto h-auto max-h-[62px] w-full max-w-2xl object-contain"
-                />
+        <div class="flex w-full items-center justify-center lg:grow">
+            <main
+                class="flex w-full max-w-[335px] flex-col-reverse overflow-hidden rounded-lg lg:max-w-4xl lg:flex-row"
+            >
+                <div
+                    class="flex-1 rounded-br-lg rounded-bl-lg bg-white p-6 pb-12 text-[13px] leading-[20px] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] lg:rounded-tl-lg lg:rounded-br-none lg:p-20 dark:bg-[#161615] dark:text-[#EDEDEC] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]"
+                >
+                    <h1 class="mb-1 font-medium">
+                        Вход за регистрирани потребители
+                    </h1>
+                    <p class="mb-2 text-[#706f6c] dark:text-[#A1A09A]">
+                        {{ $page.props.name }} е офис платформа с AI агенти за
+                        ежедневна работа — бележки, помощ и комуникация.
+                        Достъпът е само за регистрирани потребители. За достъп
+                        или въпроси изпратете запитване на
+                        <TextLink :href="`mailto:${$page.props.email}`">{{
+                            $page.props.email
+                        }}</TextLink
+                        >.
+                    </p>
+                    <Separator />
+                    <ul class="mt-3 flex gap-3 text-sm leading-normal">
+                        <Link
+                            v-if="$page.props.auth.user"
+                            :href="dashboard()"
+                            class="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
+                        >
+                            Контролен панел
+                        </Link>
+                        <template v-else>
+                            <Button
+                                class="cursor-pointer"
+                                @click="router.get(login())"
+                            >
+                                Влез в системата
+                            </Button>
+                        </template>
+                    </ul>
+                </div>
+                <div
+                    class="relative -mb-px flex w-full shrink-0 items-center justify-center overflow-hidden rounded-t-lg bg-[#f5f5f4] p-8 lg:mb-0 lg:-ml-px lg:w-[438px] lg:rounded-t-none lg:rounded-r-lg dark:bg-[#262625]"
+                >
+                    <img
+                        src="/images/logo.png"
+                        alt="Logo"
+                        width="237"
+                        height="62"
+                        class="block h-auto w-auto max-w-none shrink-0"
+                    />
+                    <div
+                        class="pointer-events-none absolute inset-0 rounded-t-lg shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] lg:overflow-hidden lg:rounded-t-none lg:rounded-r-lg dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]"
+                    />
+                </div>
             </main>
         </div>
         <div class="hidden h-14.5 lg:block"></div>
