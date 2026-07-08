@@ -45,9 +45,9 @@ class DatabaseSeeder extends Seeder
                     'name' => $data['name'],
                     'email_verified_at' => now(),
                     'password' => $password,
-                    'two_factor_secret' => encrypt('seed-two-factor-secret'),
-                    'two_factor_recovery_codes' => encrypt(json_encode(['seed-recovery-code'])),
-                    'two_factor_confirmed_at' => now(),
+                    'two_factor_secret' => null,
+                    'two_factor_recovery_codes' => null,
+                    'two_factor_confirmed_at' => null,
                 ],
             );
 

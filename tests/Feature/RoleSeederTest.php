@@ -33,5 +33,8 @@ test('database seeder creates seeded users with expected roles', function () {
         ->and($admin->hasRole('admin'))->toBeTrue()
         ->and($user)->not->toBeNull()
         ->and($user->name)->toBe('Илко Иванов')
-        ->and($user->hasRole('user'))->toBeTrue();
+        ->and($user->hasRole('user'))->toBeTrue()
+        ->and($profiler->hasEnabledTwoFactorAuthentication())->toBeFalse()
+        ->and($admin->hasEnabledTwoFactorAuthentication())->toBeFalse()
+        ->and($user->hasEnabledTwoFactorAuthentication())->toBeFalse();
 });
