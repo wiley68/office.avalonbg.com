@@ -62,11 +62,6 @@ beforeEach(function (): void {
         $table->text('note')->nullable();
         $table->string('firm', 256)->nullable();
     });
-
-    Schema::connection('service')->create('varanty', function (Blueprint $table): void {
-        $table->increments('id');
-        $table->unsignedInteger('client_id');
-    });
 });
 
 test('guest cannot list contacts', function () {
@@ -256,85 +251,6 @@ test('manage contacts tool supports pagination for list', function () {
         ->and($decoded['per_page'] ?? null)->toBe(2)
         ->and($decoded['last_page'] ?? null)->toBe(3)
         ->and(is_array($decoded['data'] ?? null))->toBeTrue();
-});
-
-test('manage contacts tool lists contacts without cards', function () {
-    $user = User::factory()->create();
-    actingAs($user);
-
-    $cityId = (int) DB::connection('service')->table('citi')->insertGetId([
-        'name' => 'Burgas',
-        'postalcod' => '8000',
-    ]);
-
-    $noCardsId = (int) DB::connection('service')->table('contacts')->insertGetId([
-        'citi_id' => $cityId,
-        'name' => 'NoCard',
-        'second_name' => 'Test',
-        'last_name' => 'Person',
-        'gsm_1_m' => '0888123456',
-    ]);
-
-    $warrantyOnlyId = (int) DB::connection('service')->table('contacts')->insertGetId([
-        'citi_id' => $cityId,
-        'name' => 'Warranty',
-        'last_name' => 'Holder',
-    ]);
-
-    DB::connection('service')->table('varanty')->insert([
-        'client_id' => $warrantyOnlyId,
-    ]);
-
-    $tool = new ManageContactsTool;
-    $result = $tool->handle(new AiToolRequest([
-        'action' => 'list_without_cards',
-    ]));
-    $decoded = json_decode((string) $result, true);
-
-    expect($decoded)->toBeArray()
-        ->and($decoded['total'] ?? null)->toBe(1)
-        ->and($decoded['returned'] ?? null)->toBe(1)
-        ->and($decoded['data'][0]['id'] ?? null)->toBe($noCardsId)
-        ->and($decoded['data'][0]['phone'] ?? null)->toBe('0888123456');
-});
-
-test('manage contacts tool counts contacts without cards', function () {
-    $user = User::factory()->create();
-    actingAs($user);
-
-    $cityId = (int) DB::connection('service')->table('citi')->insertGetId([
-        'name' => 'Varna',
-        'postalcod' => '9000',
-    ]);
-
-    $noCardsA = (int) DB::connection('service')->table('contacts')->insertGetId([
-        'citi_id' => $cityId,
-        'name' => 'Free',
-        'last_name' => 'One',
-    ]);
-    $noCardsB = (int) DB::connection('service')->table('contacts')->insertGetId([
-        'citi_id' => $cityId,
-        'name' => 'Free',
-        'last_name' => 'Two',
-    ]);
-    $warrantyOnly = (int) DB::connection('service')->table('contacts')->insertGetId([
-        'citi_id' => $cityId,
-        'name' => 'Used',
-        'last_name' => 'Warranty',
-    ]);
-
-    DB::connection('service')->table('varanty')->insert([
-        'client_id' => $warrantyOnly,
-    ]);
-
-    $tool = new ManageContactsTool;
-    $result = $tool->handle(new AiToolRequest([
-        'action' => 'count_without_cards',
-    ]));
-    $decoded = json_decode((string) $result, true);
-
-    expect($decoded)->toBeArray()
-        ->and($decoded['total'] ?? null)->toBe(2);
 });
 
 test('manage contacts tool allows per_page above 200', function () {

@@ -151,7 +151,6 @@ class AgentConversationMessagesController extends Controller
             $request->routeIs('dashboard.agent.message.pdf') => AgentContext::Orchestrator,
             $request->routeIs('dashboard.notes.agent.message.pdf') => AgentContext::Notes,
             $request->routeIs('dashboard.contacts.agent.message.pdf') => AgentContext::Contacts,
-            $request->routeIs('dashboard.warranties.agent.message.pdf') => AgentContext::Warranties,
             default => throw new \LogicException(
                 'Unexpected route for agent PDF: '.$request->route()?->getName()
             ),
@@ -186,7 +185,6 @@ class AgentConversationMessagesController extends Controller
             $request->routeIs('dashboard.agent.conversations.destroy') => AgentContext::Orchestrator,
             $request->routeIs('dashboard.notes.agent.conversations.destroy') => AgentContext::Notes,
             $request->routeIs('dashboard.contacts.agent.conversations.destroy') => AgentContext::Contacts,
-            $request->routeIs('dashboard.warranties.agent.conversations.destroy') => AgentContext::Warranties,
             default => throw new \LogicException(
                 'Unexpected route for destroy all conversations: '.$request->route()?->getName()
             ),
@@ -237,10 +235,6 @@ class AgentConversationMessagesController extends Controller
 
         if ($request->routeIs('dashboard.contacts.agent.conversations', 'dashboard.contacts.agent.conversation.messages', 'dashboard.contacts.agent.message.feedback')) {
             return AgentContext::Contacts;
-        }
-
-        if ($request->routeIs('dashboard.warranties.agent.conversations', 'dashboard.warranties.agent.conversation.messages', 'dashboard.warranties.agent.message.feedback')) {
-            return AgentContext::Warranties;
         }
 
         if ($request->routeIs('dashboard.agent.message.feedback')) {

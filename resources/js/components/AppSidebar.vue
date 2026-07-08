@@ -2,7 +2,6 @@
 import { usePage } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import {
-    BadgeCheck,
     BarChart3,
     ShoppingCart,
     LayoutGrid,
@@ -74,11 +73,6 @@ const mainNavItems = computed<NavItem[]>(() => {
             title: 'Контакти',
             href: dashboardRoutes.contacts.url(),
             icon: Contact,
-        },
-        {
-            title: 'Гаранционни карти',
-            href: dashboardRoutes.warranties.url(),
-            icon: BadgeCheck,
         },
     ];
 });

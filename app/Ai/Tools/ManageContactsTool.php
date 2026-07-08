@@ -7,7 +7,6 @@ use App\Models\Contact;
 use App\Models\User;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
@@ -35,8 +34,6 @@ class ManageContactsTool implements Tool
 
             return match ($action) {
                 'list' => $this->listContacts($input),
-                'list_without_cards' => $this->listContactsWithoutCards($input),
-                'count_without_cards' => $this->countContactsWithoutCards($input),
                 'count' => $this->countContacts(),
                 'show' => $this->showContact($input),
                 'create' => $this->createContact($input),
@@ -57,7 +54,7 @@ class ManageContactsTool implements Tool
         return [
             'action' => $schema
                 ->string()
-                ->enum(['list', 'list_without_cards', 'count_without_cards', 'count', 'show', 'create', 'update', 'delete'])
+                ->enum(['list', 'count', 'show', 'create', 'update', 'delete'])
                 ->description('Операция с контакти.')
                 ->required(),
             'id' => $schema->integer()->description('ID на контакт.'),
@@ -66,7 +63,6 @@ class ManageContactsTool implements Tool
             'page' => $schema->integer()->description('Номер на страница за list (по подразбиране 1).'),
             'per_page' => $schema->integer()->description('Редове на страница за list (1-5000, по подразбиране 50).'),
             'offset' => $schema->integer()->description('Offset за list (ако е зададен, има приоритет над page).'),
-            'include_card_counts' => $schema->boolean()->description('Само за list_without_cards: включва броя гаранционни карти.'),
             'citi_id' => $schema->integer()->description('ID на населено място (citi_id).'),
             'last_name' => $schema->string()->description('Фамилия (задължителна при create).'),
             'name' => $schema->string()->description('Собствено име.'),
@@ -131,118 +127,6 @@ class ManageContactsTool implements Tool
     {
         return $this->encode([
             'total' => Contact::query()->count(),
-        ]);
-    }
-
-    /**
-     * @param  array<string, mixed>  $input
-     */
-    private function countContactsWithoutCards(array $input): string
-    {
-        $query = Contact::query()
-            ->whereNotExists(function ($sub): void {
-                $sub->select(DB::raw(1))
-                    ->from('varanty')
-                    ->whereColumn('varanty.client_id', 'contacts.id');
-            });
-
-        if (! empty($input['q']) && is_string($input['q'])) {
-            $search = trim($input['q']);
-            $query->where(function ($builder) use ($search): void {
-                $builder
-                    ->where('name', 'like', "%{$search}%")
-                    ->orWhere('second_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('firm', 'like', "%{$search}%")
-                    ->orWhere('gsm_1_m', 'like', "%{$search}%")
-                    ->orWhere('tel1', 'like', "%{$search}%")
-                    ->orWhere('b_phone', 'like', "%{$search}%");
-            });
-        }
-
-        return $this->encode([
-            'total' => $query->count(),
-        ]);
-    }
-
-    /**
-     * @param  array<string, mixed>  $input
-     */
-    private function listContactsWithoutCards(array $input): string
-    {
-        $query = Contact::query()
-            ->select([
-                'id',
-                'name',
-                'second_name',
-                'last_name',
-                'firm',
-                'gsm_1_m',
-                'tel1',
-                'b_phone',
-            ])
-            ->whereNotExists(function ($sub): void {
-                $sub->select(DB::raw(1))
-                    ->from('varanty')
-                    ->whereColumn('varanty.client_id', 'contacts.id');
-            });
-
-        if (! empty($input['q']) && is_string($input['q'])) {
-            $search = trim($input['q']);
-            $query->where(function ($builder) use ($search): void {
-                $builder
-                    ->where('name', 'like', "%{$search}%")
-                    ->orWhere('second_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('firm', 'like', "%{$search}%")
-                    ->orWhere('gsm_1_m', 'like', "%{$search}%")
-                    ->orWhere('tel1', 'like', "%{$search}%")
-                    ->orWhere('b_phone', 'like', "%{$search}%");
-            });
-        }
-
-        $rows = $query
-            ->orderBy('last_name')
-            ->orderBy('name')
-            ->orderBy('id')
-            ->get();
-
-        $includeCardCounts = (bool) ($input['include_card_counts'] ?? false);
-        $data = $rows->map(static function (Contact $row) use ($includeCardCounts): array {
-            $fullName = collect([$row->name, $row->second_name, $row->last_name])
-                ->filter(static fn ($v): bool => is_string($v) && trim($v) !== '')
-                ->map(static fn ($v): string => trim((string) $v))
-                ->implode(' ');
-
-            $primaryPhone = collect([$row->gsm_1_m, $row->tel1, $row->b_phone])
-                ->first(static fn ($v): bool => is_string($v) && trim($v) !== '');
-
-            $result = [
-                'id' => $row->id,
-                'name' => $row->name,
-                'second_name' => $row->second_name,
-                'last_name' => $row->last_name,
-                'full_name' => $fullName !== '' ? $fullName : null,
-                'firm' => $row->firm,
-                'phone' => is_string($primaryPhone) ? trim($primaryPhone) : null,
-                'phones' => [
-                    'gsm_1_m' => $row->gsm_1_m,
-                    'tel1' => $row->tel1,
-                    'b_phone' => $row->b_phone,
-                ],
-            ];
-
-            if ($includeCardCounts) {
-                $result['warranty_cards_count'] = 0;
-            }
-
-            return $result;
-        })->values()->all();
-
-        return $this->encode([
-            'total' => count($data),
-            'returned' => count($data),
-            'data' => $data,
         ]);
     }
 

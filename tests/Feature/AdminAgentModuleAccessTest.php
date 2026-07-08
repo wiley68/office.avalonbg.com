@@ -24,16 +24,6 @@ test('admin is redirected from notes page to dashboard', function (): void {
         ->assertRedirect(route('dashboard'));
 });
 
-test('admin is redirected from warranties page to dashboard', function (): void {
-    $admin = User::factory()->create();
-    $admin->assignRole('admin');
-
-    actingAs($admin);
-
-    get(route('dashboard.warranties'))
-        ->assertRedirect(route('dashboard'));
-});
-
 test('admin receives forbidden when posting to dashboard agent', function (): void {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
@@ -50,14 +40,5 @@ test('non admin can access notes page', function (): void {
     actingAs($user);
 
     get(route('dashboard.notes'))
-        ->assertOk();
-});
-
-test('non admin can access warranties page', function (): void {
-    $user = User::factory()->create();
-
-    actingAs($user);
-
-    get(route('dashboard.warranties'))
         ->assertOk();
 });
