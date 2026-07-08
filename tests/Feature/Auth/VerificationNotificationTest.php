@@ -2,13 +2,17 @@
 
 use App\Models\User;
 use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Fortify\Features;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\post;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->skipUnlessFortifyFeature(Features::emailVerification());
+    skipUnlessFortifyFeature(Features::emailVerification());
 });
 
 test('sends verification notification', function () {
@@ -16,8 +20,9 @@ test('sends verification notification', function () {
 
     $user = User::factory()->unverified()->create();
 
-    $this->actingAs($user)
-        ->post(route('verification.send'))
+    actingAs($user);
+
+    post(route('verification.send'))
         ->assertRedirect(route('home'));
 
     Notification::assertSentTo($user, VerifyEmail::class);
@@ -28,8 +33,9 @@ test('does not send verification notification if email is verified', function ()
 
     $user = User::factory()->create();
 
-    $this->actingAs($user)
-        ->post(route('verification.send'))
+    actingAs($user);
+
+    post(route('verification.send'))
         ->assertRedirect(route('dashboard', absolute: false));
 
     Notification::assertNothingSent();

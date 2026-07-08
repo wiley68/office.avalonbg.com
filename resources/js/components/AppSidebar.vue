@@ -31,27 +31,23 @@ import type { NavItem } from '@/types';
 const page = usePage();
 
 const mainNavItems = computed<NavItem[]>(() => {
-    if (page.props.auth.user?.is_admin) {
+    const user = page.props.auth.user;
+
+    if (!user) {
+        return [];
+    }
+
+    if (user.is_profiler) {
         return [
             {
                 title: 'Потребители',
                 href: usersIndex(),
                 icon: Users,
             },
-            {
-                title: 'Статистика',
-                href: dashboardRoutes.admin.statistics.url(),
-                icon: BarChart3,
-            },
-            {
-                title: 'Експорт',
-                href: dashboardRoutes.admin.export.url(),
-                icon: Table,
-            },
         ];
     }
 
-    return [
+    const items: NavItem[] = [
         {
             title: 'Композитор',
             href: dashboard(),
@@ -68,6 +64,31 @@ const mainNavItems = computed<NavItem[]>(() => {
             icon: StickyNote,
         },
     ];
+
+    if (user.can_manage_users) {
+        items.unshift({
+            title: 'Потребители',
+            href: usersIndex(),
+            icon: Users,
+        });
+    }
+
+    if (user.has_office_access) {
+        items.push(
+            {
+                title: 'Статистика',
+                href: dashboardRoutes.admin.statistics.url(),
+                icon: BarChart3,
+            },
+            {
+                title: 'Експорт',
+                href: dashboardRoutes.admin.export.url(),
+                icon: Table,
+            },
+        );
+    }
+
+    return items;
 });
 
 const footerNavItems = computed<NavItem[]>(() => [

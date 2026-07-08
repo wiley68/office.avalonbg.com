@@ -64,31 +64,54 @@ const activeItemStyles =
     'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
 
 const mainNavItems = computed<NavItem[]>(() => {
-    if (page.props.auth.user?.is_admin) {
+    const user = page.props.auth.user;
+
+    if (!user) {
+        return [];
+    }
+
+    if (user.is_profiler) {
         return [
             {
                 title: 'Потребители',
                 href: usersIndex(),
                 icon: Users,
             },
-            {
-                title: 'Статистика',
-                href: dashboardRoutes.admin.statistics.url(),
-                icon: BarChart3,
-            },
-            {
-                title: 'Експорт',
-                href: dashboardRoutes.admin.export.url(),
-                icon: Table,
-            },
         ];
     }
 
-    return [];
+    if (!user.has_office_access) {
+        return [];
+    }
+
+    const items: NavItem[] = [];
+
+    if (user.can_manage_users) {
+        items.push({
+            title: 'Потребители',
+            href: usersIndex(),
+            icon: Users,
+        });
+    }
+
+    items.push(
+        {
+            title: 'Статистика',
+            href: dashboardRoutes.admin.statistics.url(),
+            icon: BarChart3,
+        },
+        {
+            title: 'Експорт',
+            href: dashboardRoutes.admin.export.url(),
+            icon: Table,
+        },
+    );
+
+    return items;
 });
 
 const isOfficeNav = computed(() =>
-    Boolean(page.props.auth.user && !page.props.auth.user.is_admin),
+    Boolean(page.props.auth.user?.has_office_access),
 );
 
 const rightNavItems = computed<NavItem[]>(() => [

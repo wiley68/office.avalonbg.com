@@ -45,7 +45,11 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user()
                     ? [
                         ...$request->user()->only(['id', 'name', 'email', 'email_verified_at', 'created_at', 'updated_at']),
-                        'is_admin' => $request->user()->hasRole('admin'),
+                        'role' => $request->user()->primaryRole()?->value,
+                        'is_profiler' => $request->user()->isProfiler(),
+                        'is_admin' => $request->user()->isAdmin(),
+                        'can_manage_users' => $request->user()->canManageUsers(),
+                        'has_office_access' => $request->user()->hasOfficeAccess(),
                     ]
                     : null,
             ],

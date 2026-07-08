@@ -14,7 +14,25 @@ trait PasswordValidationRules
      */
     protected function passwordRules(): array
     {
-        return ['required', 'string', Password::default(), 'confirmed'];
+        return ['required', 'string', $this->passwordRule(), 'confirmed'];
+    }
+
+    /**
+     * Get the validation rules used to validate optional passwords.
+     *
+     * @return array<int, Rule|array<mixed>|string>
+     */
+    protected function optionalPasswordRules(): array
+    {
+        return ['nullable', 'string', $this->passwordRule(), 'confirmed'];
+    }
+
+    protected function passwordRule(): Password
+    {
+        return Password::min(9)
+            ->mixedCase()
+            ->numbers()
+            ->symbols();
     }
 
     /**

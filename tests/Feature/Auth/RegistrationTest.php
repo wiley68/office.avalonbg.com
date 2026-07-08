@@ -1,27 +1,31 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Fortify\Features;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+use function Pest\Laravel\assertAuthenticated;
+use function Pest\Laravel\get;
+use function Pest\Laravel\post;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->skipUnlessFortifyFeature(Features::registration());
+    skipUnlessFortifyFeature(Features::registration());
 });
 
 test('registration screen can be rendered', function () {
-    $response = $this->get(route('register'));
-
-    $response->assertOk();
+    get(route('register'))
+        ->assertOk();
 });
 
 test('new users can register', function () {
-    $response = $this->post(route('register.store'), [
+    post(route('register.store'), [
         'name' => 'Test User',
         'email' => 'test@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
-    ]);
+        'password' => 'Password123!',
+        'password_confirmation' => 'Password123!',
+    ])
+        ->assertRedirect(route('dashboard', absolute: false));
 
-    $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    assertAuthenticated();
 });

@@ -10,19 +10,28 @@ use function Pest\Laravel\seed;
 
 uses(RefreshDatabase::class);
 
-test('roles seeder creates admin and user roles', function () {
+test('roles seeder creates profiler admin and user roles', function () {
     seed(RolesSeeder::class);
 
-    expect(Role::where('name', 'admin')->where('guard_name', 'web')->exists())->toBeTrue()
+    expect(Role::where('name', 'profiler')->where('guard_name', 'web')->exists())->toBeTrue()
+        ->and(Role::where('name', 'admin')->where('guard_name', 'web')->exists())->toBeTrue()
         ->and(Role::where('name', 'user')->where('guard_name', 'web')->exists())->toBeTrue();
 });
 
-test('database seeder creates admin user with admin role', function () {
+test('database seeder creates seeded users with expected roles', function () {
     seed(DatabaseSeeder::class);
 
-    $adminUser = User::query()->where('email', 'home@avalonbg.com')->first();
+    $profiler = User::query()->where('email', 'ilko@avalonbg.com')->first();
+    $admin = User::query()->where('email', 'home@avalonbg.com')->first();
+    $user = User::query()->where('email', 'ilko.iv@gmail.com')->first();
 
-    expect($adminUser)->not->toBeNull()
-        ->and($adminUser->name)->toBe('Администратор')
-        ->and($adminUser->hasRole('admin'))->toBeTrue();
+    expect($profiler)->not->toBeNull()
+        ->and($profiler->name)->toBe('Илко Профайлър')
+        ->and($profiler->hasRole('profiler'))->toBeTrue()
+        ->and($admin)->not->toBeNull()
+        ->and($admin->name)->toBe('Илко Администратор')
+        ->and($admin->hasRole('admin'))->toBeTrue()
+        ->and($user)->not->toBeNull()
+        ->and($user->name)->toBe('Илко Иванов')
+        ->and($user->hasRole('user'))->toBeTrue();
 });

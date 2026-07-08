@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Enums\UserRole;
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -17,17 +18,40 @@ class DatabaseSeeder extends Seeder
             RolesSeeder::class,
         ]);
 
-        // User::factory(10)->create();
+        $password = Hash::make('1Nikola@Stefanov9');
 
-        $adminUser = User::query()->updateOrCreate(
-            ['email' => 'home@avalonbg.com'],
+        $users = [
             [
-                'name' => 'Администратор',
-                'password' => '1Nikola@Stefanov9',
-            ]
-        );
+                'email' => 'ilko@avalonbg.com',
+                'name' => 'Илко Профайлър',
+                'role' => UserRole::Profiler,
+            ],
+            // [
+            //     'email' => 'home@avalonbg.com',
+            //     'name' => 'Илко Администратор',
+            //     'role' => UserRole::Admin,
+            // ],
+            // [
+            //     'email' => 'ilko.iv@gmail.com',
+            //     'name' => 'Илко Иванов',
+            //     'role' => UserRole::User,
+            // ],
+        ];
 
-        $adminUser->assignRole('admin');
+        foreach ($users as $data) {
+            $user = User::query()->updateOrCreate(
+                ['email' => $data['email']],
+                [
+                    'name' => $data['name'],
+                    'email_verified_at' => now(),
+                    'password' => $password,
+                    'two_factor_secret' => encrypt('seed-two-factor-secret'),
+                    'two_factor_recovery_codes' => encrypt(json_encode(['seed-recovery-code'])),
+                    'two_factor_confirmed_at' => now(),
+                ],
+            );
 
+            $user->syncRoles([$data['role']->value]);
+        }
     }
 }

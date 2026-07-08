@@ -47,3 +47,15 @@ function something()
 {
     // ..
 }
+
+use Laravel\Fortify\Features;
+use PHPUnit\Framework\SkippedWithMessageException;
+
+function skipUnlessFortifyFeature(string $feature, ?string $message = null): void
+{
+    if (! Features::enabled($feature)) {
+        throw new SkippedWithMessageException(
+            $message ?? "Fortify feature [{$feature}] is not enabled.",
+        );
+    }
+}

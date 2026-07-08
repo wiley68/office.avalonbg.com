@@ -11,11 +11,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'two-factor.enabled'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
 });
 
-Route::middleware(['auth', 'verified', 'admin.agent.block'])->group(function () {
+Route::middleware(['auth', 'verified', 'two-factor.enabled', 'profiler.agent.block'])->group(function () {
     Route::post('dashboard/agent', [DashboardAgentController::class, 'store'])
         ->middleware('agent.context:orchestrator')
         ->name('dashboard.agent');
@@ -52,8 +52,11 @@ Route::middleware(['auth', 'verified', 'admin.agent.block'])->group(function () 
         ->name('dashboard.notes.agent.message.pdf');
 });
 
-Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
+Route::middleware(['auth', 'verified', 'two-factor.enabled', 'role:profiler|admin'])->group(function () {
     Route::resource('users', UserController::class)->except('show');
+});
+
+Route::middleware(['auth', 'verified', 'two-factor.enabled', 'role:user|admin'])->group(function () {
     Route::get('dashboard/admin/statistics', AgentFeedbackStatisticsController::class)
         ->name('dashboard.admin.statistics');
     Route::get('dashboard/admin/export/notes', [DataExportController::class, 'notes'])

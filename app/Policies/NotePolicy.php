@@ -52,6 +52,6 @@ class NotePolicy
      */
     public function exportAll(User $user): bool
     {
-        return $user->hasRole('admin');
+        return $user->hasOfficeAccess();
     }
 }

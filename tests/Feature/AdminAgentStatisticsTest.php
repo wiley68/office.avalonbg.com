@@ -14,34 +14,34 @@ use function Pest\Laravel\withoutVite;
 
 uses(RefreshDatabase::class);
 
-test('non admin cannot access agent statistics', function () {
-    withoutVite();
-
+beforeEach(function (): void {
+    Role::findOrCreate('profiler', 'web');
     Role::findOrCreate('admin', 'web');
     Role::findOrCreate('user', 'web');
+});
 
-    $user = User::factory()->create();
-    $user->assignRole('user');
+test('profiler cannot access agent statistics', function () {
+    withoutVite();
 
-    actingAs($user);
+    $profiler = User::factory()->create();
+    $profiler->assignRole('profiler');
+
+    actingAs($profiler);
 
     get('/dashboard/admin/statistics')
         ->assertForbidden();
 });
 
-test('admin can view aggregated agent statistics', function () {
+test('office user can view aggregated agent statistics', function () {
     withoutVite();
 
-    Role::findOrCreate('admin', 'web');
-    Role::findOrCreate('user', 'web');
-
-    $admin = User::factory()->create();
-    $admin->assignRole('admin');
+    $user = User::factory()->create();
+    $user->assignRole('user');
     $messageId = (string) Str::uuid();
 
     DB::table('agent_conversations')->insert([
         'id' => (string) Str::uuid(),
-        'user_id' => $admin->id,
+        'user_id' => $user->id,
         'context' => AgentContext::Orchestrator->value,
         'title' => 'Stats',
         'created_at' => now(),
@@ -49,13 +49,13 @@ test('admin can view aggregated agent statistics', function () {
     ]);
 
     $conversationId = DB::table('agent_conversations')
-        ->where('user_id', $admin->id)
+        ->where('user_id', $user->id)
         ->value('id');
 
     DB::table('agent_conversation_messages')->insert([
         'id' => $messageId,
         'conversation_id' => $conversationId,
-        'user_id' => $admin->id,
+        'user_id' => $user->id,
         'agent' => 'App\\Ai\\Agents\\ConversationalOfficeAgent',
         'role' => 'assistant',
         'content' => 'Answer',
@@ -70,20 +70,22 @@ test('admin can view aggregated agent statistics', function () {
 
     DB::table('agent_message_feedback')->insert([
         'message_id' => $messageId,
-        'user_id' => $admin->id,
+        'user_id' => $user->id,
         'feedback' => 'up',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
-    actingAs($admin);
+    actingAs($user);
 
-    get('/dashboard/admin/statistics?period=30d')
+    $period = '30d';
+
+    get('/dashboard/admin/statistics?period='.$period)
         ->assertOk()
         ->assertInertia(
             fn (Assert $page) => $page
                 ->component('admin/AgentStatistics')
-                ->where('period', '30d')
+                ->where('period', $period)
                 ->has('summary_rows', 1)
                 ->where('summary_rows.0.context', AgentContext::Orchestrator->value)
                 ->where('summary_rows.0.up_count', 1)
@@ -95,4 +97,19 @@ test('admin can view aggregated agent statistics', function () {
                 ->where('rows.0.down_count', 0)
                 ->where('rows.0.total_feedback', 1)
         );
+});
+
+test('admin can view aggregated agent statistics', function () {
+    withoutVite();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    actingAs($admin);
+
+    $period = '30d';
+
+    get('/dashboard/admin/statistics?period='.$period)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->component('admin/AgentStatistics'));
 });

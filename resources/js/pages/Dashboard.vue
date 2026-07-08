@@ -11,7 +11,12 @@ import type { BreadcrumbItem } from '@/types';
 
 const page = usePage();
 
-const isAdmin = computed(() => page.props.auth.user?.is_admin === true);
+const hasOfficeAccess = computed(
+    () => page.props.auth.user?.has_office_access === true,
+);
+const isProfiler = computed(
+    () => page.props.auth.user?.is_profiler === true,
+);
 
 const messagesUrl = (id: string) =>
     dashboardRoutes.agent.conversation.messages.url(id);
@@ -27,11 +32,8 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-const pageDescriptionUser =
+const pageDescription =
     'Агент за бележки: четене, създаване, редакция, изтриване и експорт. Разговорът се пази на сървъра — за нов контекст ползвайте „Нов разговор“. Същият агент е достъпен и от „Бележки“ в менюто.';
-
-const pageDescriptionAdmin =
-    'Композитор за администратори — тук по-късно ще се добави съдържание.';
 </script>
 
 <template>
@@ -39,23 +41,26 @@ const pageDescriptionAdmin =
 
     <AppLayout
         :breadcrumbs="breadcrumbs"
-        :page-title="isAdmin ? 'Композитор' : 'Офис координатор'"
-        :page-description="isAdmin ? pageDescriptionAdmin : pageDescriptionUser"
+        page-title="Офис координатор"
+        :page-description="pageDescription"
     >
         <div
-            v-if="isAdmin"
+            v-if="isProfiler"
             class="flex min-h-0 flex-1 flex-col items-center justify-center overflow-auto p-6 md:p-10"
         >
             <div
                 class="w-full max-w-xl rounded-xl border border-border bg-card p-10 text-center shadow-sm"
             >
                 <p class="text-sm text-muted-foreground">
-                    Това табло е запазено за бъдещо съдържание. Ползвайте менюто
-                    за управление на потребители и статистика.
+                    Това табло е запазено за бъдещи функции на профайлъра.
+                    Ползвайте менюто за управление на администратори.
                 </p>
             </div>
         </div>
-        <div v-else class="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div
+            v-else-if="hasOfficeAccess"
+            class="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
             <AgentChatPanel
                 :post-url="postOrchestratorMessage.url()"
                 :messages-url="messagesUrl"

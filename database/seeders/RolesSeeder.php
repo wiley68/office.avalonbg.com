@@ -15,6 +15,7 @@ class RolesSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
+        Role::findOrCreate('profiler', 'web');
         Role::findOrCreate('admin', 'web');
         Role::findOrCreate('user', 'web');
     }

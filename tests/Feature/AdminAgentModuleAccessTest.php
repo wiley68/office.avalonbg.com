@@ -11,31 +11,44 @@ use function Pest\Laravel\postJson;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
+    Role::findOrCreate('profiler', 'web');
     Role::findOrCreate('admin', 'web');
+    Role::findOrCreate('user', 'web');
 });
 
-test('admin is redirected from notes page to dashboard', function (): void {
+test('profiler is redirected from notes page to dashboard', function (): void {
+    $profiler = User::factory()->create();
+    $profiler->assignRole('profiler');
+
+    actingAs($profiler);
+
+    get(route('dashboard.notes'))
+        ->assertRedirect(route('dashboard'));
+});
+
+test('profiler receives forbidden when posting to dashboard agent', function (): void {
+    $profiler = User::factory()->create();
+    $profiler->assignRole('profiler');
+
+    actingAs($profiler);
+
+    postJson('/dashboard/agent', ['message' => 'Hi'])
+        ->assertForbidden();
+});
+
+test('admin can access notes page', function (): void {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
     actingAs($admin);
 
     get(route('dashboard.notes'))
-        ->assertRedirect(route('dashboard'));
+        ->assertOk();
 });
 
-test('admin receives forbidden when posting to dashboard agent', function (): void {
-    $admin = User::factory()->create();
-    $admin->assignRole('admin');
-
-    actingAs($admin);
-
-    postJson('/dashboard/agent', ['message' => 'Hi'])
-        ->assertForbidden();
-});
-
-test('non admin can access notes page', function (): void {
+test('office user can access notes page', function (): void {
     $user = User::factory()->create();
+    $user->assignRole('user');
 
     actingAs($user);
 
