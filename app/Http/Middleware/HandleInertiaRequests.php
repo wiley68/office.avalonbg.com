@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Translations;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -41,6 +42,12 @@ class HandleInertiaRequests extends Middleware
             'organization' => (string) config('app.organization'),
             'email' => (string) config('app.contact_email'),
             'shopUrl' => (string) config('app.shop_url'),
+            'locale' => app()->getLocale(),
+            'locales' => [
+                ['code' => 'en', 'label' => 'English'],
+                ['code' => 'bg', 'label' => 'Български'],
+            ],
+            'translations' => Translations::forLocale(),
             'auth' => [
                 'user' => $request->user()
                     ? [

@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import LocaleSwitcher from '@/components/LocaleSwitcher.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { useTranslations } from '@/composables/useTranslations';
 import { dashboard, login } from '@/routes';
+
+const page = usePage();
+const { t } = useTranslations();
 </script>
 
 <template>
@@ -23,16 +28,17 @@ import { dashboard, login } from '@/routes';
                     :href="dashboard()"
                     class="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
                 >
-                    Контролен панел
+                    {{ t('welcome.dashboard') }}
                 </Link>
                 <template v-else>
                     <Link
                         :href="login()"
                         class="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                     >
-                        Влез в системата
+                        {{ t('welcome.sign_in') }}
                     </Link>
                 </template>
+                <LocaleSwitcher />
             </nav>
         </header>
         <div class="flex w-full items-center justify-center lg:grow">
@@ -43,15 +49,16 @@ import { dashboard, login } from '@/routes';
                     class="flex-1 rounded-br-lg rounded-bl-lg bg-white p-6 pb-12 text-[13px] leading-[20px] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] lg:rounded-tl-lg lg:rounded-br-none lg:p-20 dark:bg-[#161615] dark:text-[#EDEDEC] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]"
                 >
                     <h1 class="mb-1 font-medium">
-                        Вход за регистрирани потребители
+                        {{ t('welcome.title') }}
                     </h1>
                     <p class="mb-2 text-[#706f6c] dark:text-[#A1A09A]">
-                        {{ $page.props.name }} е офис платформа с AI агенти за
-                        ежедневна работа — бележки, помощ и комуникация.
-                        Достъпът е само за регистрирани потребители. За достъп
-                        или въпроси изпратете запитване на
-                        <TextLink :href="`mailto:${$page.props.email}`">{{
-                            $page.props.email
+                        {{
+                            t('welcome.description', {
+                                name: String(page.props.name),
+                            })
+                        }}
+                        <TextLink :href="`mailto:${page.props.email}`">{{
+                            page.props.email
                         }}</TextLink
                         >.
                     </p>
@@ -62,14 +69,14 @@ import { dashboard, login } from '@/routes';
                             :href="dashboard()"
                             class="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
                         >
-                            Контролен панел
+                            {{ t('welcome.dashboard') }}
                         </Link>
                         <template v-else>
                             <Button
                                 class="cursor-pointer"
                                 @click="router.get(login())"
                             >
-                                Влез в системата
+                                {{ t('welcome.sign_in') }}
                             </Button>
                         </template>
                     </ul>

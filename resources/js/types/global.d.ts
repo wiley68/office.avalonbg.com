@@ -20,6 +20,9 @@ declare module '@inertiajs/core' {
             organization: string;
             email: string;
             shopUrl: string;
+            locale: string;
+            locales: Array<{ code: string; label: string }>;
+            translations: Record<string, unknown>;
             auth: Auth;
             sidebarOpen: boolean;
             [key: string]: unknown;

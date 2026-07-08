@@ -4,12 +4,15 @@ use App\Http\Controllers\Admin\AgentFeedbackStatisticsController;
 use App\Http\Controllers\Admin\DataExportController;
 use App\Http\Controllers\AgentConversationMessagesController;
 use App\Http\Controllers\DashboardAgentController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NotesAgentController;
 use App\Http\Controllers\NotesExportDownloadController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
+
+Route::get('locale/{locale}', LocaleController::class)->name('locale.update');
 
 Route::middleware(['auth', 'verified', 'two-factor.enabled'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
