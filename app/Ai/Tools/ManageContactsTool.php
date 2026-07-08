@@ -66,7 +66,7 @@ class ManageContactsTool implements Tool
             'page' => $schema->integer()->description('Номер на страница за list (по подразбиране 1).'),
             'per_page' => $schema->integer()->description('Редове на страница за list (1-5000, по подразбиране 50).'),
             'offset' => $schema->integer()->description('Offset за list (ако е зададен, има приоритет над page).'),
-            'include_card_counts' => $schema->boolean()->description('Само за list_without_cards: включва броя карти (обикновено 0/0).'),
+            'include_card_counts' => $schema->boolean()->description('Само за list_without_cards: включва броя гаранционни карти.'),
             'citi_id' => $schema->integer()->description('ID на населено място (citi_id).'),
             'last_name' => $schema->string()->description('Фамилия (задължителна при create).'),
             'name' => $schema->string()->description('Собствено име.'),
@@ -144,11 +144,6 @@ class ManageContactsTool implements Tool
                 $sub->select(DB::raw(1))
                     ->from('varanty')
                     ->whereColumn('varanty.client_id', 'contacts.id');
-            })
-            ->whereNotExists(function ($sub): void {
-                $sub->select(DB::raw(1))
-                    ->from('projects')
-                    ->whereColumn('projects.name', 'contacts.id');
             });
 
         if (! empty($input['q']) && is_string($input['q'])) {
@@ -190,11 +185,6 @@ class ManageContactsTool implements Tool
                 $sub->select(DB::raw(1))
                     ->from('varanty')
                     ->whereColumn('varanty.client_id', 'contacts.id');
-            })
-            ->whereNotExists(function ($sub): void {
-                $sub->select(DB::raw(1))
-                    ->from('projects')
-                    ->whereColumn('projects.name', 'contacts.id');
             });
 
         if (! empty($input['q']) && is_string($input['q'])) {
@@ -244,7 +234,6 @@ class ManageContactsTool implements Tool
 
             if ($includeCardCounts) {
                 $result['warranty_cards_count'] = 0;
-                $result['service_cards_count'] = 0;
             }
 
             return $result;
