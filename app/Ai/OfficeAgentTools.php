@@ -3,9 +3,6 @@
 namespace App\Ai;
 
 use App\Ai\Tools\ExportNotesToXlsxTool;
-use App\Ai\Tools\ManageCitiTool;
-use App\Ai\Tools\ManageContactsTool;
-use App\Ai\Tools\ManageDlazhnostiTool;
 use App\Ai\Tools\ManageNotesTool;
 use App\Ai\Tools\SendAgentResponseEmailTool;
 use Laravel\Ai\Contracts\Tool;
@@ -25,9 +22,6 @@ final class OfficeAgentTools
     {
         return [
             app(ManageNotesTool::class),
-            app(ManageContactsTool::class),
-            app(ManageCitiTool::class),
-            app(ManageDlazhnostiTool::class),
             app(ExportNotesToXlsxTool::class),
             app(SendAgentResponseEmailTool::class),
             // Бъдещи: app(InvoiceTool::class), …
@@ -44,21 +38,6 @@ final class OfficeAgentTools
         return [
             app(ManageNotesTool::class),
             app(ExportNotesToXlsxTool::class),
-            app(SendAgentResponseEmailTool::class),
-        ];
-    }
-
-    /**
-     * Само инструменти за модул „контакти“.
-     *
-     * @return list<Tool>
-     */
-    public static function forContacts(): array
-    {
-        return [
-            app(ManageContactsTool::class),
-            app(ManageCitiTool::class),
-            app(ManageDlazhnostiTool::class),
             app(SendAgentResponseEmailTool::class),
         ];
     }

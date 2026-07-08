@@ -43,7 +43,6 @@ class StoreAgentMessageRequest extends FormRequest
         return match (true) {
             $this->routeIs('dashboard.agent') => AgentContext::Orchestrator,
             $this->routeIs('dashboard.notes.agent') => AgentContext::Notes,
-            $this->routeIs('dashboard.contacts.agent') => AgentContext::Contacts,
             default => throw new \LogicException(
                 'Unexpected route for agent message: '.$this->route()?->getName()
             ),

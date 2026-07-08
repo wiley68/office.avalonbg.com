@@ -6,7 +6,6 @@ import {
     ShoppingCart,
     LayoutGrid,
     StickyNote,
-    Contact,
     Table,
     Users,
 } from 'lucide-vue-next';
@@ -68,11 +67,6 @@ const mainNavItems = computed<NavItem[]>(() => {
             title: 'Бележки',
             href: dashboardRoutes.notes.url(),
             icon: StickyNote,
-        },
-        {
-            title: 'Контакти',
-            href: dashboardRoutes.contacts.url(),
-            icon: Contact,
         },
     ];
 });

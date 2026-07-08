@@ -3,7 +3,6 @@
 use App\Http\Controllers\Admin\AgentFeedbackStatisticsController;
 use App\Http\Controllers\Admin\DataExportController;
 use App\Http\Controllers\AgentConversationMessagesController;
-use App\Http\Controllers\ContactsAgentController;
 use App\Http\Controllers\DashboardAgentController;
 use App\Http\Controllers\NotesAgentController;
 use App\Http\Controllers\NotesExportController;
@@ -43,7 +42,6 @@ Route::middleware(['auth', 'verified', 'admin.agent.block'])->group(function () 
         ->name('dashboard.agent.message.pdf');
 
     Route::inertia('dashboard/notes', 'office/NotesAgent')->name('dashboard.notes');
-    Route::inertia('dashboard/contacts', 'office/ContactsAgent')->name('dashboard.contacts');
     Route::post('dashboard/notes/export', NotesExportController::class)
         ->name('dashboard.notes.export');
     Route::get('dashboard/notes/export/{token}', NotesExportDownloadController::class)
@@ -63,22 +61,6 @@ Route::middleware(['auth', 'verified', 'admin.agent.block'])->group(function () 
         ->name('dashboard.notes.agent.message.email');
     Route::get('dashboard/notes/agent/messages/{message}/pdf', [AgentConversationMessagesController::class, 'pdf'])
         ->name('dashboard.notes.agent.message.pdf');
-
-    Route::post('dashboard/contacts/agent', [ContactsAgentController::class, 'store'])
-        ->middleware('agent.context:contacts')
-        ->name('dashboard.contacts.agent');
-    Route::get('dashboard/contacts/agent/conversations', [AgentConversationMessagesController::class, 'index'])
-        ->name('dashboard.contacts.agent.conversations');
-    Route::delete('dashboard/contacts/agent/conversations', [AgentConversationMessagesController::class, 'destroyAll'])
-        ->name('dashboard.contacts.agent.conversations.destroy');
-    Route::get('dashboard/contacts/agent/conversations/{conversation}/messages', [AgentConversationMessagesController::class, 'show'])
-        ->name('dashboard.contacts.agent.conversation.messages');
-    Route::post('dashboard/contacts/agent/messages/{message}/feedback', [AgentConversationMessagesController::class, 'feedback'])
-        ->name('dashboard.contacts.agent.message.feedback');
-    Route::post('dashboard/contacts/agent/messages/{message}/email', [AgentConversationMessagesController::class, 'email'])
-        ->name('dashboard.contacts.agent.message.email');
-    Route::get('dashboard/contacts/agent/messages/{message}/pdf', [AgentConversationMessagesController::class, 'pdf'])
-        ->name('dashboard.contacts.agent.message.pdf');
 });
 
 Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
