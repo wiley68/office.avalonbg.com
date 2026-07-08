@@ -4,5 +4,11 @@
         "sign_in": "Sign in",
         "title": "Sign in for registered users",
         "description": ":name is an office platform with AI agents for daily work — notes, assistance and communication. Access is limited to registered users. For access or questions, contact us at"
+    },
+    "appearance": {
+        "label": "Appearance",
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System"
     }
 }

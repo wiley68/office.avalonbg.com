@@ -11,6 +11,7 @@ test('home page defaults to english locale', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('locale', 'en')
+            ->where('appearance', 'system')
             ->where('translations.welcome.sign_in', 'Sign in'));
 });
 

@@ -23,6 +23,7 @@ declare module '@inertiajs/core' {
             locale: string;
             locales: Array<{ code: string; label: string }>;
             translations: Record<string, unknown>;
+            appearance: 'light' | 'dark' | 'system';
             auth: Auth;
             sidebarOpen: boolean;
             [key: string]: unknown;

@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/vue3';
 import type { ComputedRef, Ref } from 'vue';
 import { computed, onMounted, ref } from 'vue';
 import type { Appearance, ResolvedAppearance } from '@/types';
@@ -86,13 +87,16 @@ export function initializeTheme(): void {
 const appearance = ref<Appearance>('system');
 
 export function useAppearance(): UseAppearanceReturn {
+    const page = usePage();
+
     onMounted(() => {
-        const savedAppearance = localStorage.getItem(
-            'appearance',
-        ) as Appearance | null;
+        const savedAppearance =
+            (localStorage.getItem('appearance') as Appearance | null) ??
+            (page.props.appearance as Appearance | null);
 
         if (savedAppearance) {
             appearance.value = savedAppearance;
+            updateTheme(savedAppearance);
         }
     });
 

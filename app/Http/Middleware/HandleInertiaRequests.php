@@ -48,6 +48,7 @@ class HandleInertiaRequests extends Middleware
                 ['code' => 'bg', 'label' => 'Български'],
             ],
             'translations' => Translations::forLocale(),
+            'appearance' => $request->cookie('appearance', 'system'),
             'auth' => [
                 'user' => $request->user()
                     ? [

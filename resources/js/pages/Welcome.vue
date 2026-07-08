@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import AppearanceSwitcher from '@/components/AppearanceSwitcher.vue';
 import LocaleSwitcher from '@/components/LocaleSwitcher.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
@@ -39,6 +40,7 @@ const { t } = useTranslations();
                     </Link>
                 </template>
                 <LocaleSwitcher />
+                <AppearanceSwitcher />
             </nav>
         </header>
         <div class="flex w-full items-center justify-center lg:grow">
