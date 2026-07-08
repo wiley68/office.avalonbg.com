@@ -6,6 +6,7 @@ use App\Http\Controllers\AgentConversationMessagesController;
 use App\Http\Controllers\ContactsAgentController;
 use App\Http\Controllers\DashboardAgentController;
 use App\Http\Controllers\NotesAgentController;
+use App\Http\Controllers\NotesExportController;
 use App\Http\Controllers\NotesExportDownloadController;
 use App\Http\Controllers\Office\TextCryptoController;
 use App\Http\Controllers\ServiceCardPrintController;
@@ -48,6 +49,8 @@ Route::middleware(['auth', 'verified', 'admin.agent.block'])->group(function () 
 
     Route::inertia('dashboard/notes', 'office/NotesAgent')->name('dashboard.notes');
     Route::inertia('dashboard/contacts', 'office/ContactsAgent')->name('dashboard.contacts');
+    Route::post('dashboard/notes/export', NotesExportController::class)
+        ->name('dashboard.notes.export');
     Route::get('dashboard/notes/export/{token}', NotesExportDownloadController::class)
         ->name('dashboard.notes.export.download');
     Route::post('dashboard/notes/agent', [NotesAgentController::class, 'store'])

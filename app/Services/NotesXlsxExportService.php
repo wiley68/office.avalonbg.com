@@ -3,14 +3,67 @@
 namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Throwable;
 
 class NotesXlsxExportService
 {
+    public function __construct(
+        private readonly TextCryptoService $textCrypto,
+    ) {}
+
     /**
-     * Записва XLSX с всички бележки на потребителя. Полето `note` се записва като обикновен текст (моделът декриптира).
+     * Подготвя еднократно изтегляне на XLSX с всички бележки на потребителя.
+     *
+     * @return array{
+     *     ok: true,
+     *     note_count: int,
+     *     download_url: string,
+     *     filename: string,
+     * }
+     */
+    public function createPendingDownload(User $user): array
+    {
+        $token = (string) Str::uuid();
+
+        $tmpBase = tempnam(sys_get_temp_dir(), 'notes_xlsx_');
+        if ($tmpBase === false) {
+            throw new \RuntimeException('Не може да се подготви временен файл за експорт (temp директория).');
+        }
+
+        unlink($tmpBase);
+        $absolutePath = $tmpBase.'.xlsx';
+
+        $count = $this->writeExportFile($user, $absolutePath);
+
+        Cache::put(
+            'notes_export:'.$token,
+            [
+                'user_id' => $user->id,
+                'path' => $absolutePath,
+            ],
+            now()->addMinutes(30),
+        );
+
+        $downloadUrl = route('dashboard.notes.export.download', ['token' => $token], true);
+        $filename = 'belazhki-'.now()->format('Y-m-d-His').'.xlsx';
+
+        return [
+            'ok' => true,
+            'note_count' => $count,
+            'download_url' => $downloadUrl,
+            'filename' => $filename,
+        ];
+    }
+
+    /**
+     * Записва XLSX с всички бележки на потребителя. Криптираното съдържание се записва като обикновен текст.
      *
      * @return int Брой редове с данни (без заглавния ред)
      */
@@ -29,9 +82,9 @@ class NotesXlsxExportService
         foreach ($notes as $note) {
             $rows[] = [
                 $note->id,
-                $note->name,
-                $note->description,
-                $note->note,
+                $this->resolveExportPlainText($note->name),
+                $this->resolveExportPlainText($note->description),
+                $this->resolveExportPlainText($note->note),
                 $note->created_at?->timezone(config('app.timezone'))->format('Y-m-d H:i:s'),
                 $note->updated_at?->timezone(config('app.timezone'))->format('Y-m-d H:i:s'),
             ];
@@ -55,5 +108,26 @@ class NotesXlsxExportService
         $writer->save($absolutePath);
 
         return $notes->count();
+    }
+
+    private function resolveExportPlainText(?string $value): string
+    {
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        try {
+            return $this->textCrypto->decryptToPlainText($value);
+        } catch (DecryptException) {
+            //
+        }
+
+        try {
+            return Crypt::decrypt($value, false);
+        } catch (Throwable) {
+            //
+        }
+
+        return $value;
     }
 }

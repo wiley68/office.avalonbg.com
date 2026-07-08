@@ -3,6 +3,7 @@ import {
     ArrowDown,
     ArrowUp,
     ArrowUpDown,
+    Download,
     MoreHorizontal,
     Plus,
     X,
@@ -37,6 +38,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import dashboardRoutes from '@/routes/dashboard';
+import { exportMethod as notesExportRoute } from '@/routes/dashboard/notes';
 
 const props = defineProps<{
     active: boolean;
@@ -90,6 +92,7 @@ const formNote = ref('');
 const deleteTarget = ref<NoteRow | null>(null);
 const deleteDialogOpen = ref(false);
 const deleting = ref(false);
+const exporting = ref(false);
 
 const textareaClass = cn(
     'min-h-[220px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground',
@@ -416,6 +419,45 @@ const confirmDelete = async (): Promise<void> => {
     }
 };
 
+const exportNotes = async (): Promise<void> => {
+    if (exporting.value) {
+        return;
+    }
+
+    exporting.value = true;
+    listError.value = null;
+
+    try {
+        const response = await fetch(notesExportRoute.url(), {
+            method: 'POST',
+            headers: jsonHeaders(),
+            credentials: 'same-origin',
+        });
+
+        if (!response.ok) {
+            listError.value = await parseJsonErrors(response);
+
+            return;
+        }
+
+        const data = (await response.json()) as {
+            download_url?: string;
+        };
+
+        if (!data.download_url) {
+            listError.value = 'Неуспешен експорт. Липсва връзка за изтегляне.';
+
+            return;
+        }
+
+        window.location.assign(data.download_url);
+    } catch {
+        listError.value = 'Неуспешен експорт на бележките.';
+    } finally {
+        exporting.value = false;
+    }
+};
+
 const formatDate = (iso: string): string => {
     try {
         return new Date(iso).toLocaleString('bg-BG', {
@@ -483,10 +525,21 @@ defineExpose({
                     aria-label="Търсене в бележките"
                 />
             </div>
-            <Button type="button" class="shrink-0" @click="openCreate">
-                <Plus class="mr-2 h-4 w-4" />
-                Добави
-            </Button>
+            <div class="flex shrink-0 gap-2">
+                <Button
+                    type="button"
+                    variant="outline"
+                    :disabled="exporting || loading"
+                    @click="exportNotes"
+                >
+                    <Download class="mr-2 h-4 w-4" />
+                    {{ exporting ? 'Експорт…' : 'Експорт' }}
+                </Button>
+                <Button type="button" class="shrink-0" @click="openCreate">
+                    <Plus class="mr-2 h-4 w-4" />
+                    Добави
+                </Button>
+            </div>
         </div>
 
         <p v-if="listError" class="text-sm text-destructive">
