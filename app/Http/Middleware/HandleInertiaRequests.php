@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\Appearance;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Support\Translations;
@@ -51,7 +52,7 @@ class HandleInertiaRequests extends Middleware
                 ['code' => 'bg', 'label' => 'Български'],
             ],
             'translations' => Translations::forLocale(),
-            'appearance' => $request->cookie('appearance', 'system'),
+            'appearance' => $this->resolveAppearance($request),
             'auth' => [
                 'user' => $request->user()
                     ? [
@@ -76,5 +77,25 @@ class HandleInertiaRequests extends Middleware
                 return User::role(UserRole::Admin->value)->count();
             },
         ];
+    }
+
+    /**
+     * @return value-of<Appearance>
+     */
+    private function resolveAppearance(Request $request): string
+    {
+        $user = $request->user();
+
+        if ($user !== null) {
+            return $user->appearance ?? Appearance::System->value;
+        }
+
+        $cookieAppearance = $request->cookie('appearance');
+
+        if (Appearance::tryFrom((string) $cookieAppearance) !== null) {
+            return (string) $cookieAppearance;
+        }
+
+        return Appearance::System->value;
     }
 }
