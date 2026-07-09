@@ -26,16 +26,6 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Илко Профайлър',
                 'role' => UserRole::Profiler,
             ],
-            [
-                'email' => 'home@avalonbg.com',
-                'name' => 'Илко Администратор',
-                'role' => UserRole::Admin,
-            ],
-            [
-                'email' => 'ilko.iv@gmail.com',
-                'name' => 'Илко Иванов',
-                'role' => UserRole::User,
-            ],
         ];
 
         foreach ($users as $data) {

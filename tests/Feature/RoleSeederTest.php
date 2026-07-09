@@ -18,23 +18,14 @@ test('roles seeder creates profiler admin and user roles', function () {
         ->and(Role::where('name', 'user')->where('guard_name', 'web')->exists())->toBeTrue();
 });
 
-test('database seeder creates seeded users with expected roles', function () {
+test('database seeder creates profiler user without two factor', function () {
     seed(DatabaseSeeder::class);
 
     $profiler = User::query()->where('email', 'ilko@avalonbg.com')->first();
-    $admin = User::query()->where('email', 'home@avalonbg.com')->first();
-    $user = User::query()->where('email', 'ilko.iv@gmail.com')->first();
 
     expect($profiler)->not->toBeNull()
         ->and($profiler->name)->toBe('Илко Профайлър')
         ->and($profiler->hasRole('profiler'))->toBeTrue()
-        ->and($admin)->not->toBeNull()
-        ->and($admin->name)->toBe('Илко Администратор')
-        ->and($admin->hasRole('admin'))->toBeTrue()
-        ->and($user)->not->toBeNull()
-        ->and($user->name)->toBe('Илко Иванов')
-        ->and($user->hasRole('user'))->toBeTrue()
         ->and($profiler->hasEnabledTwoFactorAuthentication())->toBeFalse()
-        ->and($admin->hasEnabledTwoFactorAuthentication())->toBeFalse()
-        ->and($user->hasEnabledTwoFactorAuthentication())->toBeFalse();
+        ->and(User::query()->count())->toBe(1);
 });
