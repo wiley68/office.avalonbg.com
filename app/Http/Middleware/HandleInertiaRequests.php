@@ -56,7 +56,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user()
                     ? [
-                        ...$request->user()->only(['id', 'name', 'email', 'email_verified_at', 'created_at', 'updated_at']),
+                        ...$request->user()->only(['id', 'name', 'email', 'email_verified_at', 'must_change_password', 'created_at', 'updated_at']),
                         'role' => $request->user()->primaryRole()?->value,
                         'role_label' => $request->user()->primaryRole()?->getLabel(),
                         'is_profiler' => $request->user()->isProfiler(),

@@ -17,11 +17,11 @@ Route::inertia('/', 'Welcome')->name('home');
 
 Route::get('locale/{locale}', LocaleController::class)->name('locale.update');
 
-Route::middleware(['auth', 'verified', 'two-factor.enabled'])->group(function () {
+Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
 });
 
-Route::middleware(['auth', 'verified', 'two-factor.enabled', 'profiler.agent.block'])->group(function () {
+Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled', 'profiler.agent.block'])->group(function () {
     Route::inertia('dashboard/composer', 'office/Composer')->name('dashboard.composer');
 
     Route::post('dashboard/agent', [DashboardAgentController::class, 'store'])
@@ -60,7 +60,7 @@ Route::middleware(['auth', 'verified', 'two-factor.enabled', 'profiler.agent.blo
         ->name('dashboard.notes.agent.message.pdf');
 });
 
-Route::middleware(['auth', 'verified', 'two-factor.enabled', 'role:profiler|admin'])->group(function () {
+Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled', 'role:profiler|admin'])->group(function () {
     Route::resource('users', UserController::class)->except('show');
 
     Route::post('/users/two-factor/{user}/enable', [UserTwoFactorController::class, 'enable'])
@@ -73,7 +73,7 @@ Route::middleware(['auth', 'verified', 'two-factor.enabled', 'role:profiler|admi
         ->name('users.two-factor.resend');
 });
 
-Route::middleware(['auth', 'verified', 'two-factor.enabled', 'role:profiler'])->group(function () {
+Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled', 'role:profiler'])->group(function () {
     Route::get('/audit-logs', [AuditLogController::class, 'index'])
         ->name('audit-logs.index');
 
@@ -94,7 +94,7 @@ Route::middleware(['auth', 'verified', 'two-factor.enabled', 'role:profiler'])->
         });
 });
 
-Route::middleware(['auth', 'verified', 'two-factor.enabled', 'role:user|admin'])->group(function () {
+Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled', 'role:user|admin'])->group(function () {
     Route::get('dashboard/admin/statistics', AgentFeedbackStatisticsController::class)
         ->name('dashboard.admin.statistics');
     Route::get('dashboard/admin/export/notes', [DataExportController::class, 'notes'])

@@ -58,6 +58,13 @@ class UserFactory extends Factory
         ]);
     }
 
+    public function mustChangePassword(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'must_change_password' => true,
+        ]);
+    }
+
     /**
      * Indicate that the model has two-factor authentication configured.
      */

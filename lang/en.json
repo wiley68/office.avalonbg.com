@@ -78,7 +78,16 @@
         "copy": "Copy password",
         "copied": "Copied",
         "copy_success": "Password copied to clipboard.",
-        "copy_error": "Failed to copy the password."
+        "copy_error": "Failed to copy the password.",
+        "must_change": {
+            "title": "Change your password",
+            "description": "An administrator created your account with a temporary password. For security, you must choose a new password before continuing.",
+            "current": "Current password",
+            "current_placeholder": "Enter the password you received",
+            "submit": "Set new password",
+            "saved": "Password updated successfully.",
+            "required_message": "You must change your password before continuing."
+        }
     },
     "users": {
         "card_title": "User information",

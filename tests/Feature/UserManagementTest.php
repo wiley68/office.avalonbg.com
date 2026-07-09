@@ -88,7 +88,8 @@ test('admin can create user and verification email is sent', function () {
 
     expect($createdUser)->not->toBeNull()
         ->and($createdUser->hasRole('user'))->toBeTrue()
-        ->and($createdUser->email_verified_at)->toBeNull();
+        ->and($createdUser->email_verified_at)->toBeNull()
+        ->and($createdUser->must_change_password)->toBeTrue();
 
     Notification::assertSentTo($createdUser, VerifyEmail::class);
 });

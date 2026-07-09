@@ -51,6 +51,7 @@ class SecurityController extends Controller implements HasMiddleware
     {
         $request->user()->update([
             'password' => $request->password,
+            'must_change_password' => false,
         ]);
 
         return back();

@@ -51,7 +51,10 @@ class UserController extends Controller
         $actor = Auth::user();
         $manageableRole = app(UserPolicy::class)->manageableRole($actor);
 
-        $user = User::query()->create($request->validated());
+        $user = User::query()->create([
+            ...$request->validated(),
+            'must_change_password' => true,
+        ]);
         $user->syncRoles([$manageableRole?->value]);
         $user->sendEmailVerificationNotification();
 
@@ -84,6 +87,8 @@ class UserController extends Controller
 
         if (empty($validated['password'])) {
             unset($validated['password']);
+        } else {
+            $validated['must_change_password'] = true;
         }
 
         $user->update($validated);
