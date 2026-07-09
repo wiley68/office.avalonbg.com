@@ -30,6 +30,22 @@ test('users can authenticate using the login screen', function () {
     assertAuthenticated();
 });
 
+test('remember me is not used during login', function () {
+    $user = User::factory()->withoutTwoFactor()->create([
+        'remember_token' => null,
+    ]);
+
+    post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'Password123!',
+        'remember' => true,
+    ])
+        ->assertRedirect(route('dashboard', absolute: false));
+
+    assertAuthenticated();
+    expect($user->fresh()->remember_token)->toBeNull();
+});
+
 test('users with two factor enabled are redirected to two factor challenge', function () {
     skipUnlessFortifyFeature(Features::twoFactorAuthentication());
 
@@ -49,9 +65,11 @@ test('users with two factor enabled are redirected to two factor challenge', fun
     post(route('login'), [
         'email' => $user->email,
         'password' => 'Password123!',
+        'remember' => true,
     ])
         ->assertRedirect(route('two-factor.login'))
-        ->assertSessionHas('login.id', $user->id);
+        ->assertSessionHas('login.id', $user->id)
+        ->assertSessionHas('login.remember', false);
 
     assertGuest();
 });
