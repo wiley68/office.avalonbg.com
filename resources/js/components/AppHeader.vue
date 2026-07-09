@@ -73,7 +73,7 @@ const mainNavItems = computed<NavItem[]>(() => {
     if (user.is_profiler) {
         return [
             {
-                title: 'Потребители',
+                title: 'Администратори',
                 href: usersIndex(),
                 icon: Users,
             },

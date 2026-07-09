@@ -46,7 +46,7 @@ const mainNavItems = computed<NavItem[]>(() => {
                 icon: LayoutGrid,
             },
             {
-                title: 'Потребители',
+                title: 'Администратори',
                 href: usersIndex(),
                 icon: Users,
             },

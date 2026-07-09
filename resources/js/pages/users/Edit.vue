@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useManageableUsersLabels } from '@/composables/useManageableUsersLabels';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import { edit, index, update } from '@/routes/users';
-import type { BreadcrumbItem } from '@/types';
+import type { BreadcrumbItem, UserRole } from '@/types';
 
 type EditableUser = {
     id: number;
@@ -17,30 +19,33 @@ type EditableUser = {
 
 const props = defineProps<{
     user: EditableUser;
+    manageableRole?: UserRole;
 }>();
 
-const breadcrumbs: BreadcrumbItem[] = [
+const labels = useManageableUsersLabels(() => props.manageableRole);
+
+const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     {
         title: 'Табло',
         href: dashboard(),
     },
     {
-        title: 'Users',
+        title: labels.value.plural,
         href: index(),
     },
     {
-        title: 'Edit user',
+        title: labels.value.editTitle,
         href: edit(props.user.id),
     },
-];
+]);
 </script>
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
-        <Head title="Edit user" />
+        <Head :title="labels.editTitle" />
 
         <div class="mx-auto w-full max-w-2xl space-y-4 p-4">
-            <h1 class="text-xl font-semibold">Edit user</h1>
+            <h1 class="text-xl font-semibold">{{ labels.editTitle }}</h1>
 
             <Form
                 v-bind="update.form(user.id)"
@@ -48,32 +53,32 @@ const breadcrumbs: BreadcrumbItem[] = [
                 v-slot="{ errors, processing }"
             >
                 <div class="grid gap-2">
-                    <Label for="name">Name</Label>
+                    <Label for="name">Име</Label>
                     <Input id="name" name="name" required autocomplete="name" :default-value="user.name" />
                     <InputError :message="errors.name" />
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="email">Email</Label>
+                    <Label for="email">Имейл</Label>
                     <Input id="email" type="email" name="email" required autocomplete="email" :default-value="user.email" />
                     <InputError :message="errors.email" />
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="password">New password (optional)</Label>
+                    <Label for="password">Нова парола (по избор)</Label>
                     <Input id="password" type="password" name="password" autocomplete="new-password" />
                     <InputError :message="errors.password" />
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="password_confirmation">Confirm new password</Label>
+                    <Label for="password_confirmation">Потвърди новата парола</Label>
                     <Input id="password_confirmation" type="password" name="password_confirmation" autocomplete="new-password" />
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <Button type="submit" :disabled="processing">Save</Button>
+                    <Button type="submit" :disabled="processing">Запази</Button>
                     <Button variant="outline" as-child>
-                        <Link :href="index()">Cancel</Link>
+                        <Link :href="index()">Отказ</Link>
                     </Button>
                 </div>
             </Form>

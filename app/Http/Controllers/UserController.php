@@ -45,6 +45,8 @@ class UserController extends Controller
 
     public function store(StoreUserRequest $request): RedirectResponse
     {
+        $this->authorize('create', User::class);
+
         /** @var User $actor */
         $actor = Auth::user();
         $manageableRole = app(UserPolicy::class)->manageableRole($actor);
@@ -71,6 +73,8 @@ class UserController extends Controller
 
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
+        $this->authorize('update', $user);
+
         $validated = $request->validated();
 
         if (empty($validated['password'])) {

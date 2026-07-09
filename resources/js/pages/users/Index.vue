@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2 } from 'lucide-vue-next';
+import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
+import { useManageableUsersLabels } from '@/composables/useManageableUsersLabels';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import { create, destroy, edit, index } from '@/routes/users';
-import type { BreadcrumbItem } from '@/types';
+import type { BreadcrumbItem, UserRole } from '@/types';
 
 type UserListItem = {
     id: number;
@@ -14,23 +16,26 @@ type UserListItem = {
     created_at: string;
 };
 
-defineProps<{
+const props = defineProps<{
     users: UserListItem[];
+    manageableRole?: UserRole;
 }>();
 
-const breadcrumbs: BreadcrumbItem[] = [
+const labels = useManageableUsersLabels(() => props.manageableRole);
+
+const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     {
         title: 'Табло',
         href: dashboard(),
     },
     {
-        title: 'Users',
+        title: labels.value.plural,
         href: index(),
     },
-];
+]);
 
 const deleteUser = (userId: number): void => {
-    if (! window.confirm('Сигурни ли сте, че искате да изтриете този потребител?')) {
+    if (!window.confirm(labels.value.deleteConfirm)) {
         return;
     }
 
@@ -42,15 +47,15 @@ const deleteUser = (userId: number): void => {
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
-        <Head title="Users" />
+        <Head :title="labels.plural" />
 
         <div class="space-y-4 p-4">
             <div class="flex items-center justify-between">
-                <h1 class="text-xl font-semibold">Users</h1>
+                <h1 class="text-xl font-semibold">{{ labels.plural }}</h1>
                 <Button as-child>
                     <Link :href="create()">
                         <Plus class="mr-2 h-4 w-4" />
-                        Add user
+                        {{ labels.add }}
                     </Link>
                 </Button>
             </div>
@@ -59,10 +64,10 @@ const deleteUser = (userId: number): void => {
                 <table class="w-full text-sm">
                     <thead class="bg-muted/50 text-left">
                         <tr>
-                            <th class="px-4 py-3 font-medium">Name</th>
-                            <th class="px-4 py-3 font-medium">Email</th>
-                            <th class="px-4 py-3 font-medium">Created</th>
-                            <th class="px-4 py-3 font-medium">Actions</th>
+                            <th class="px-4 py-3 font-medium">Име</th>
+                            <th class="px-4 py-3 font-medium">Имейл</th>
+                            <th class="px-4 py-3 font-medium">Създаден</th>
+                            <th class="px-4 py-3 font-medium">Действия</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -81,7 +86,7 @@ const deleteUser = (userId: number): void => {
                                     <Button variant="outline" size="sm" as-child>
                                         <Link :href="edit(user.id)">
                                             <Pencil class="mr-1 h-4 w-4" />
-                                            Edit
+                                            Редакция
                                         </Link>
                                     </Button>
                                     <Button
@@ -91,14 +96,14 @@ const deleteUser = (userId: number): void => {
                                         @click="deleteUser(user.id)"
                                     >
                                         <Trash2 class="mr-1 h-4 w-4" />
-                                        Delete
+                                        Изтриване
                                     </Button>
                                 </div>
                             </td>
                         </tr>
                         <tr v-if="users.length === 0">
                             <td colspan="4" class="px-4 py-6 text-center text-muted-foreground">
-                                No users found.
+                                {{ labels.empty }}
                             </td>
                         </tr>
                     </tbody>

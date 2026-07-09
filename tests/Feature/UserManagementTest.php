@@ -144,6 +144,53 @@ test('weak password is rejected when creating user', function () {
     ])->assertSessionHasErrors('password');
 });
 
+test('profiler cannot manage office user role account', function () {
+    $profiler = User::factory()->create();
+    $profiler->assignRole('profiler');
+
+    $officeUser = User::factory()->create();
+    $officeUser->assignRole('user');
+
+    actingAs($profiler);
+
+    get("/users/{$officeUser->id}/edit")->assertForbidden();
+
+    put("/users/{$officeUser->id}", [
+        'name' => 'Blocked',
+        'email' => $officeUser->email,
+        'password' => '',
+        'password_confirmation' => '',
+    ])->assertForbidden();
+
+    delete("/users/{$officeUser->id}")->assertForbidden();
+});
+
+test('profiler can update and delete admin role account', function () {
+    $profiler = User::factory()->create();
+    $profiler->assignRole('profiler');
+
+    $managedAdmin = User::factory()->create();
+    $managedAdmin->assignRole('admin');
+
+    actingAs($profiler);
+
+    put("/users/{$managedAdmin->id}", [
+        'name' => 'Updated Admin',
+        'email' => 'updated.admin@example.com',
+        'password' => '',
+        'password_confirmation' => '',
+    ])
+        ->assertRedirect('/users');
+
+    expect($managedAdmin->refresh()->name)->toBe('Updated Admin')
+        ->and($managedAdmin->email)->toBe('updated.admin@example.com');
+
+    delete("/users/{$managedAdmin->id}")
+        ->assertRedirect('/users');
+
+    expect(User::query()->whereKey($managedAdmin->id)->exists())->toBeFalse();
+});
+
 test('admin can update and delete user role account', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
