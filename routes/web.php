@@ -3,6 +3,8 @@
 use App\Http\Controllers\Admin\AgentFeedbackStatisticsController;
 use App\Http\Controllers\Admin\DataExportController;
 use App\Http\Controllers\AgentConversationMessagesController;
+use App\Http\Controllers\Api\AuditLogApiController;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\DashboardAgentController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NotesAgentController;
@@ -59,6 +61,27 @@ Route::middleware(['auth', 'verified', 'two-factor.enabled', 'profiler.agent.blo
 
 Route::middleware(['auth', 'verified', 'two-factor.enabled', 'role:profiler|admin'])->group(function () {
     Route::resource('users', UserController::class)->except('show');
+});
+
+Route::middleware(['auth', 'verified', 'two-factor.enabled', 'role:profiler'])->group(function () {
+    Route::get('/audit-logs', [AuditLogController::class, 'index'])
+        ->name('audit-logs.index');
+
+    Route::post('/audit-logs-export', [AuditLogController::class, 'export'])
+        ->name('audit-logs.export');
+
+    Route::delete('/audit-logs/bulk', [AuditLogController::class, 'destroyBulk'])
+        ->name('audit-logs.destroy-bulk');
+
+    Route::delete('/audit-logs/{auditLog}', [AuditLogController::class, 'destroy'])
+        ->name('audit-logs.destroy');
+
+    Route::prefix('internal-api')
+        ->name('internal.')
+        ->group(function () {
+            Route::get('audit-logs', [AuditLogApiController::class, 'index'])
+                ->name('audit-logs.index');
+        });
 });
 
 Route::middleware(['auth', 'verified', 'two-factor.enabled', 'role:user|admin'])->group(function () {

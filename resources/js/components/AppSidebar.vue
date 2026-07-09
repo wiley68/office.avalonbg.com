@@ -5,8 +5,10 @@ import {
     BarChart3,
     Bot,
     HardDriveDownload,
+    History,
     LayoutGrid,
     Mail,
+    ScrollText,
     StickyNote,
     Table,
     User,
@@ -27,6 +29,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { index as auditLogsIndex } from '@/routes/audit-logs';
 import dashboardRoutes from '@/routes/dashboard';
 import { index as usersIndex } from '@/routes/users';
 import type { NavItem } from '@/types';
@@ -51,6 +54,18 @@ const mainNavItems = computed<NavItem[]>(() => {
                 title: 'Администратори',
                 href: usersIndex(),
                 icon: Users,
+            },
+            {
+                title: 'Журнали',
+                href: '',
+                icon: ScrollText,
+                children: [
+                    {
+                        title: 'Одит',
+                        href: auditLogsIndex(),
+                        icon: History,
+                    },
+                ],
             },
         ];
     }
