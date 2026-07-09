@@ -42,6 +42,8 @@
         "created": "Created",
         "edit": "Edit",
         "delete": "Delete",
+        "confirm": "Confirm",
+        "confirm_delete": "Delete",
         "form_errors": "The form contains errors.",
         "table": {
             "search_placeholder": "Search...",

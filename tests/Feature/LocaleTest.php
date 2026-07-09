@@ -44,14 +44,18 @@ test('translations helper resolves nested english keys', function () {
     expect(Translations::get('users.admin.plural'))->toBe('Administrators')
         ->and(Translations::get('users.two_factor.email_send_failed'))->toBe('The email could not be sent automatically.')
         ->and(Translations::get('password.hint', ['min' => '9']))->toContain('9 characters')
-        ->and(Translations::get('common.table.page_of', ['current' => '2', 'total' => '5']))->toBe('Page 2 of 5');
+        ->and(Translations::get('common.table.page_of', ['current' => '2', 'total' => '5']))->toBe('Page 2 of 5')
+        ->and(Translations::get('common.confirm'))->toBe('Confirm')
+        ->and(Translations::get('common.confirm_delete'))->toBe('Delete');
 });
 
 test('translations helper resolves bulgarian keys', function () {
     expect(Translations::get('users.admin.plural', locale: 'bg'))->toBe('Администратори')
         ->and(Translations::get('users.two_factor.email_send_failed', locale: 'bg'))->toBe('Имейлът не можа да бъде изпратен автоматично.')
         ->and(Translations::get('audit_logs.event_types.login_success', locale: 'bg'))->toBe('Успешен вход')
-        ->and(Translations::get('common.table.show_columns', locale: 'bg'))->toBe('Покажи колони');
+        ->and(Translations::get('common.table.show_columns', locale: 'bg'))->toBe('Покажи колони')
+        ->and(Translations::get('common.confirm', locale: 'bg'))->toBe('Потвърди')
+        ->and(Translations::get('common.confirm_delete', locale: 'bg'))->toBe('Изтрий');
 });
 
 test('user translations are shared on inertia pages', function () {

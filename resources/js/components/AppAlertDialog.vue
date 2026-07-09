@@ -10,6 +10,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useTranslations } from '@/composables/useTranslations';
 
 const open = defineModel<boolean>('open', { required: true });
 
@@ -28,7 +29,7 @@ const props = withDefaults(
         mode: 'confirm',
         variant: 'destructive',
         confirmLabel: undefined,
-        cancelLabel: 'Отказ',
+        cancelLabel: undefined,
         loading: false,
     },
 );
@@ -38,16 +39,24 @@ const emit = defineEmits<{
     cancel: [];
 }>();
 
+const { t } = useTranslations();
+
+const resolvedCancelLabel = computed(
+    () => props.cancelLabel ?? t('common.cancel'),
+);
+
 const resolvedConfirmLabel = computed(() => {
     if (props.confirmLabel) {
         return props.confirmLabel;
     }
 
     if (props.mode === 'info') {
-        return 'Затвори';
+        return t('common.close');
     }
 
-    return props.variant === 'destructive' ? 'Изтрий' : 'Потвърди';
+    return props.variant === 'destructive'
+        ? t('common.confirm_delete')
+        : t('common.confirm');
 });
 
 const confirmActionClass = computed(() =>
@@ -82,7 +91,7 @@ const handleCancel = () => {
                     :disabled="loading"
                     @click="handleCancel"
                 >
-                    {{ cancelLabel }}
+                    {{ resolvedCancelLabel }}
                 </AlertDialogCancel>
                 <AlertDialogAction
                     :class="confirmActionClass"

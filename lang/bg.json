@@ -42,6 +42,8 @@
         "created": "Създаден",
         "edit": "Редакция",
         "delete": "Изтриване",
+        "confirm": "Потвърди",
+        "confirm_delete": "Изтрий",
         "form_errors": "Във формата има грешки.",
         "table": {
             "search_placeholder": "Търси...",
