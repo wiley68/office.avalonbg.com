@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Support\EncryptedSevenZipArchive;
-use Illuminate\Support\Facades\Storage;
+use App\Support\LogExportFilename;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -14,16 +14,11 @@ class EncryptedAuditLogExporter
         private readonly EncryptedSevenZipArchive $archive,
     ) {}
 
-    public function download(string $dateFrom, string $dateTo, string $xlsxFilename, string $password): BinaryFileResponse
+    public function download(string $dateFrom, string $dateTo, string $password): BinaryFileResponse
     {
-        $relativeDir = 'temp/exports/'.Str::uuid()->toString();
-        $safeXlsxFilename = basename($xlsxFilename);
-        $relativePath = $relativeDir.'/'.$safeXlsxFilename;
-        $workDir = Storage::disk('local')->path($relativeDir);
-
-        Storage::disk('local')->makeDirectory($relativeDir);
-
-        $xlsxPath = Storage::disk('local')->path($relativePath);
+        $xlsxFilename = LogExportFilename::auditLogs($dateFrom, $dateTo);
+        $workDir = $this->createWorkDirectory();
+        $xlsxPath = $workDir.'/'.$xlsxFilename;
 
         $this->exportService->writeToFile($dateFrom, $dateTo, $xlsxPath);
 
@@ -33,7 +28,7 @@ class EncryptedAuditLogExporter
             throw new \RuntimeException('Експортът не беше генериран успешно.');
         }
 
-        $archiveFilename = pathinfo($safeXlsxFilename, PATHINFO_FILENAME).'.7z';
+        $archiveFilename = LogExportFilename::archiveFromXlsx($xlsxFilename);
         $archivePath = $workDir.'/'.$archiveFilename;
 
         try {
@@ -51,6 +46,20 @@ class EncryptedAuditLogExporter
         return response()->download($archivePath, $archiveFilename, [
             'Content-Type' => 'application/x-7z-compressed',
         ])->deleteFileAfterSend(true);
+    }
+
+    private function createWorkDirectory(): string
+    {
+        $workDir = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR)
+            .DIRECTORY_SEPARATOR
+            .'office-export-'
+            .Str::uuid()->toString();
+
+        if (! @mkdir($workDir, 0775, true) && ! is_dir($workDir)) {
+            throw new \RuntimeException('Неуспешно създаване на временна директория за експорт.');
+        }
+
+        return $workDir;
     }
 
     private function removeDirectory(string $directory): void

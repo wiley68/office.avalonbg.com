@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2 } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import AppAlertDialog from '@/components/AppAlertDialog.vue';
+import TableRowActionsMenu from '@/components/table/TableRowActionsMenu.vue';
 import { Button } from '@/components/ui/button';
 import { useManageableUsersLabels } from '@/composables/useManageableUsersLabels';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -34,10 +36,27 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     },
 ]);
 
-const deleteUser = (userId: number): void => {
-    if (!window.confirm(labels.value.deleteConfirm)) {
+const showDeleteDialog = ref(false);
+const userToDelete = ref<number | null>(null);
+
+const requestDeleteUser = (userId: number): void => {
+    userToDelete.value = userId;
+    showDeleteDialog.value = true;
+};
+
+const cancelDelete = (): void => {
+    userToDelete.value = null;
+    showDeleteDialog.value = false;
+};
+
+const confirmDelete = (): void => {
+    if (userToDelete.value === null) {
         return;
     }
+
+    const userId = userToDelete.value;
+    userToDelete.value = null;
+    showDeleteDialog.value = false;
 
     router.visit(destroy(userId), {
         preserveScroll: true,
@@ -67,7 +86,7 @@ const deleteUser = (userId: number): void => {
                             <th class="px-4 py-3 font-medium">Име</th>
                             <th class="px-4 py-3 font-medium">Имейл</th>
                             <th class="px-4 py-3 font-medium">Създаден</th>
-                            <th class="px-4 py-3 font-medium">Действия</th>
+                            <th class="w-10 px-4 py-3 font-medium" />
                         </tr>
                     </thead>
                     <tbody>
@@ -82,23 +101,23 @@ const deleteUser = (userId: number): void => {
                                 {{ new Date(user.created_at).toLocaleDateString() }}
                             </td>
                             <td class="px-4 py-3">
-                                <div class="flex items-center gap-2">
-                                    <Button variant="outline" size="sm" as-child>
-                                        <Link :href="edit(user.id)">
-                                            <Pencil class="mr-1 h-4 w-4" />
-                                            Редакция
-                                        </Link>
-                                    </Button>
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        type="button"
-                                        @click="deleteUser(user.id)"
-                                    >
-                                        <Trash2 class="mr-1 h-4 w-4" />
-                                        Изтриване
-                                    </Button>
-                                </div>
+                                <TableRowActionsMenu
+                                    :actions="[
+                                        {
+                                            label: 'Редакция',
+                                            icon: Pencil,
+                                            onSelect: () =>
+                                                router.visit(edit(user.id)),
+                                        },
+                                        {
+                                            label: 'Изтриване',
+                                            icon: Trash2,
+                                            variant: 'destructive',
+                                            onSelect: () =>
+                                                requestDeleteUser(user.id),
+                                        },
+                                    ]"
+                                />
                             </td>
                         </tr>
                         <tr v-if="users.length === 0">
@@ -110,5 +129,13 @@ const deleteUser = (userId: number): void => {
                 </table>
             </div>
         </div>
+
+        <AppAlertDialog
+            v-model:open="showDeleteDialog"
+            title="Потвърждение за изтриване"
+            :description="labels.deleteConfirm"
+            @confirm="confirmDelete"
+            @cancel="cancelDelete"
+        />
     </AppLayout>
 </template>

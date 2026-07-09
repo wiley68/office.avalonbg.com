@@ -1,14 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
-import {
-    AlertDialog,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import AppAlertDialog from '@/components/AppAlertDialog.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -1204,37 +1196,14 @@ defineExpose({
                 </DialogContent>
             </Dialog>
 
-            <AlertDialog v-model:open="deleteAllDialogOpen">
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>
-                            Изтриване на всички разговори?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Ще изтриете всички разговори, видими в този панел,
-                            заедно с историята им. Действието не може да бъде
-                            отменено.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel :disabled="deletingAllConversations">
-                            Отказ
-                        </AlertDialogCancel>
-                        <Button
-                            type="button"
-                            variant="destructive"
-                            :disabled="deletingAllConversations"
-                            @click="confirmDeleteAllConversations"
-                        >
-                            {{
-                                deletingAllConversations
-                                    ? 'Изтриване…'
-                                    : 'Изтрий всички'
-                            }}
-                        </Button>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <AppAlertDialog
+                v-model:open="deleteAllDialogOpen"
+                title="Изтриване на всички разговори?"
+                description="Ще изтриете всички разговори, видими в този панел, заедно с историята им. Действието не може да бъде отменено."
+                confirm-label="Изтрий всички"
+                :loading="deletingAllConversations"
+                @confirm="confirmDeleteAllConversations"
+            />
         </div>
     </div>
 </template>

@@ -26,12 +26,10 @@ class AuditLogController extends Controller
         Gate::authorize('viewAny', AuditLog::class);
 
         $validated = $request->validated();
-        $filename = 'audit_logs_'.$validated['date_from'].'_'.$validated['date_to'].'_'.now()->format('H-i-s').'.xlsx';
 
         return $exporter->download(
             $validated['date_from'],
             $validated['date_to'],
-            $filename,
             $validated['password'],
         );
     }

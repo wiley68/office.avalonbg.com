@@ -1,0 +1,101 @@
+<script setup lang="ts">
+import { computed } from 'vue';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
+const open = defineModel<boolean>('open', { required: true });
+
+const props = withDefaults(
+    defineProps<{
+        title: string;
+        description?: string;
+        mode?: 'confirm' | 'info';
+        variant?: 'default' | 'destructive';
+        confirmLabel?: string;
+        cancelLabel?: string;
+        loading?: boolean;
+    }>(),
+    {
+        description: undefined,
+        mode: 'confirm',
+        variant: 'destructive',
+        confirmLabel: undefined,
+        cancelLabel: 'Отказ',
+        loading: false,
+    },
+);
+
+const emit = defineEmits<{
+    confirm: [];
+    cancel: [];
+}>();
+
+const resolvedConfirmLabel = computed(() => {
+    if (props.confirmLabel) {
+        return props.confirmLabel;
+    }
+
+    if (props.mode === 'info') {
+        return 'Затвори';
+    }
+
+    return props.variant === 'destructive' ? 'Изтрий' : 'Потвърди';
+});
+
+const confirmActionClass = computed(() =>
+    props.variant === 'destructive'
+        ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+        : undefined,
+);
+
+const handleConfirm = () => {
+    emit('confirm');
+};
+
+const handleCancel = () => {
+    emit('cancel');
+};
+</script>
+
+<template>
+    <AlertDialog v-model:open="open">
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>{{ title }}</AlertDialogTitle>
+                <AlertDialogDescription v-if="description || $slots.description">
+                    <slot name="description">
+                        {{ description }}
+                    </slot>
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel
+                    v-if="mode === 'confirm'"
+                    :disabled="loading"
+                    @click="handleCancel"
+                >
+                    {{ cancelLabel }}
+                </AlertDialogCancel>
+                <AlertDialogAction
+                    :class="confirmActionClass"
+                    :disabled="loading"
+                    @click.prevent="handleConfirm"
+                >
+                    {{
+                        loading
+                            ? `${resolvedConfirmLabel}…`
+                            : resolvedConfirmLabel
+                    }}
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+</template>

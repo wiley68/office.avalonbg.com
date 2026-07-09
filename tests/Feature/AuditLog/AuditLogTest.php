@@ -183,20 +183,26 @@ test('profiler can export audit logs when 7z is available', function () {
     $profiler = User::factory()->create();
     $profiler->assignRole('profiler');
 
+    $dateFrom = now()->subDays(7)->toDateString();
+    $dateTo = now()->toDateString();
+
     createAuditLog([
         'occurred_at' => now()->subDays(2),
         'user_email' => $profiler->email,
     ]);
 
-    actingAs($profiler)
+    $response = actingAs($profiler)
         ->postJson(route('audit-logs.export'), [
-            'date_from' => now()->subDays(7)->toDateString(),
-            'date_to' => now()->toDateString(),
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
             'password' => 'ExportPass1!',
             'password_confirmation' => 'ExportPass1!',
         ])
         ->assertOk()
         ->assertDownload();
+
+    expect($response->headers->get('content-disposition'))
+        ->toMatch('/audit_logs_'.preg_quote($dateFrom, '/').'_'.preg_quote($dateTo, '/').'_.*\.7z/');
 });
 
 test('prune command deletes audit logs older than configured retention', function () {
