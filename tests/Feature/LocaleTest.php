@@ -19,7 +19,7 @@ beforeEach(function () {
 test('home page defaults to english locale', function () {
     get(route('home'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->where('locale', 'en')
             ->where('appearance', 'system')
             ->where('translations.welcome.sign_in', 'Sign in'));
@@ -31,7 +31,7 @@ test('locale can be switched and stored in session', function () {
 
     get(route('home'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->where('locale', 'bg')
             ->where('translations.welcome.sign_in', 'Влез в системата'));
 });
@@ -41,7 +41,8 @@ test('invalid locale returns not found', function () {
 });
 
 test('translations helper resolves nested english keys', function () {
-    expect(Translations::get('users.admin.plural'))->toBe('Administrators')
+    expect(Translations::get('nav.users'))->toBe('Users')
+        ->and(Translations::get('users.admin.plural'))->toBe('Administrators')
         ->and(Translations::get('users.two_factor.email_send_failed'))->toBe('The email could not be sent automatically.')
         ->and(Translations::get('password.hint', ['min' => '9']))->toContain('9 characters')
         ->and(Translations::get('common.table.page_of', ['current' => '2', 'total' => '5']))->toBe('Page 2 of 5')
@@ -50,7 +51,8 @@ test('translations helper resolves nested english keys', function () {
 });
 
 test('translations helper resolves bulgarian keys', function () {
-    expect(Translations::get('users.admin.plural', locale: 'bg'))->toBe('Администратори')
+    expect(Translations::get('nav.users', locale: 'bg'))->toBe('Потребители')
+        ->and(Translations::get('users.admin.plural', locale: 'bg'))->toBe('Администратори')
         ->and(Translations::get('users.two_factor.email_send_failed', locale: 'bg'))->toBe('Имейлът не можа да бъде изпратен автоматично.')
         ->and(Translations::get('audit_logs.event_types.login_success', locale: 'bg'))->toBe('Успешен вход')
         ->and(Translations::get('common.table.show_columns', locale: 'bg'))->toBe('Покажи колони')
@@ -61,7 +63,7 @@ test('translations helper resolves bulgarian keys', function () {
 test('user translations are shared on inertia pages', function () {
     get(route('home'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->where('translations.users.admin.create_title', 'New administrator')
             ->where('translations.users.tabs.profile', 'Profile'));
 });
@@ -73,7 +75,7 @@ test('authenticated dashboard uses english navigation labels when locale is en',
     actingAs($profiler)
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->where('locale', 'en')
             ->where('translations.nav.logs', 'Logs')
             ->where('translations.common.dashboard', 'Dashboard')
@@ -87,7 +89,7 @@ test('authenticated audit logs page uses english labels when locale is en', func
     actingAs($profiler)
         ->get(route('audit-logs.index'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->where('locale', 'en')
             ->where('translations.audit_logs.title', 'Audit')
             ->where('translations.nav.logs', 'Logs')
@@ -103,7 +105,7 @@ test('authenticated audit logs page uses bulgarian labels when locale is bg', fu
         ->withSession(['locale' => 'bg'])
         ->get(route('audit-logs.index'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->where('locale', 'bg')
             ->where('translations.audit_logs.title', 'Одит')
             ->where('translations.nav.logs', 'Журнали')
@@ -119,9 +121,42 @@ test('authenticated dashboard uses bulgarian navigation labels when locale is bg
         ->withSession(['locale' => 'bg'])
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->where('locale', 'bg')
+            ->where('translations.nav.users', 'Потребители')
             ->where('translations.nav.logs', 'Журнали')
             ->where('translations.common.dashboard', 'Табло')
             ->where('auth.user.role_label', 'Профайлер'));
+});
+
+test('user management navigation is available only for profiler and admin roles', function () {
+    $profiler = User::factory()->create();
+    $profiler->assignRole('profiler');
+
+    actingAs($profiler)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn($page) => $page
+            ->where('auth.user.can_manage_users', true)
+            ->where('auth.user.is_profiler', true));
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    actingAs($admin)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn($page) => $page
+            ->where('auth.user.can_manage_users', true)
+            ->where('auth.user.is_admin', true));
+
+    $officeUser = User::factory()->create();
+    $officeUser->assignRole('user');
+
+    actingAs($officeUser)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn($page) => $page
+            ->where('auth.user.can_manage_users', false)
+            ->where('auth.user.has_office_access', true));
 });

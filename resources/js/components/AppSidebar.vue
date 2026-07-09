@@ -38,12 +38,37 @@ import type { NavItem } from '@/types';
 const page = usePage();
 const { t } = useTranslations();
 
+const usersNavItem = (user: NonNullable<typeof page.props.auth.user>): NavItem | null => {
+    if (!user.can_manage_users) {
+        return null;
+    }
+
+    const childTitle = user.is_profiler
+        ? t('users.admin.plural')
+        : t('users.office_user.plural');
+
+    return {
+        title: t('nav.users'),
+        href: '',
+        icon: Users,
+        children: [
+            {
+                title: childTitle,
+                href: usersIndex(),
+                icon: User,
+            },
+        ],
+    };
+};
+
 const mainNavItems = computed<NavItem[]>(() => {
     const user = page.props.auth.user;
 
     if (!user) {
         return [];
     }
+
+    const usersItem = usersNavItem(user);
 
     if (user.is_profiler) {
         return [
@@ -52,11 +77,7 @@ const mainNavItems = computed<NavItem[]>(() => {
                 href: dashboard(),
                 icon: LayoutGrid,
             },
-            {
-                title: t('users.admin.plural'),
-                href: usersIndex(),
-                icon: Users,
-            },
+            ...(usersItem ? [usersItem] : []),
             {
                 title: t('nav.logs'),
                 href: '',
@@ -78,6 +99,7 @@ const mainNavItems = computed<NavItem[]>(() => {
             href: dashboard(),
             icon: LayoutGrid,
         },
+        ...(usersItem ? [usersItem] : []),
         {
             title: t('nav.composer'),
             href: dashboardRoutes.composer.url(),
@@ -94,14 +116,6 @@ const mainNavItems = computed<NavItem[]>(() => {
             icon: StickyNote,
         },
     ];
-
-    if (user.can_manage_users) {
-        items.unshift({
-            title: t('users.office_user.plural'),
-            href: usersIndex(),
-            icon: Users,
-        });
-    }
 
     if (user.has_office_access) {
         items.push(

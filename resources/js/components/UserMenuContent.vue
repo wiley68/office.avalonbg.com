@@ -75,7 +75,7 @@ const handleLogout = (): void => {
         </DropdownMenuItem>
     </DropdownMenuGroup>
     <DropdownMenuSeparator />
-    <DropdownMenuItem :as-child="true">
+    <DropdownMenuItem :as-child="true" variant="destructive">
         <Link
             class="block w-full cursor-pointer"
             :href="logout()"

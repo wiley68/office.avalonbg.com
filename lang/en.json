@@ -12,6 +12,7 @@
         "system": "System"
     },
     "nav": {
+        "users": "Users",
         "logs": "Logs",
         "audit": "Audit",
         "composer": "Composer",
