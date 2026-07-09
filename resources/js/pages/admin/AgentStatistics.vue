@@ -28,7 +28,7 @@ defineProps<{
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Композитор',
+        title: 'Табло',
         href: dashboard(),
     },
     {

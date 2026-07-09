@@ -3,6 +3,7 @@ import { usePage } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import {
     BarChart3,
+    Bot,
     ShoppingCart,
     LayoutGrid,
     StickyNote,
@@ -40,6 +41,11 @@ const mainNavItems = computed<NavItem[]>(() => {
     if (user.is_profiler) {
         return [
             {
+                title: 'Табло',
+                href: dashboard(),
+                icon: LayoutGrid,
+            },
+            {
                 title: 'Потребители',
                 href: usersIndex(),
                 icon: Users,
@@ -49,9 +55,14 @@ const mainNavItems = computed<NavItem[]>(() => {
 
     const items: NavItem[] = [
         {
-            title: 'Композитор',
+            title: 'Табло',
             href: dashboard(),
             icon: LayoutGrid,
+        },
+        {
+            title: 'Композитор',
+            href: dashboardRoutes.composer.url(),
+            icon: Bot,
         },
         {
             title: 'Агенти',

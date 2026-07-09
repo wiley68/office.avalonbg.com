@@ -19,6 +19,8 @@ Route::middleware(['auth', 'verified', 'two-factor.enabled'])->group(function ()
 });
 
 Route::middleware(['auth', 'verified', 'two-factor.enabled', 'profiler.agent.block'])->group(function () {
+    Route::inertia('dashboard/composer', 'office/Composer')->name('dashboard.composer');
+
     Route::post('dashboard/agent', [DashboardAgentController::class, 'store'])
         ->middleware('agent.context:orchestrator')
         ->name('dashboard.agent');
