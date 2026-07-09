@@ -27,15 +27,15 @@ export function validateLogExportDateRange(
     dateTo: string,
 ): string | null {
     if (!dateFrom) {
-        return 'Изберете начална дата.';
+        return 'audit_logs.export.validation.date_from_required';
     }
 
     if (!dateTo) {
-        return 'Изберете крайна дата.';
+        return 'audit_logs.export.validation.date_to_required';
     }
 
     if (dateTo < dateFrom) {
-        return 'Крайната дата трябва да е след или равна на началната.';
+        return 'audit_logs.export.validation.date_range_invalid';
     }
 
     return null;

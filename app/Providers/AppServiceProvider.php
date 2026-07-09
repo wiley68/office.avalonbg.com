@@ -98,7 +98,7 @@ class AppServiceProvider extends ServiceProvider
             $email = (string) ($event->credentials[Fortify::username()] ?? $event->credentials['email'] ?? '—');
             $user = $event->user instanceof User ? $event->user : null;
 
-            AuditLogger::logLoginFailed($email, 'невалидни данни за вход', $user);
+            AuditLogger::logLoginFailed($email, 'invalid_credentials', $user);
         });
 
         Event::listen(ValidTwoFactorAuthenticationCodeProvided::class, function (ValidTwoFactorAuthenticationCodeProvided $event): void {

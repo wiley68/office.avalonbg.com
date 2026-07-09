@@ -39,6 +39,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useTranslations } from '@/composables/useTranslations';
 import { cn, valueUpdater } from '@/lib/utils';
 
 interface DataTableProps {
@@ -68,9 +69,6 @@ interface DataTableProps {
 
 const props = withDefaults(defineProps<DataTableProps>(), {
     loading: false,
-    searchPlaceholder: 'Търси...',
-    emptyMessage: 'Няма съответстващи записи',
-    loadingMessage: 'Данните се зареждат...',
     showPagination: true,
     showColumnToggle: true,
     pageSize: 10,
@@ -82,6 +80,24 @@ const props = withDefaults(defineProps<DataTableProps>(), {
     expandedRows: () => ({}),
     fillHeight: false,
 });
+
+const { t } = useTranslations();
+
+const resolvedSearchPlaceholder = computed(
+    () => props.searchPlaceholder ?? t('common.table.search_placeholder'),
+);
+const resolvedEmptyMessage = computed(
+    () => props.emptyMessage ?? t('common.table.empty'),
+);
+const resolvedLoadingMessage = computed(
+    () => props.loadingMessage ?? t('common.table.loading'),
+);
+const pageLabel = computed(() =>
+    t('common.table.page_of', {
+        current: String(props.currentPage),
+        total: String(props.totalPages),
+    }),
+);
 
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
@@ -145,7 +161,7 @@ const getColumnTitle = (columnId: string) => {
             <div class="flex items-center gap-4">
                 <Input
                     v-model="search"
-                    :placeholder="searchPlaceholder"
+                    :placeholder="resolvedSearchPlaceholder"
                     class="flex-1"
                 />
                 <div v-if="showColumnToggle" class="flex items-center gap-2">
@@ -153,7 +169,7 @@ const getColumnTitle = (columnId: string) => {
                         <DropdownMenuTrigger as-child>
                             <Button variant="outline" size="sm">
                                 <Icon name="Settings" class="mr-2 h-4 w-4" />
-                                Колони
+                                {{ t('common.table.columns') }}
                                 <Icon
                                     name="ChevronDown"
                                     class="ml-2 h-4 w-4"
@@ -161,7 +177,9 @@ const getColumnTitle = (columnId: string) => {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" class="w-[150px]">
-                            <DropdownMenuLabel>Покажи колони</DropdownMenuLabel>
+                            <DropdownMenuLabel>{{
+                                t('common.table.show_columns')
+                            }}</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuCheckboxItem
                                 v-for="column in table
@@ -232,7 +250,7 @@ const getColumnTitle = (columnId: string) => {
                                             name="Loader2"
                                             class="h-4 w-4 animate-spin"
                                         />
-                                        {{ loadingMessage }}
+                                        {{ resolvedLoadingMessage }}
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -313,7 +331,7 @@ const getColumnTitle = (columnId: string) => {
                                 "
                                 class="h-24 text-center"
                             >
-                                {{ emptyMessage }}
+                                {{ resolvedEmptyMessage }}
                             </TableCell>
                         </TableRow>
                     </TableBody>
@@ -331,7 +349,9 @@ const getColumnTitle = (columnId: string) => {
             "
         >
             <div class="flex items-center space-x-2">
-                <p class="text-sm font-medium">Редове на страница</p>
+                <p class="text-sm font-medium">
+                    {{ t('common.table.rows_per_page') }}
+                </p>
                 <Select
                     :model-value="`${pageSize}`"
                     @update:model-value="
@@ -357,7 +377,7 @@ const getColumnTitle = (columnId: string) => {
                 <div
                     class="flex w-[140px] items-center justify-center text-sm font-medium"
                 >
-                    Страница {{ currentPage }} от {{ totalPages }}
+                    {{ pageLabel }}
                 </div>
                 <div class="flex items-center space-x-2">
                     <Button
@@ -366,7 +386,9 @@ const getColumnTitle = (columnId: string) => {
                         :disabled="currentPage <= 1"
                         @click="onPaginationChange?.(1, pageSize)"
                     >
-                        <span class="sr-only">Към първа страница</span>
+                        <span class="sr-only">{{
+                            t('common.table.first_page')
+                        }}</span>
                         <Icon name="ChevronsLeft" class="h-4 w-4" />
                     </Button>
                     <Button
@@ -377,7 +399,9 @@ const getColumnTitle = (columnId: string) => {
                             onPaginationChange?.(currentPage - 1, pageSize)
                         "
                     >
-                        <span class="sr-only">Предишна страница</span>
+                        <span class="sr-only">{{
+                            t('common.table.previous_page')
+                        }}</span>
                         <Icon name="ChevronLeft" class="h-4 w-4" />
                     </Button>
                     <Button
@@ -388,7 +412,9 @@ const getColumnTitle = (columnId: string) => {
                             onPaginationChange?.(currentPage + 1, pageSize)
                         "
                     >
-                        <span class="sr-only">Следваща страница</span>
+                        <span class="sr-only">{{
+                            t('common.table.next_page')
+                        }}</span>
                         <Icon name="ChevronRight" class="h-4 w-4" />
                     </Button>
                     <Button
@@ -399,7 +425,9 @@ const getColumnTitle = (columnId: string) => {
                             onPaginationChange?.(totalPages, pageSize)
                         "
                     >
-                        <span class="sr-only">Към последна страница</span>
+                        <span class="sr-only">{{
+                            t('common.table.last_page')
+                        }}</span>
                         <Icon name="ChevronsRight" class="h-4 w-4" />
                     </Button>
                 </div>

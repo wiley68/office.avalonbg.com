@@ -5,6 +5,7 @@ import EncryptedExportDialog from '@/components/exports/EncryptedExportDialog.vu
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslations } from '@/composables/useTranslations';
 import { downloadEncryptedExport } from '@/lib/encryptedExport';
 import {
     getDefaultLogExportDateRange,
@@ -14,6 +15,8 @@ import {
 const props = defineProps<{
     exportUrl: string;
 }>();
+
+const { t } = useTranslations();
 
 const defaultRange = getDefaultLogExportDateRange();
 const dateFrom = ref(defaultRange.dateFrom);
@@ -33,7 +36,7 @@ const openExportDialog = () => {
     );
 
     if (validationError) {
-        exportError.value = validationError;
+        exportError.value = t(validationError);
 
         return;
     }
@@ -66,9 +69,11 @@ const handleExport = async (
         }
 
         showExportDialog.value = false;
-        exportSuccess.value = `Архивът ${result.filename} беше изтеглен успешно.`;
+        exportSuccess.value = t('audit_logs.export.success', {
+            filename: result.filename,
+        });
     } catch {
-        exportError.value = 'Грешка при експорт на файла.';
+        exportError.value = t('audit_logs.export.error');
     } finally {
         isExporting.value = false;
     }
@@ -83,7 +88,7 @@ const handleExport = async (
                     for="log-export-date-from"
                     class="text-xs text-muted-foreground"
                 >
-                    Начална дата
+                    {{ t('audit_logs.export.date_from') }}
                 </Label>
                 <Input
                     id="log-export-date-from"
@@ -98,7 +103,7 @@ const handleExport = async (
                     for="log-export-date-to"
                     class="text-xs text-muted-foreground"
                 >
-                    Крайна дата
+                    {{ t('audit_logs.export.date_to') }}
                 </Label>
                 <Input
                     id="log-export-date-to"
@@ -119,7 +124,7 @@ const handleExport = async (
                     class="mr-2 h-4 w-4 animate-spin"
                 />
                 <FileDown v-else class="mr-2 h-4 w-4" />
-                Експорт 7z
+                {{ t('audit_logs.export.button') }}
             </Button>
         </div>
 

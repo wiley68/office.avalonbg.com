@@ -11,6 +11,23 @@
         "dark": "Тъмен",
         "system": "Системен"
     },
+    "nav": {
+        "logs": "Журнали",
+        "audit": "Одит",
+        "composer": "Композитор",
+        "agents": "Агенти",
+        "notes": "Бележки",
+        "statistics": "Статистика",
+        "export": "Експорт"
+    },
+    "roles": {
+        "profiler": "Профайлер",
+        "admin": "Администратор",
+        "user": "Потребител"
+    },
+    "dashboard": {
+        "administrators_subtitle": "Системни администратори"
+    },
     "common": {
         "dashboard": "Табло",
         "error": "Грешка",
@@ -25,7 +42,20 @@
         "created": "Създаден",
         "edit": "Редакция",
         "delete": "Изтриване",
-        "form_errors": "Във формата има грешки."
+        "form_errors": "Във формата има грешки.",
+        "table": {
+            "search_placeholder": "Търси...",
+            "empty": "Няма съответстващи записи",
+            "loading": "Данните се зареждат...",
+            "columns": "Колони",
+            "show_columns": "Покажи колони",
+            "rows_per_page": "Редове на страница",
+            "page_of": "Страница :current от :total",
+            "first_page": "Към първа страница",
+            "previous_page": "Предишна страница",
+            "next_page": "Следваща страница",
+            "last_page": "Към последна страница"
+        }
     },
     "password": {
         "hint": "Минимум :min символа, поне една главна буква, една малка буква, една цифра и специален символ.",
@@ -136,6 +166,89 @@
             "recovery_description": "Използвайте тези кодове, ако загубите достъп до приложението си. Всеки код може да се използва само веднъж.",
             "login_intro": "След като настроите приложението, можете да влезете в контролния панел на адрес:",
             "footer": "Ако не очаквате този имейл, свържете се с администратора на системата."
+        }
+    },
+    "audit_logs": {
+        "title": "Одит",
+        "search_placeholder": "Търси по потребител, имейл, събитие...",
+        "empty": "Няма съответстващи записи",
+        "loading": "Данните се зареждат...",
+        "delete_selected": "Изтрий избраните (:count)",
+        "delete_confirm_title": "Потвърждение за изтриване",
+        "delete_confirm_single": "Сигурни ли сте, че искате да изтриете този запис? Това действие не може да бъде отменено.",
+        "delete_confirm_bulk": "Сигурни ли сте, че искате да изтриете :count избрани записа? Това действие не може да бъде отменено.",
+        "details_title": "Детайли на събитието",
+        "result": "Резултат",
+        "success": "Успех",
+        "failure": "Неуспех",
+        "field": "Поле",
+        "initial_value": "Начална стойност",
+        "final_value": "Крайна стойност",
+        "value": "Стойност",
+        "view": "Преглед",
+        "columns": {
+            "id": "№",
+            "occurred_at": "Дата",
+            "event_type": "Събитие",
+            "event_source": "Източник",
+            "is_success": "Резултат",
+            "user_name": "Потребител",
+            "user_email": "Имейл",
+            "details_count": "Детайли",
+            "actions": "Действия"
+        },
+        "fields": {
+            "email": "Имейл",
+            "reason": "Причина"
+        },
+        "reasons": {
+            "invalid_credentials": "Невалидни данни за вход",
+            "invalid_mfa_code": "Невалиден MFA код"
+        },
+        "event_types": {
+            "login_success": "Успешен вход",
+            "login_failed": "Неуспешен опит за вход",
+            "two_factor_challenge_success": "Успешен MFA challenge",
+            "two_factor_challenge_failed": "Неуспешен MFA challenge"
+        },
+        "event_sources": {
+            "office": "Офис",
+            "api": "API"
+        },
+        "export": {
+            "date_from": "Начална дата",
+            "date_to": "Крайна дата",
+            "button": "Експорт 7z",
+            "exporting": "Експорт...",
+            "success": "Архивът :filename беше изтеглен успешно.",
+            "error": "Грешка при експорт на файла.",
+            "validation": {
+                "date_from_required": "Изберете начална дата.",
+                "date_to_required": "Изберете крайна дата.",
+                "date_range_invalid": "Крайната дата трябва да е след или равна на началната."
+            },
+            "dialog": {
+                "title": "Парола за криптиран архив",
+                "description": "Експортът ще бъде пакетиран в криптиран 7z архив. Запомнете паролата — тя не се съхранява в системата и е необходима за отваряне на файла.",
+                "password": "Парола",
+                "password_placeholder": "Въведете парола",
+                "confirm_password": "Потвърди парола",
+                "confirm_placeholder": "Повторете паролата"
+            },
+            "sheet_title": "Одит",
+            "sheet_columns": {
+                "id": "№",
+                "occurred_at": "Дата",
+                "event_type": "Събитие",
+                "event_source": "Източник",
+                "is_success": "Резултат",
+                "user_name": "Потребител",
+                "user_email": "Имейл",
+                "field": "Поле",
+                "initial_value": "Начална стойност",
+                "final_value": "Крайна стойност",
+                "value": "Стойност"
+            }
         }
     }
 }

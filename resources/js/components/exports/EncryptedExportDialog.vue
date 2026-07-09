@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslations } from '@/composables/useTranslations';
 
 const open = defineModel<boolean>('open', { required: true });
 
@@ -22,6 +23,8 @@ const props = defineProps<{
 const emit = defineEmits<{
     confirm: [password: string, passwordConfirmation: string];
 }>();
+
+const { t } = useTranslations();
 
 const password = ref('');
 const passwordConfirmation = ref('');
@@ -42,49 +45,59 @@ const handleConfirm = () => {
     <AlertDialog v-model:open="open">
         <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Парола за криптиран архив</AlertDialogTitle>
+                <AlertDialogTitle>{{
+                    t('audit_logs.export.dialog.title')
+                }}</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Експортът ще бъде пакетиран в криптиран 7z архив. Запомнете
-                    паролата — тя не се съхранява в системата и е необходима за
-                    отваряне на файла.
+                    {{ t('audit_logs.export.dialog.description') }}
                 </AlertDialogDescription>
             </AlertDialogHeader>
 
             <div class="space-y-4 py-2">
                 <div class="space-y-2">
-                    <Label for="export-archive-password">Парола</Label>
+                    <Label for="export-archive-password">{{
+                        t('audit_logs.export.dialog.password')
+                    }}</Label>
                     <Input
                         id="export-archive-password"
                         v-model="password"
                         type="password"
                         autocomplete="new-password"
-                        placeholder="Въведете парола"
+                        :placeholder="
+                            t('audit_logs.export.dialog.password_placeholder')
+                        "
                     />
                 </div>
 
                 <div class="space-y-2">
-                    <Label for="export-archive-password-confirmation"
-                        >Потвърди парола</Label
-                    >
+                    <Label for="export-archive-password-confirmation">{{
+                        t('audit_logs.export.dialog.confirm_password')
+                    }}</Label>
                     <Input
                         id="export-archive-password-confirmation"
                         v-model="passwordConfirmation"
                         type="password"
                         autocomplete="new-password"
-                        placeholder="Повторете паролата"
+                        :placeholder="
+                            t('audit_logs.export.dialog.confirm_placeholder')
+                        "
                     />
                 </div>
             </div>
 
             <AlertDialogFooter>
-                <AlertDialogCancel :disabled="props.loading"
-                    >Отказ</AlertDialogCancel
-                >
+                <AlertDialogCancel :disabled="props.loading">{{
+                    t('common.cancel')
+                }}</AlertDialogCancel>
                 <AlertDialogAction
                     :disabled="props.loading"
                     @click.prevent="handleConfirm"
                 >
-                    {{ props.loading ? 'Експорт...' : 'Експорт 7z' }}
+                    {{
+                        props.loading
+                            ? t('audit_logs.export.exporting')
+                            : t('audit_logs.export.button')
+                    }}
                 </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>

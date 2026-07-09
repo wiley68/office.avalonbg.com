@@ -28,6 +28,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useTranslations } from '@/composables/useTranslations';
 import { dashboard } from '@/routes';
 import { index as auditLogsIndex } from '@/routes/audit-logs';
 import dashboardRoutes from '@/routes/dashboard';
@@ -35,6 +36,7 @@ import { index as usersIndex } from '@/routes/users';
 import type { NavItem } from '@/types';
 
 const page = usePage();
+const { t } = useTranslations();
 
 const mainNavItems = computed<NavItem[]>(() => {
     const user = page.props.auth.user;
@@ -46,22 +48,22 @@ const mainNavItems = computed<NavItem[]>(() => {
     if (user.is_profiler) {
         return [
             {
-                title: 'Табло',
+                title: t('common.dashboard'),
                 href: dashboard(),
                 icon: LayoutGrid,
             },
             {
-                title: 'Администратори',
+                title: t('users.admin.plural'),
                 href: usersIndex(),
                 icon: Users,
             },
             {
-                title: 'Журнали',
+                title: t('nav.logs'),
                 href: '',
                 icon: ScrollText,
                 children: [
                     {
-                        title: 'Одит',
+                        title: t('nav.audit'),
                         href: auditLogsIndex(),
                         icon: History,
                     },
@@ -72,22 +74,22 @@ const mainNavItems = computed<NavItem[]>(() => {
 
     const items: NavItem[] = [
         {
-            title: 'Табло',
+            title: t('common.dashboard'),
             href: dashboard(),
             icon: LayoutGrid,
         },
         {
-            title: 'Композитор',
+            title: t('nav.composer'),
             href: dashboardRoutes.composer.url(),
             icon: Bot,
         },
         {
-            title: 'Агенти',
+            title: t('nav.agents'),
             href: dashboard(),
             separator: true,
         },
         {
-            title: 'Бележки',
+            title: t('nav.notes'),
             href: dashboardRoutes.notes.url(),
             icon: StickyNote,
         },
@@ -95,7 +97,7 @@ const mainNavItems = computed<NavItem[]>(() => {
 
     if (user.can_manage_users) {
         items.unshift({
-            title: 'Потребители',
+            title: t('users.office_user.plural'),
             href: usersIndex(),
             icon: Users,
         });
@@ -104,12 +106,12 @@ const mainNavItems = computed<NavItem[]>(() => {
     if (user.has_office_access) {
         items.push(
             {
-                title: 'Статистика',
+                title: t('nav.statistics'),
                 href: dashboardRoutes.admin.statistics.url(),
                 icon: BarChart3,
             },
             {
-                title: 'Експорт',
+                title: t('nav.export'),
                 href: dashboardRoutes.admin.export.url(),
                 icon: Table,
             },
@@ -128,7 +130,7 @@ const footerNavItems = computed<NavItem[]>(() => {
 
     return [
         {
-            title: user.role_label ?? 'Потребител',
+            title: user.role_label ?? t('roles.user'),
             href: '',
             icon: User,
         },

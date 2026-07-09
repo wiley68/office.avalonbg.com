@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Support\Translations;
+
 enum AuditEventSource: string
 {
     case Office = 'office';
@@ -9,10 +11,7 @@ enum AuditEventSource: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::Office => 'Офис',
-            self::Api => 'API',
-        };
+        return Translations::get('audit_logs.event_sources.'.$this->value);
     }
 
     /**

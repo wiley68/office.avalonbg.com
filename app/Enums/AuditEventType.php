@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Support\Translations;
+
 enum AuditEventType: string
 {
     case LoginSuccess = 'login_success';
@@ -11,12 +13,7 @@ enum AuditEventType: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::LoginSuccess => 'Успешен вход',
-            self::LoginFailed => 'Неуспешен опит за вход',
-            self::TwoFactorChallengeSuccess => 'Успешен MFA challenge',
-            self::TwoFactorChallengeFailed => 'Неуспешен MFA challenge',
-        };
+        return Translations::get('audit_logs.event_types.'.$this->value);
     }
 
     /**

@@ -11,6 +11,23 @@
         "dark": "Dark",
         "system": "System"
     },
+    "nav": {
+        "logs": "Logs",
+        "audit": "Audit",
+        "composer": "Composer",
+        "agents": "Agents",
+        "notes": "Notes",
+        "statistics": "Statistics",
+        "export": "Export"
+    },
+    "roles": {
+        "profiler": "Profiler",
+        "admin": "Administrator",
+        "user": "User"
+    },
+    "dashboard": {
+        "administrators_subtitle": "System administrators"
+    },
     "common": {
         "dashboard": "Dashboard",
         "error": "Error",
@@ -25,7 +42,20 @@
         "created": "Created",
         "edit": "Edit",
         "delete": "Delete",
-        "form_errors": "The form contains errors."
+        "form_errors": "The form contains errors.",
+        "table": {
+            "search_placeholder": "Search...",
+            "empty": "No matching records",
+            "loading": "Loading data...",
+            "columns": "Columns",
+            "show_columns": "Show columns",
+            "rows_per_page": "Rows per page",
+            "page_of": "Page :current of :total",
+            "first_page": "Go to first page",
+            "previous_page": "Go to previous page",
+            "next_page": "Go to next page",
+            "last_page": "Go to last page"
+        }
     },
     "password": {
         "hint": "Minimum :min characters, at least one uppercase letter, one lowercase letter, one digit, and one special character.",
@@ -136,6 +166,89 @@
             "recovery_description": "Use these codes if you lose access to your app. Each code can be used only once.",
             "login_intro": "After setting up the app, you can sign in to the control panel at:",
             "footer": "If you did not expect this email, contact the system administrator."
+        }
+    },
+    "audit_logs": {
+        "title": "Audit",
+        "search_placeholder": "Search by user, email, event...",
+        "empty": "No matching records",
+        "loading": "Loading data...",
+        "delete_selected": "Delete selected (:count)",
+        "delete_confirm_title": "Confirm deletion",
+        "delete_confirm_single": "Are you sure you want to delete this record? This action cannot be undone.",
+        "delete_confirm_bulk": "Are you sure you want to delete :count selected records? This action cannot be undone.",
+        "details_title": "Event details",
+        "result": "Result",
+        "success": "Success",
+        "failure": "Failure",
+        "field": "Field",
+        "initial_value": "Initial value",
+        "final_value": "Final value",
+        "value": "Value",
+        "view": "View",
+        "columns": {
+            "id": "№",
+            "occurred_at": "Date",
+            "event_type": "Event",
+            "event_source": "Source",
+            "is_success": "Result",
+            "user_name": "User",
+            "user_email": "Email",
+            "details_count": "Details",
+            "actions": "Actions"
+        },
+        "fields": {
+            "email": "Email",
+            "reason": "Reason"
+        },
+        "reasons": {
+            "invalid_credentials": "Invalid login credentials",
+            "invalid_mfa_code": "Invalid MFA code"
+        },
+        "event_types": {
+            "login_success": "Successful login",
+            "login_failed": "Failed login attempt",
+            "two_factor_challenge_success": "Successful MFA challenge",
+            "two_factor_challenge_failed": "Failed MFA challenge"
+        },
+        "event_sources": {
+            "office": "Office",
+            "api": "API"
+        },
+        "export": {
+            "date_from": "Start date",
+            "date_to": "End date",
+            "button": "Export 7z",
+            "exporting": "Exporting...",
+            "success": "Archive :filename was downloaded successfully.",
+            "error": "Error exporting the file.",
+            "validation": {
+                "date_from_required": "Select a start date.",
+                "date_to_required": "Select an end date.",
+                "date_range_invalid": "End date must be on or after the start date."
+            },
+            "dialog": {
+                "title": "Password for encrypted archive",
+                "description": "The export will be packaged in an encrypted 7z archive. Remember the password — it is not stored in the system and is required to open the file.",
+                "password": "Password",
+                "password_placeholder": "Enter password",
+                "confirm_password": "Confirm password",
+                "confirm_placeholder": "Repeat the password"
+            },
+            "sheet_title": "Audit",
+            "sheet_columns": {
+                "id": "№",
+                "occurred_at": "Date",
+                "event_type": "Event",
+                "event_source": "Source",
+                "is_success": "Result",
+                "user_name": "User",
+                "user_email": "Email",
+                "field": "Field",
+                "initial_value": "Initial value",
+                "final_value": "Final value",
+                "value": "Value"
+            }
         }
     }
 }

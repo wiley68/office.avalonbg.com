@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Support\Translations;
+
 enum UserRole: string
 {
     case Profiler = 'profiler';
@@ -10,10 +12,6 @@ enum UserRole: string
 
     public function getLabel(): string
     {
-        return match ($this) {
-            self::Profiler => 'Профайлер',
-            self::Admin => 'Администратор',
-            self::User => 'Потребител',
-        };
+        return Translations::get('roles.'.$this->value);
     }
 }

@@ -14,6 +14,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { useApiTable } from '@/composables/useApiTable';
+import { useTranslations } from '@/composables/useTranslations';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import {
@@ -25,19 +26,22 @@ import {
 import { index as auditLogsApiIndex } from '@/routes/internal/audit-logs';
 import type { BreadcrumbItem } from '@/types';
 import {
-    auditFieldLabelMap,
-    auditLogColumnTitleMap,
+    createAuditLogColumnTitleMap,
     createAuditLogColumns,
+    formatAuditDetailValue,
+    getAuditFieldLabel,
 } from './columns';
 import type { AuditLog, AuditLogDetail } from './columns';
 
-const title = 'Одит';
+const { t } = useTranslations();
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Табло', href: dashboard() },
-    { title: 'Журнали', href: auditLogsIndex() },
-    { title, href: auditLogsIndex() },
-];
+const title = computed(() => t('audit_logs.title'));
+
+const breadcrumbs = computed<BreadcrumbItem[]>(() => [
+    { title: t('common.dashboard'), href: dashboard() },
+    { title: t('nav.logs'), href: auditLogsIndex() },
+    { title: title.value, href: auditLogsIndex() },
+]);
 
 const showDetailsDialog = ref(false);
 const selectedLog = ref<AuditLog | null>(null);
@@ -70,6 +74,8 @@ const totalPages = computed(() =>
     ),
 );
 
+const auditLogColumnTitleMap = computed(() => createAuditLogColumnTitleMap(t));
+
 const isAllSelected = () =>
     rows.value.length > 0 &&
     rows.value.every((row) => selectedIds.value.includes(row.id));
@@ -98,10 +104,12 @@ const toggleSelectRow = (id: number, checked: boolean) => {
 
 const deleteDialogDescription = computed(() => {
     if (deleteDialogMode.value === 'bulk') {
-        return `Сигурни ли сте, че искате да изтриете ${selectedIds.value.length} избрани записа? Това действие не може да бъде отменено.`;
+        return t('audit_logs.delete_confirm_bulk', {
+            count: String(selectedIds.value.length),
+        });
     }
 
-    return 'Сигурни ли сте, че искате да изтриете този запис? Това действие не може да бъде отменено.';
+    return t('audit_logs.delete_confirm_single');
 });
 
 const requestDeleteLog = (id: number) => {
@@ -167,6 +175,7 @@ const handleViewDetails = (log: AuditLog) => {
 
 const columns = computed(() =>
     createAuditLogColumns({
+        t,
         onViewDetails: handleViewDetails,
         onDelete: requestDeleteLog,
         isRowSelected: (id) => selectedIds.value.includes(id),
@@ -196,14 +205,6 @@ const handleSortingChange = (sorting: { id: string; desc: boolean }[]) => {
 
 const updateSearch = (value: string) => {
     search.value = value;
-};
-
-const formatValue = (value: string | null | undefined) => {
-    if (value === null || value === undefined || value === '') {
-        return '—';
-    }
-
-    return value;
 };
 
 const hasChangeValues = (detail: AuditLogDetail) =>
@@ -241,7 +242,11 @@ onMounted(async () => {
                         @click="requestDeleteSelected"
                     >
                         <Trash2 class="mr-1 h-4 w-4" />
-                        Изтрий избраните ({{ selectedIds.length }})
+                        {{
+                            t('audit_logs.delete_selected', {
+                                count: String(selectedIds.length),
+                            })
+                        }}
                     </Button>
                 </div>
 
@@ -255,9 +260,9 @@ onMounted(async () => {
                     :loading="loading"
                     :search="search"
                     :column-title-map="auditLogColumnTitleMap"
-                    search-placeholder="Търси по потребител, имейл, събитие..."
-                    empty-message="Няма съответстващи записи"
-                    loading-message="Данните се зареждат..."
+                    :search-placeholder="t('audit_logs.search_placeholder')"
+                    :empty-message="t('audit_logs.empty')"
+                    :loading-message="t('audit_logs.loading')"
                     :show-pagination="true"
                     :show-column-toggle="true"
                     :page-size="pagination.rowsPerPage"
@@ -273,7 +278,7 @@ onMounted(async () => {
 
         <AppAlertDialog
             v-model:open="showDeleteDialog"
-            title="Потвърждение за изтриване"
+            :title="t('audit_logs.delete_confirm_title')"
             :description="deleteDialogDescription"
             @confirm="confirmDelete"
             @cancel="cancelDelete"
@@ -285,7 +290,7 @@ onMounted(async () => {
         >
             <DialogContent class="max-h-[85vh] max-w-3xl overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Детайли на събитието</DialogTitle>
+                    <DialogTitle>{{ t('audit_logs.details_title') }}</DialogTitle>
                     <DialogDescription v-if="selectedLog">
                         {{ selectedLog.event_type_label }} ·
                         {{ selectedLog.occurred_at }} ·
@@ -297,13 +302,19 @@ onMounted(async () => {
                 <div v-if="selectedLog" class="space-y-3">
                     <div class="grid gap-2 text-sm sm:grid-cols-2">
                         <div>
-                            <span class="text-muted-foreground">Резултат:</span>
+                            <span class="text-muted-foreground"
+                                >{{ t('audit_logs.result') }}:</span
+                            >
                             {{
-                                selectedLog.is_success ? 'Успех' : 'Неуспех'
+                                selectedLog.is_success
+                                    ? t('audit_logs.success')
+                                    : t('audit_logs.failure')
                             }}
                         </div>
                         <div class="truncate" :title="selectedLog.user_email">
-                            <span class="text-muted-foreground">Имейл:</span>
+                            <span class="text-muted-foreground"
+                                >{{ t('common.email') }}:</span
+                            >
                             {{ selectedLog.user_email }}
                         </div>
                     </div>
@@ -315,7 +326,7 @@ onMounted(async () => {
                                     <th
                                         class="px-3 py-2 text-left font-medium"
                                     >
-                                        Поле
+                                        {{ t('audit_logs.field') }}
                                     </th>
                                     <th
                                         v-if="
@@ -325,7 +336,7 @@ onMounted(async () => {
                                         "
                                         class="px-3 py-2 text-left font-medium"
                                     >
-                                        Начална стойност
+                                        {{ t('audit_logs.initial_value') }}
                                     </th>
                                     <th
                                         v-if="
@@ -335,7 +346,7 @@ onMounted(async () => {
                                         "
                                         class="px-3 py-2 text-left font-medium"
                                     >
-                                        Крайна стойност
+                                        {{ t('audit_logs.final_value') }}
                                     </th>
                                     <th
                                         v-if="
@@ -345,7 +356,7 @@ onMounted(async () => {
                                         "
                                         class="px-3 py-2 text-left font-medium"
                                     >
-                                        Стойност
+                                        {{ t('audit_logs.value') }}
                                     </th>
                                 </tr>
                             </thead>
@@ -357,8 +368,7 @@ onMounted(async () => {
                                 >
                                     <td class="px-3 py-2 align-top">
                                         {{
-                                            auditFieldLabelMap[detail.поле] ??
-                                            detail.поле
+                                            getAuditFieldLabel(t, detail.поле)
                                         }}
                                     </td>
                                     <template v-if="hasChangeValues(detail)">
@@ -366,7 +376,9 @@ onMounted(async () => {
                                             class="px-3 py-2 align-top break-all"
                                         >
                                             {{
-                                                formatValue(
+                                                formatAuditDetailValue(
+                                                    t,
+                                                    detail.поле,
                                                     detail.начална_стойност,
                                                 )
                                             }}
@@ -375,7 +387,9 @@ onMounted(async () => {
                                             class="px-3 py-2 align-top break-all"
                                         >
                                             {{
-                                                formatValue(
+                                                formatAuditDetailValue(
+                                                    t,
+                                                    detail.поле,
                                                     detail.крайна_стойност,
                                                 )
                                             }}
@@ -385,7 +399,13 @@ onMounted(async () => {
                                         v-else
                                         class="px-3 py-2 align-top break-all"
                                     >
-                                        {{ formatValue(detail.стойност) }}
+                                        {{
+                                            formatAuditDetailValue(
+                                                t,
+                                                detail.поле,
+                                                detail.стойност,
+                                            )
+                                        }}
                                     </td>
                                 </tr>
                             </tbody>

@@ -3,12 +3,14 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import { Shield } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Card, CardContent } from '@/components/ui/card';
+import { useTranslations } from '@/composables/useTranslations';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import { index as usersIndex } from '@/routes/users';
 import type { BreadcrumbItem } from '@/types';
 
 const page = usePage();
+const { t } = useTranslations();
 
 const isProfiler = computed(
     () => page.props.auth.user?.is_profiler === true,
@@ -18,20 +20,20 @@ const adminUserCount = computed(
     () => Number(page.props.admin_user_count ?? 0),
 );
 
-const breadcrumbs: BreadcrumbItem[] = [
+const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     {
-        title: 'Табло',
+        title: t('common.dashboard'),
         href: dashboard(),
     },
-];
+]);
 </script>
 
 <template>
-    <Head title="Табло" />
+    <Head :title="t('common.dashboard')" />
 
     <AppLayout
         :breadcrumbs="breadcrumbs"
-        page-title="Табло"
+        :page-title="t('common.dashboard')"
     >
         <div
             class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4"
@@ -53,10 +55,10 @@ const breadcrumbs: BreadcrumbItem[] = [
                                     <Shield class="h-5 w-5 text-blue-600" />
                                     <div>
                                         <p class="font-medium">
-                                            Администратори
+                                            {{ t('users.admin.plural') }}
                                         </p>
                                         <p class="text-sm text-muted-foreground">
-                                            Системни администратори
+                                            {{ t('dashboard.administrators_subtitle') }}
                                         </p>
                                     </div>
                                 </div>

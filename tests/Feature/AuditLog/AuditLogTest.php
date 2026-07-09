@@ -61,7 +61,27 @@ test('profiler can list audit logs via internal api', function () {
         ->getJson(route('internal.audit-logs.index', ['search' => $profiler->email]))
         ->assertOk()
         ->assertJsonPath('data.0.event_type', 'login_success')
+        ->assertJsonPath('data.0.event_type_label', 'Successful login')
+        ->assertJsonPath('data.0.event_source_label', 'Office')
         ->assertJsonPath('total', 1);
+});
+
+test('audit log api returns bulgarian labels when locale is bg', function () {
+    $profiler = User::factory()->create();
+    $profiler->assignRole('profiler');
+
+    createAuditLog([
+        'user_email' => $profiler->email,
+        'user_name' => $profiler->name,
+        'user_id' => $profiler->id,
+    ]);
+
+    actingAs($profiler)
+        ->withSession(['locale' => 'bg'])
+        ->getJson(route('internal.audit-logs.index', ['search' => $profiler->email]))
+        ->assertOk()
+        ->assertJsonPath('data.0.event_type_label', 'Успешен вход')
+        ->assertJsonPath('data.0.event_source_label', 'Офис');
 });
 
 test('admin cannot access audit logs', function () {
@@ -130,7 +150,8 @@ test('failed login creates audit log entry without password', function () {
 
     $encoded = $log->description;
     expect($encoded)->not->toContain('wrong-password')
-        ->and($encoded)->not->toContain('password');
+        ->and($encoded)->not->toContain('password')
+        ->and($encoded)->toContain('invalid_credentials');
 });
 
 test('profiler can delete single audit log', function () {

@@ -9,6 +9,7 @@ import {
     DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import UserInfo from '@/components/UserInfo.vue';
+import { useTranslations } from '@/composables/useTranslations';
 import { logout } from '@/routes';
 import { edit as profileEdit } from '@/routes/profile';
 import { index as usersIndex } from '@/routes/users';
@@ -20,13 +21,15 @@ type Props = {
 
 const props = defineProps<Props>();
 
+const { t } = useTranslations();
+
 const usersMenuLabel = computed(() => {
     if (props.user.is_profiler) {
-        return 'Администратори';
+        return t('users.admin.plural');
     }
 
     if (props.user.is_admin) {
-        return 'Потребители';
+        return t('users.office_user.plural');
     }
 
     return null;
