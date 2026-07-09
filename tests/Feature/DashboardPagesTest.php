@@ -47,3 +47,31 @@ test('profiler is redirected from composer page to dashboard', function (): void
     get(route('dashboard.composer'))
         ->assertRedirect(route('dashboard'));
 });
+
+test('profiler dashboard shares admin user count', function (): void {
+    $profiler = User::factory()->create();
+    $profiler->assignRole('profiler');
+
+    User::factory()->count(2)->create()->each->assignRole('admin');
+    User::factory()->create()->assignRole('user');
+
+    actingAs($profiler);
+
+    get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard')
+            ->where('admin_user_count', 2));
+});
+
+test('admin dashboard does not share admin user count', function (): void {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    actingAs($admin);
+
+    get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('admin_user_count', null));
+});

@@ -26,6 +26,7 @@ declare module '@inertiajs/core' {
             appearance: 'light' | 'dark' | 'system';
             auth: Auth;
             sidebarOpen: boolean;
+            admin_user_count: number | null;
             [key: string]: unknown;
         };
     }

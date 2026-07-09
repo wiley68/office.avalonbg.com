@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\UserRole;
+use App\Models\User;
 use App\Support\Translations;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -62,6 +64,15 @@ class HandleInertiaRequests extends Middleware
                     : null,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'admin_user_count' => function () use ($request) {
+                $user = $request->user();
+
+                if ($user === null || ! $user->hasRole(UserRole::Profiler->value)) {
+                    return null;
+                }
+
+                return User::role(UserRole::Admin->value)->count();
+            },
         ];
     }
 }
