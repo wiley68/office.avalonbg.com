@@ -10,6 +10,7 @@ use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NotesAgentController;
 use App\Http\Controllers\NotesExportDownloadController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserTwoFactorController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
@@ -61,6 +62,15 @@ Route::middleware(['auth', 'verified', 'two-factor.enabled', 'profiler.agent.blo
 
 Route::middleware(['auth', 'verified', 'two-factor.enabled', 'role:profiler|admin'])->group(function () {
     Route::resource('users', UserController::class)->except('show');
+
+    Route::post('/users/two-factor/{user}/enable', [UserTwoFactorController::class, 'enable'])
+        ->name('users.two-factor.enable');
+
+    Route::delete('/users/two-factor/{user}', [UserTwoFactorController::class, 'disable'])
+        ->name('users.two-factor.disable');
+
+    Route::post('/users/two-factor/{user}/resend', [UserTwoFactorController::class, 'resend'])
+        ->name('users.two-factor.resend');
 });
 
 Route::middleware(['auth', 'verified', 'two-factor.enabled', 'role:profiler'])->group(function () {

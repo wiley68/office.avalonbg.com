@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Component } from 'vue';
+import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -9,6 +10,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useTranslations } from '@/composables/useTranslations';
 
 export type TableRowAction = {
     label: string;
@@ -17,15 +19,19 @@ export type TableRowAction = {
     variant?: 'default' | 'destructive';
 };
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         actions: TableRowAction[];
         label?: string;
     }>(),
     {
-        label: 'Управление',
+        label: undefined,
     },
 );
+
+const { t } = useTranslations();
+
+const menuLabel = computed(() => props.label ?? t('users.actions.manage'));
 </script>
 
 <template>
@@ -35,13 +41,13 @@ withDefaults(
                 variant="ghost"
                 class="h-8 w-8 p-0 text-base leading-none"
                 type="button"
-                aria-label="Управление"
+                :aria-label="menuLabel"
             >
                 ...
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{{ label }}</DropdownMenuLabel>
+            <DropdownMenuLabel>{{ menuLabel }}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem
                 v-for="action in actions"

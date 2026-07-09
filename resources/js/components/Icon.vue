@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import {
+    ArrowLeft,
     ChevronDown,
     ChevronLeft,
     ChevronRight,
     ChevronUp,
     ChevronsLeft,
     ChevronsRight,
+    Copy,
     Loader2,
+    RefreshCcw,
+    Save,
     Settings,
+    Shield,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { cn } from '@/lib/utils';
@@ -29,14 +34,19 @@ const props = withDefaults(defineProps<Props>(), {
 const className = computed(() => cn('h-4 w-4', props.class));
 
 const iconMap: Record<string, object> = {
+    ArrowLeft,
     ChevronDown,
     ChevronLeft,
     ChevronRight,
     ChevronUp,
     ChevronsLeft,
     ChevronsRight,
+    Copy,
     Loader2,
+    RefreshCcw,
+    Save,
     Settings,
+    Shield,
 };
 
 const icon = computed(() => {

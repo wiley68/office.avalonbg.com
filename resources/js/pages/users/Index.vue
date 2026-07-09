@@ -6,6 +6,7 @@ import AppAlertDialog from '@/components/AppAlertDialog.vue';
 import TableRowActionsMenu from '@/components/table/TableRowActionsMenu.vue';
 import { Button } from '@/components/ui/button';
 import { useManageableUsersLabels } from '@/composables/useManageableUsersLabels';
+import { useTranslations } from '@/composables/useTranslations';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import { create, destroy, edit, index } from '@/routes/users';
@@ -24,10 +25,11 @@ const props = defineProps<{
 }>();
 
 const labels = useManageableUsersLabels(() => props.manageableRole);
+const { t } = useTranslations();
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     {
-        title: 'Табло',
+        title: t('common.dashboard'),
         href: dashboard(),
     },
     {
@@ -83,9 +85,9 @@ const confirmDelete = (): void => {
                 <table class="w-full text-sm">
                     <thead class="bg-muted/50 text-left">
                         <tr>
-                            <th class="px-4 py-3 font-medium">Име</th>
-                            <th class="px-4 py-3 font-medium">Имейл</th>
-                            <th class="px-4 py-3 font-medium">Създаден</th>
+                            <th class="px-4 py-3 font-medium">{{ t('common.name') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('common.email') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('common.created') }}</th>
                             <th class="w-10 px-4 py-3 font-medium" />
                         </tr>
                     </thead>
@@ -104,13 +106,13 @@ const confirmDelete = (): void => {
                                 <TableRowActionsMenu
                                     :actions="[
                                         {
-                                            label: 'Редакция',
+                                            label: t('common.edit'),
                                             icon: Pencil,
                                             onSelect: () =>
                                                 router.visit(edit(user.id)),
                                         },
                                         {
-                                            label: 'Изтриване',
+                                            label: t('common.delete'),
                                             icon: Trash2,
                                             variant: 'destructive',
                                             onSelect: () =>
@@ -132,7 +134,7 @@ const confirmDelete = (): void => {
 
         <AppAlertDialog
             v-model:open="showDeleteDialog"
-            title="Потвърждение за изтриване"
+            :title="t('users.delete_confirm_title')"
             :description="labels.deleteConfirm"
             @confirm="confirmDelete"
             @cancel="cancelDelete"

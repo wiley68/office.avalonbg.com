@@ -66,7 +66,12 @@ class UserController extends Controller
         $actor = Auth::user();
 
         return Inertia::render('users/Edit', [
-            'user' => $user->only(['id', 'name', 'email']),
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'two_factor_enabled' => $user->hasEnabledTwoFactorAuthentication(),
+            ],
             'manageableRole' => app(UserPolicy::class)->manageableRole($actor)?->value,
         ]);
     }
