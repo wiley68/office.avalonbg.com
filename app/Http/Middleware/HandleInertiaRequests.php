@@ -44,6 +44,7 @@ class HandleInertiaRequests extends Middleware
             'organization' => (string) config('app.organization'),
             'email' => (string) config('app.contact_email'),
             'shopUrl' => (string) config('app.shop_url'),
+            'version' => (string) config('app.version'),
             'locale' => app()->getLocale(),
             'locales' => [
                 ['code' => 'en', 'label' => 'English'],
@@ -56,6 +57,7 @@ class HandleInertiaRequests extends Middleware
                     ? [
                         ...$request->user()->only(['id', 'name', 'email', 'email_verified_at', 'created_at', 'updated_at']),
                         'role' => $request->user()->primaryRole()?->value,
+                        'role_label' => $request->user()->primaryRole()?->getLabel(),
                         'is_profiler' => $request->user()->isProfiler(),
                         'is_admin' => $request->user()->isAdmin(),
                         'can_manage_users' => $request->user()->canManageUsers(),

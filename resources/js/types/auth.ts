@@ -5,6 +5,7 @@ export type User = {
     name: string;
     email: string;
     role: UserRole | null;
+    role_label: string | null;
     is_profiler: boolean;
     is_admin: boolean;
     can_manage_users: boolean;

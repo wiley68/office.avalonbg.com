@@ -10,9 +10,14 @@ use function Pest\Laravel\get;
 uses(RefreshDatabase::class);
 
 test('inertia shares organization from config on dashboard', function () {
+    $organization = 'Тест ООД';
+    $shopUrl = 'https://shop.example.test';
+    $version = '2.5.0';
+
     config([
-        'app.organization' => 'Тест ООД',
-        'app.shop_url' => 'https://shop.example.test',
+        'app.organization' => $organization,
+        'app.shop_url' => $shopUrl,
+        'app.version' => $version,
     ]);
 
     $user = User::factory()->create();
@@ -20,10 +25,12 @@ test('inertia shares organization from config on dashboard', function () {
     actingAs($user);
 
     get(route('dashboard'))->assertInertia(
-        fn(Assert $page) => $page
+        fn (Assert $page) => $page
             ->has('organization')
-            ->where('organization', 'Тест ООД')
+            ->where('organization', $organization)
             ->has('shopUrl')
-            ->where('shopUrl', 'https://shop.example.test'),
+            ->where('shopUrl', $shopUrl)
+            ->has('version')
+            ->where('version', $version),
     );
 });

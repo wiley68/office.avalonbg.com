@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
-import { LogOut, Settings } from 'lucide-vue-next';
+import { IdCard, LogOut, Users } from 'lucide-vue-next';
+import { computed } from 'vue';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -9,18 +10,33 @@ import {
 } from '@/components/ui/dropdown-menu';
 import UserInfo from '@/components/UserInfo.vue';
 import { logout } from '@/routes';
-import { edit } from '@/routes/profile';
+import { edit as profileEdit } from '@/routes/profile';
+import { index as usersIndex } from '@/routes/users';
 import type { User } from '@/types';
 
 type Props = {
     user: User;
 };
 
-const handleLogout = () => {
+const props = defineProps<Props>();
+
+const usersMenuLabel = computed(() => {
+    if (props.user.is_profiler) {
+        return 'Администратори';
+    }
+
+    if (props.user.is_admin) {
+        return 'Потребители';
+    }
+
+    return null;
+});
+
+const showUsersMenu = computed(() => usersMenuLabel.value !== null);
+
+const handleLogout = (): void => {
     router.flushAll();
 };
-
-defineProps<Props>();
 </script>
 
 <template>
@@ -30,11 +46,28 @@ defineProps<Props>();
         </div>
     </DropdownMenuLabel>
     <DropdownMenuSeparator />
+    <DropdownMenuGroup v-if="showUsersMenu">
+        <DropdownMenuItem :as-child="true">
+            <Link
+                class="block w-full cursor-pointer"
+                :href="usersIndex()"
+                prefetch
+            >
+                <Users class="mr-2 h-4 w-4" />
+                {{ usersMenuLabel }}
+            </Link>
+        </DropdownMenuItem>
+    </DropdownMenuGroup>
+    <DropdownMenuSeparator v-if="showUsersMenu" />
     <DropdownMenuGroup>
         <DropdownMenuItem :as-child="true">
-            <Link class="block w-full cursor-pointer" :href="edit()" prefetch>
-                <Settings class="mr-2 h-4 w-4" />
-                Settings
+            <Link
+                class="block w-full cursor-pointer"
+                :href="profileEdit()"
+                prefetch
+            >
+                <IdCard class="mr-2 h-4 w-4" />
+                Profile
             </Link>
         </DropdownMenuItem>
     </DropdownMenuGroup>

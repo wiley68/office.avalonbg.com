@@ -4,10 +4,12 @@ import { Link } from '@inertiajs/vue3';
 import {
     BarChart3,
     Bot,
-    ShoppingCart,
+    HardDriveDownload,
     LayoutGrid,
+    Mail,
     StickyNote,
     Table,
+    User,
     Users,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
@@ -102,15 +104,31 @@ const mainNavItems = computed<NavItem[]>(() => {
     return items;
 });
 
-const footerNavItems = computed<NavItem[]>(() => [
-    {
-        title: 'Магазин',
-        href: page.props.shopUrl,
-        target: '_blank',
-        rel: 'noopener noreferrer',
-        icon: ShoppingCart,
-    },
-]);
+const footerNavItems = computed<NavItem[]>(() => {
+    const user = page.props.auth.user;
+
+    if (!user) {
+        return [];
+    }
+
+    return [
+        {
+            title: user.role_label ?? 'Потребител',
+            href: '',
+            icon: User,
+        },
+        {
+            title: user.email,
+            href: '',
+            icon: Mail,
+        },
+        {
+            title: String(page.props.version),
+            href: '',
+            icon: HardDriveDownload,
+        },
+    ];
+});
 </script>
 
 <template>

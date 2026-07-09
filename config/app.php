@@ -36,6 +36,8 @@ return [
      */
     'contact_email' => env('APP_CONTACT_EMAIL', 'home@avalonbg.com'),
 
+    'version' => env('APP_VERSION', '1.0.0'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment
