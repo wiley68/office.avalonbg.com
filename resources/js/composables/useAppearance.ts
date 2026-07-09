@@ -13,6 +13,13 @@ export type UseAppearanceReturn = {
     updateProfileAppearance: (value: Appearance) => void;
 };
 
+type ThemePageProps = {
+    appearance?: Appearance | null;
+    auth?: {
+        user?: unknown | null;
+    };
+};
+
 export function updateTheme(value: Appearance): void {
     if (typeof window === 'undefined') {
         return;
@@ -68,18 +75,35 @@ const prefersDark = (): boolean => {
 };
 
 const handleSystemThemeChange = () => {
-    const currentAppearance = getStoredAppearance();
-
-    updateTheme(currentAppearance || 'system');
+    updateTheme(appearance.value);
 };
+
+export function resolveAppearanceFromPageProps(
+    pageProps: ThemePageProps,
+): Appearance {
+    const serverAppearance = pageProps.appearance ?? 'system';
+    const isAuthenticated = pageProps.auth?.user != null;
+
+    if (isAuthenticated) {
+        return serverAppearance;
+    }
+
+    return getStoredAppearance() ?? serverAppearance;
+}
+
+export function syncThemeFromPageProps(pageProps: ThemePageProps): void {
+    const resolvedAppearance = resolveAppearanceFromPageProps(pageProps);
+
+    appearance.value = resolvedAppearance;
+    localStorage.setItem('appearance', resolvedAppearance);
+    setCookie('appearance', resolvedAppearance);
+    updateTheme(resolvedAppearance);
+}
 
 export function initializeTheme(): void {
     if (typeof window === 'undefined') {
         return;
     }
-
-    const savedAppearance = getStoredAppearance();
-    updateTheme(savedAppearance || 'system');
 
     mediaQuery()?.addEventListener('change', handleSystemThemeChange);
 }
@@ -93,29 +117,11 @@ function applyAppearance(value: Appearance): void {
     updateTheme(value);
 }
 
-function resolveInitialAppearance(
-    isAuthenticated: boolean,
-    serverAppearance: Appearance | null,
-): Appearance {
-    if (isAuthenticated) {
-        return serverAppearance ?? 'system';
-    }
-
-    return getStoredAppearance() ?? serverAppearance ?? 'system';
-}
-
 export function useAppearance(): UseAppearanceReturn {
     const page = usePage();
 
     onMounted(() => {
-        const isAuthenticated = page.props.auth.user !== null;
-        const serverAppearance = page.props.appearance as Appearance | null;
-        const initialAppearance = resolveInitialAppearance(
-            isAuthenticated,
-            serverAppearance,
-        );
-
-        applyAppearance(initialAppearance);
+        syncThemeFromPageProps(page.props as ThemePageProps);
     });
 
     const resolvedAppearance = computed<ResolvedAppearance>(() => {

@@ -8,6 +8,7 @@ use Tests\TestCase;
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
 use function Pest\Laravel\patch;
+use function Pest\Laravel\post;
 
 uses(RefreshDatabase::class);
 
@@ -56,4 +57,22 @@ test('invalid appearance value is rejected', function () {
     patch(route('appearance.update'), [
         'appearance' => 'neon',
     ])->assertSessionHasErrors('appearance');
+});
+
+test('login restores appearance from user profile on first page load', function () {
+    $user = User::factory()->withoutTwoFactor()->create([
+        'appearance' => Appearance::Dark->value,
+    ]);
+
+    /** @var TestCase $this */
+    $this->withSession(['auth.password_confirmed_at' => time()]);
+
+    post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'Password123!',
+    ])->assertRedirect(route('dashboard'));
+
+    get(route('security.edit'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('appearance', Appearance::Dark->value));
 });
