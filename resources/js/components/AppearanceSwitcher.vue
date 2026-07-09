@@ -31,7 +31,7 @@ const options: Array<{
             :aria-label="t(option.labelKey)"
             :aria-pressed="appearance === option.value"
             :title="t(option.labelKey)"
-            class="inline-flex items-center justify-center px-2.5 py-1.5 text-[#1b1b18] transition-colors not-first:border-l not-first:border-[#19140035] hover:bg-[#19140012] dark:text-[#EDEDEC] dark:not-first:border-[#3E3E3A] dark:hover:bg-[#ffffff12]"
+            class="inline-flex items-center justify-center px-3 py-2 text-[#1b1b18] transition-colors not-first:border-l not-first:border-[#19140035] hover:bg-[#19140012] dark:text-[#EDEDEC] dark:not-first:border-[#3E3E3A] dark:hover:bg-[#ffffff12]"
             :class="
                 appearance === option.value
                     ? 'bg-[#19140012] dark:bg-[#ffffff12]'
