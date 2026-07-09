@@ -82,7 +82,7 @@ watch(showRecoveryInput, async (recovery) => {
                     class="space-y-4"
                     reset-on-error
                     @error="code = ''"
-                    #default="{ errors, processing, clearErrors }"
+                    #default="{ errors, processing, clearErrors, submit }"
                 >
                     <input type="hidden" name="code" :value="code" />
                     <div
@@ -97,6 +97,7 @@ watch(showRecoveryInput, async (recovery) => {
                                 v-model="code"
                                 :maxlength="6"
                                 :disabled="processing"
+                                @complete="() => !processing && submit()"
                             >
                                 <InputOTPGroup>
                                     <InputOTPSlot
