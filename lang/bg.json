@@ -27,7 +27,8 @@
         "user": "Потребител"
     },
     "dashboard": {
-        "administrators_subtitle": "Системни администратори"
+        "administrators_subtitle": "Системни администратори",
+        "refresh_data": "Обнови данните"
     },
     "common": {
         "dashboard": "Табло",

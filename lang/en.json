@@ -27,7 +27,8 @@
         "user": "User"
     },
     "dashboard": {
-        "administrators_subtitle": "System administrators"
+        "administrators_subtitle": "System administrators",
+        "refresh_data": "Refresh data"
     },
     "common": {
         "dashboard": "Dashboard",

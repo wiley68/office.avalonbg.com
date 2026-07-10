@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Enums\Appearance;
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Support\DashboardCache;
 use App\Support\Translations;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -74,7 +75,11 @@ class HandleInertiaRequests extends Middleware
                     return null;
                 }
 
-                return User::role(UserRole::Admin->value)->count();
+                return DashboardCache::remember(
+                    'admin_user_count',
+                    $user->id,
+                    fn () => User::role(UserRole::Admin->value)->count(),
+                );
             },
         ];
     }

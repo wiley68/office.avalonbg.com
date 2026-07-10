@@ -33,7 +33,6 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => [
 
     <AppLayout
         :breadcrumbs="breadcrumbs"
-        :page-title="t('common.dashboard')"
     >
         <div
             class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4"

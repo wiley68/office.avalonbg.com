@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AuditLogApiController;
 use App\Http\Controllers\Api\UserApiController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\DashboardAgentController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NotesAgentController;
 use App\Http\Controllers\NotesExportDownloadController;
@@ -20,6 +21,9 @@ Route::get('locale/{locale}', LocaleController::class)->name('locale.update');
 
 Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+
+    Route::post('/dashboard/clear-cache', [DashboardController::class, 'clearCache'])
+        ->name('dashboard.clear-cache');
 });
 
 Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled', 'profiler.agent.block'])->group(function () {
