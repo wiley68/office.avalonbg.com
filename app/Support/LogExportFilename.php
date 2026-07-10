@@ -9,6 +9,11 @@ class LogExportFilename
         return 'audit_logs_'.$dateFrom.'_'.$dateTo.'_'.now()->format('H-i-s').'.xlsx';
     }
 
+    public static function users(string $role): string
+    {
+        return 'users_'.$role.'_'.now()->format('Y-m-d_H-i-s').'.xlsx';
+    }
+
     public static function archiveFromXlsx(string $xlsxFilename): string
     {
         return pathinfo(basename($xlsxFilename), PATHINFO_FILENAME).'.7z';

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Plus } from 'lucide-vue-next';
+import { FileDown, Loader2, Plus } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 import AppAlertDialog from '@/components/AppAlertDialog.vue';
 import DataTable from '@/components/DataTable.vue';
+import EncryptedExportDialog from '@/components/exports/EncryptedExportDialog.vue';
 import { Button } from '@/components/ui/button';
 import { useApiTable } from '@/composables/useApiTable';
 import { useAppToast } from '@/composables/useAppToast';
@@ -11,8 +12,9 @@ import { useManageableUsersLabels } from '@/composables/useManageableUsersLabels
 import { useTranslations } from '@/composables/useTranslations';
 import { usersApiIndex } from '@/composables/useUsersApiRoute';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { downloadEncryptedExport } from '@/lib/encryptedExport';
 import { dashboard } from '@/routes';
-import { create, destroy, index } from '@/routes/users';
+import { create, destroy, exportMethod, index } from '@/routes/users';
 import type { BreadcrumbItem, UserRole } from '@/types';
 import {
     createUserColumnTitleMap,
@@ -26,7 +28,10 @@ const props = defineProps<{
 
 const labels = useManageableUsersLabels(() => props.manageableRole);
 const { t } = useTranslations();
-const { showError } = useAppToast();
+const { showError, showMessage } = useAppToast();
+
+const isExporting = ref(false);
+const showExportDialog = ref(false);
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     {
@@ -132,6 +137,37 @@ const updateSearch = (value: string) => {
     search.value = value;
 };
 
+const handleExport = async (
+    password: string,
+    passwordConfirmation: string,
+): Promise<void> => {
+    isExporting.value = true;
+
+    try {
+        const result = await downloadEncryptedExport(
+            exportMethod().url,
+            password,
+            passwordConfirmation,
+        );
+
+        if (!result.ok) {
+            showError(t('common.error'), result.message);
+
+            return;
+        }
+
+        showExportDialog.value = false;
+        showMessage(
+            t('users.export.button'),
+            t('users.export.success', { filename: result.filename }),
+        );
+    } catch {
+        showError(t('common.error'), t('users.export.error'));
+    } finally {
+        isExporting.value = false;
+    }
+};
+
 onMounted(async () => {
     await fetch();
 });
@@ -146,12 +182,30 @@ onMounted(async () => {
                 <h1 class="grow text-xl font-semibold">
                     {{ labels.plural }} ({{ pagination.rowsNumber }})
                 </h1>
-                <Button as-child>
-                    <Link :href="create()">
-                        <Plus class="mr-2 h-4 w-4" />
-                        {{ labels.add }}
-                    </Link>
-                </Button>
+                <div class="flex items-center gap-2">
+                    <Button
+                        variant="secondary"
+                        :disabled="isExporting"
+                        @click="showExportDialog = true"
+                    >
+                        <Loader2
+                            v-if="isExporting"
+                            class="mr-2 h-4 w-4 animate-spin"
+                        />
+                        <FileDown v-else class="mr-2 h-4 w-4" />
+                        {{
+                            isExporting
+                                ? t('users.export.exporting')
+                                : t('users.export.button')
+                        }}
+                    </Button>
+                    <Button as-child>
+                        <Link :href="create()">
+                            <Plus class="mr-2 h-4 w-4" />
+                            {{ labels.add }}
+                        </Link>
+                    </Button>
+                </div>
             </div>
 
             <div class="flex flex-col rounded-xl border p-4 shadow-sm">
@@ -183,6 +237,13 @@ onMounted(async () => {
             :description="labels.deleteConfirm"
             @confirm="confirmDelete"
             @cancel="cancelDelete"
+        />
+
+        <EncryptedExportDialog
+            v-model:open="showExportDialog"
+            :loading="isExporting"
+            i18n-prefix="users.export"
+            @confirm="handleExport"
         />
     </AppLayout>
 </template>

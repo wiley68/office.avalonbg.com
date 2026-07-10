@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ExportPasswordRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use App\Policies\UserPolicy;
+use App\Services\EncryptedUsersExporter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class UserController extends Controller
 {
@@ -99,5 +102,15 @@ class UserController extends Controller
         $user->delete();
 
         return to_route('users.index');
+    }
+
+    public function export(ExportPasswordRequest $request, EncryptedUsersExporter $exporter): BinaryFileResponse
+    {
+        $this->authorize('viewAny', User::class);
+
+        /** @var User $actor */
+        $actor = Auth::user();
+
+        return $exporter->download($actor, $request->validated('password'));
     }
 }

@@ -64,6 +64,9 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
 Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled', 'role:profiler|admin'])->group(function () {
     Route::resource('users', UserController::class)->except('show');
 
+    Route::post('/users-export', [UserController::class, 'export'])
+        ->name('users.export');
+
     Route::post('/users/two-factor/{user}/enable', [UserTwoFactorController::class, 'enable'])
         ->name('users.two-factor.enable');
 

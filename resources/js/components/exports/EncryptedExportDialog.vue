@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -18,6 +18,7 @@ const open = defineModel<boolean>('open', { required: true });
 
 const props = defineProps<{
     loading?: boolean;
+    i18nPrefix?: string;
 }>();
 
 const emit = defineEmits<{
@@ -25,6 +26,10 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useTranslations();
+
+const translationPrefix = computed(
+    () => props.i18nPrefix ?? 'audit_logs.export',
+);
 
 const password = ref('');
 const passwordConfirmation = ref('');
@@ -46,17 +51,17 @@ const handleConfirm = () => {
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>{{
-                    t('audit_logs.export.dialog.title')
+                    t(`${translationPrefix}.dialog.title`)
                 }}</AlertDialogTitle>
                 <AlertDialogDescription>
-                    {{ t('audit_logs.export.dialog.description') }}
+                    {{ t(`${translationPrefix}.dialog.description`) }}
                 </AlertDialogDescription>
             </AlertDialogHeader>
 
             <div class="space-y-4 py-2">
                 <div class="space-y-2">
                     <Label for="export-archive-password">{{
-                        t('audit_logs.export.dialog.password')
+                        t(`${translationPrefix}.dialog.password`)
                     }}</Label>
                     <Input
                         id="export-archive-password"
@@ -64,14 +69,14 @@ const handleConfirm = () => {
                         type="password"
                         autocomplete="new-password"
                         :placeholder="
-                            t('audit_logs.export.dialog.password_placeholder')
+                            t(`${translationPrefix}.dialog.password_placeholder`)
                         "
                     />
                 </div>
 
                 <div class="space-y-2">
                     <Label for="export-archive-password-confirmation">{{
-                        t('audit_logs.export.dialog.confirm_password')
+                        t(`${translationPrefix}.dialog.confirm_password`)
                     }}</Label>
                     <Input
                         id="export-archive-password-confirmation"
@@ -79,7 +84,7 @@ const handleConfirm = () => {
                         type="password"
                         autocomplete="new-password"
                         :placeholder="
-                            t('audit_logs.export.dialog.confirm_placeholder')
+                            t(`${translationPrefix}.dialog.confirm_placeholder`)
                         "
                     />
                 </div>
@@ -95,8 +100,8 @@ const handleConfirm = () => {
                 >
                     {{
                         props.loading
-                            ? t('audit_logs.export.exporting')
-                            : t('audit_logs.export.button')
+                            ? t(`${translationPrefix}.exporting`)
+                            : t(`${translationPrefix}.button`)
                     }}
                 </AlertDialogAction>
             </AlertDialogFooter>

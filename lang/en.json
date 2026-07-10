@@ -195,6 +195,29 @@
             "recovery_description": "Use these codes if you lose access to your app. Each code can be used only once.",
             "login_intro": "After setting up the app, you can sign in to the control panel at:",
             "footer": "If you did not expect this email, contact the system administrator."
+        },
+        "export": {
+            "button": "Export 7z",
+            "exporting": "Exporting...",
+            "success": "Archive :filename was downloaded successfully.",
+            "error": "Error exporting the file.",
+            "dialog": {
+                "title": "Password for encrypted archive",
+                "description": "The export will be packaged in an encrypted 7z archive. Remember the password — it is not stored in the system and is required to open the file.",
+                "password": "Password",
+                "password_placeholder": "Enter password",
+                "confirm_password": "Confirm password",
+                "confirm_placeholder": "Repeat the password"
+            },
+            "sheet_title": "Users",
+            "sheet_columns": {
+                "id": "№",
+                "name": "User",
+                "email": "Email",
+                "role": "Role",
+                "status": "Status",
+                "created_at": "Created"
+            }
         }
     },
     "audit_logs": {
