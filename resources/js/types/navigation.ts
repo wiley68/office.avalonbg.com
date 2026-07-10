@@ -17,6 +17,6 @@ export type NavItem = {
         href: NonNullable<InertiaLinkProps['href']>;
         icon?: LucideIcon;
     }>;
-    /** Специален toggle „Агенти“ с chevron-up/down вместо стандартната стрелка */
-    collapsibleVariant?: 'default' | 'agents';
+    /** Специален toggle с chevron-up/down вместо стандартната стрелка */
+    collapsibleVariant?: 'default' | 'agents' | 'users';
 };

@@ -2,6 +2,8 @@
 import { Link, usePage } from '@inertiajs/vue3';
 import { ChevronDown } from 'lucide-vue-next';
 import { computed } from 'vue';
+import type { Ref } from 'vue';
+import NavCollapsibleChevron from '@/components/NavCollapsibleChevron.vue';
 import {
     Collapsible,
     CollapsibleContent,
@@ -19,6 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useAgentsNavSection } from '@/composables/useAgentsNavSection';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
+import { useUsersNavSection } from '@/composables/useUsersNavSection';
 import type { NavItem } from '@/types';
 
 defineProps<{
@@ -27,6 +30,39 @@ defineProps<{
 
 const { isCurrentUrl } = useCurrentUrl();
 const { agentsNavOpen } = useAgentsNavSection();
+const { usersNavOpen } = useUsersNavSection();
+
+const toggleSectionOpen: Record<'agents' | 'users', Ref<boolean>> = {
+    agents: agentsNavOpen,
+    users: usersNavOpen,
+};
+
+function isToggleCollapsible(
+    variant: NavItem['collapsibleVariant'],
+): variant is 'agents' | 'users' {
+    return variant === 'agents' || variant === 'users';
+}
+
+function isToggleOpen(variant: 'agents' | 'users'): boolean {
+    return toggleSectionOpen[variant].value;
+}
+
+function setToggleOpen(variant: 'agents' | 'users', open: boolean): void {
+    toggleSectionOpen[variant].value = open;
+}
+
+function toggleOpenForItem(variant: NavItem['collapsibleVariant']): boolean {
+    return isToggleCollapsible(variant) ? isToggleOpen(variant) : false;
+}
+
+function onToggleOpenUpdate(
+    variant: NavItem['collapsibleVariant'],
+    open: boolean,
+): void {
+    if (isToggleCollapsible(variant)) {
+        setToggleOpen(variant, open);
+    }
+}
 
 const page = usePage();
 
@@ -64,39 +100,19 @@ const organizationLabel = computed(() => {
                 </SidebarMenuItem>
 
                 <Collapsible
-                    v-else-if="item.collapsibleVariant === 'agents'"
-                    v-model:open="agentsNavOpen"
+                    v-else-if="isToggleCollapsible(item.collapsibleVariant)"
+                    :open="toggleOpenForItem(item.collapsibleVariant)"
                     as-child
+                    @update:open="onToggleOpenUpdate(item.collapsibleVariant, $event)"
                 >
                     <SidebarMenuItem>
                         <CollapsibleTrigger as-child>
                             <SidebarMenuButton :tooltip="item.title">
                                 <component v-if="item.icon" :is="item.icon" />
                                 <span>{{ item.title }}</span>
-                                <svg
-                                    v-if="agentsNavOpen"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24"
-                                    class="ml-auto size-4 shrink-0"
-                                    aria-hidden="true"
-                                >
-                                    <title>chevron-down</title>
-                                    <path
-                                        d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
-                                    />
-                                </svg>
-                                <svg
-                                    v-else
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24"
-                                    class="ml-auto size-4 shrink-0"
-                                    aria-hidden="true"
-                                >
-                                    <title>chevron-up</title>
-                                    <path
-                                        d="M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z"
-                                    />
-                                </svg>
+                                <NavCollapsibleChevron
+                                    :open="isToggleOpen(item.collapsibleVariant)"
+                                />
                             </SidebarMenuButton>
                         </CollapsibleTrigger>
                         <CollapsibleContent>

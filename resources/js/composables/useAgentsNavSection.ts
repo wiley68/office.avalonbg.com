@@ -5,19 +5,24 @@ import dashboardRoutes from '@/routes/dashboard';
 
 const agentsNavOpen = ref(false);
 
+const agentSectionUrls = [
+    dashboardRoutes.notes.url(),
+    dashboardRoutes.admin.statistics.url(),
+    dashboardRoutes.admin.export.url(),
+];
+
 /**
  * Споделено състояние за секцията „Агенти“ (sidebar + header).
- * При отваряне на страницата „Бележки“ секцията се разгъва автоматично.
+ * При отваряне на страница от секцията се разгъва автоматично.
  */
 export function useAgentsNavSection(): { agentsNavOpen: typeof agentsNavOpen } {
     const page = usePage();
     const { isCurrentUrl } = useCurrentUrl();
-    const notesUrl = dashboardRoutes.notes.url();
 
     watch(
         () => page.url,
         () => {
-            if (isCurrentUrl(notesUrl)) {
+            if (agentSectionUrls.some((url) => isCurrentUrl(url))) {
                 agentsNavOpen.value = true;
             }
         },

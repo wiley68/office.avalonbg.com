@@ -51,6 +51,7 @@ const usersNavItem = (user: NonNullable<typeof page.props.auth.user>): NavItem |
         title: t('nav.users'),
         href: '',
         icon: Users,
+        collapsibleVariant: 'users',
         children: [
             {
                 title: childTitle,
@@ -90,6 +91,45 @@ const mainNavItems = computed<NavItem[]>(() => {
                     },
                 ],
             },
+        ];
+    }
+
+    if (user.is_admin) {
+        return [
+            {
+                title: t('common.dashboard'),
+                href: dashboard(),
+                icon: LayoutGrid,
+            },
+            {
+                title: t('nav.composer'),
+                href: dashboardRoutes.composer.url(),
+                icon: Bot,
+            },
+            {
+                title: t('nav.agents'),
+                href: '',
+                icon: Users,
+                collapsibleVariant: 'agents',
+                children: [
+                    {
+                        title: t('nav.notes'),
+                        href: dashboardRoutes.notes.url(),
+                        icon: StickyNote,
+                    },
+                    {
+                        title: t('nav.statistics'),
+                        href: dashboardRoutes.admin.statistics.url(),
+                        icon: BarChart3,
+                    },
+                    {
+                        title: t('nav.export'),
+                        href: dashboardRoutes.admin.export.url(),
+                        icon: Table,
+                    },
+                ],
+            },
+            ...(usersItem ? [usersItem] : []),
         ];
     }
 
