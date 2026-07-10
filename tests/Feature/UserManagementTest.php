@@ -20,7 +20,20 @@ beforeEach(function () {
     Role::findOrCreate('user', 'web');
 });
 
-test('admin can view users page with only user role accounts', function () {
+test('admin can view users page', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    actingAs($admin);
+
+    get('/users')
+        ->assertSuccessful()
+        ->assertInertia(fn ($page) => $page
+            ->component('users/Index')
+            ->where('manageableRole', 'user'));
+});
+
+test('admin can list manageable users via internal api', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
@@ -30,16 +43,28 @@ test('admin can view users page with only user role accounts', function () {
     $otherAdmin = User::factory()->create();
     $otherAdmin->assignRole('admin');
 
-    actingAs($admin);
+    actingAs($admin)
+        ->getJson(route('internal.users.index'))
+        ->assertOk()
+        ->assertJsonPath('total', 1)
+        ->assertJsonPath('data.0.id', $officeUser->id)
+        ->assertJsonPath('data.0.status', 1);
+});
+
+test('profiler can view users page', function () {
+    $profiler = User::factory()->create();
+    $profiler->assignRole('profiler');
+
+    actingAs($profiler);
 
     get('/users')
         ->assertSuccessful()
         ->assertInertia(fn ($page) => $page
-            ->has('users', 1)
-            ->where('users.0.id', $officeUser->id));
+            ->component('users/Index')
+            ->where('manageableRole', 'admin'));
 });
 
-test('profiler can view users page with only admin role accounts', function () {
+test('profiler can list manageable users via internal api', function () {
     $profiler = User::factory()->create();
     $profiler->assignRole('profiler');
 
@@ -49,13 +74,11 @@ test('profiler can view users page with only admin role accounts', function () {
     $officeUser = User::factory()->create();
     $officeUser->assignRole('user');
 
-    actingAs($profiler);
-
-    get('/users')
-        ->assertSuccessful()
-        ->assertInertia(fn ($page) => $page
-            ->has('users', 1)
-            ->where('users.0.id', $managedAdmin->id));
+    actingAs($profiler)
+        ->getJson(route('internal.users.index'))
+        ->assertOk()
+        ->assertJsonPath('total', 1)
+        ->assertJsonPath('data.0.id', $managedAdmin->id);
 });
 
 test('office user cannot access users page', function () {
@@ -65,6 +88,10 @@ test('office user cannot access users page', function () {
     actingAs($user);
 
     get('/users')
+        ->assertForbidden();
+
+    actingAs($user)
+        ->getJson(route('internal.users.index'))
         ->assertForbidden();
 });
 
@@ -129,6 +156,36 @@ test('admin cannot update user with admin role', function () {
         'password' => '',
         'password_confirmation' => '',
     ])->assertForbidden();
+});
+
+test('users api exposes status for inactive users', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $inactiveUser = User::factory()->inactive()->create();
+    $inactiveUser->assignRole('user');
+
+    actingAs($admin)
+        ->getJson(route('internal.users.index'))
+        ->assertOk()
+        ->assertJsonPath('data.0.status', 0);
+});
+
+test('users api supports search', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $first = User::factory()->create(['name' => 'Alpha User']);
+    $first->assignRole('user');
+
+    $second = User::factory()->create(['name' => 'Beta User']);
+    $second->assignRole('user');
+
+    actingAs($admin)
+        ->getJson(route('internal.users.index', ['search' => 'Alpha']))
+        ->assertOk()
+        ->assertJsonPath('total', 1)
+        ->assertJsonPath('data.0.name', 'Alpha User');
 });
 
 test('weak password is rejected when creating user', function () {

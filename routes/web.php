@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AgentFeedbackStatisticsController;
 use App\Http\Controllers\Admin\DataExportController;
 use App\Http\Controllers\AgentConversationMessagesController;
 use App\Http\Controllers\Api\AuditLogApiController;
+use App\Http\Controllers\Api\UserApiController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\DashboardAgentController;
 use App\Http\Controllers\LocaleController;
@@ -71,6 +72,13 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
 
     Route::post('/users/two-factor/{user}/resend', [UserTwoFactorController::class, 'resend'])
         ->name('users.two-factor.resend');
+
+    Route::prefix('internal-api')
+        ->name('internal.')
+        ->group(function () {
+            Route::get('users', [UserApiController::class, 'index'])
+                ->name('users.index');
+        });
 });
 
 Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled', 'role:profiler'])->group(function () {

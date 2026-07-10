@@ -60,6 +60,7 @@ interface DataTableProps {
     onSearchChange?: (value: string) => void;
     onPaginationChange?: (page: number, pageSize: number) => void;
     onSortingChange?: (sorting: SortingState) => void;
+    serverSide?: boolean;
     expandable?: boolean;
     expandedRows?: Record<string, boolean>;
     onRowExpand?: (rowId: string, expanded: boolean) => void;
@@ -79,6 +80,7 @@ const props = withDefaults(defineProps<DataTableProps>(), {
     expandable: false,
     expandedRows: () => ({}),
     fillHeight: false,
+    serverSide: false,
 });
 
 const { t } = useTranslations();
@@ -107,8 +109,11 @@ const table = useVueTable({
     data: computed(() => props.data),
     columns: props.columns,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: props.serverSide ? undefined : getSortedRowModel(),
+    getFilteredRowModel: props.serverSide ? undefined : getFilteredRowModel(),
+    manualSorting: props.serverSide,
+    manualPagination: props.serverSide,
+    pageCount: props.serverSide ? props.totalPages : undefined,
     onSortingChange: (updaterOrValue) =>
         valueUpdater(updaterOrValue, sorting),
     onColumnFiltersChange: (updaterOrValue) =>

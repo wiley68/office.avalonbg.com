@@ -263,6 +263,7 @@ onMounted(async () => {
                     :search-placeholder="t('audit_logs.search_placeholder')"
                     :empty-message="t('audit_logs.empty')"
                     :loading-message="t('audit_logs.loading')"
+                    server-side
                     :show-pagination="true"
                     :show-column-toggle="true"
                     :page-size="pagination.rowsPerPage"

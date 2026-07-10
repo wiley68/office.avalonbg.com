@@ -94,6 +94,15 @@
         "inactive": "This account is inactive. Please contact an administrator."
     },
     "users": {
+        "search_placeholder": "Search by name or email...",
+        "columns": {
+            "id": "№",
+            "name": "User",
+            "email": "Email",
+            "status": "Status",
+            "created_at": "Created",
+            "actions": "Actions"
+        },
         "card_title": "User information",
         "create_subtitle": "Creating a new :role",
         "tabs": {
@@ -107,7 +116,8 @@
             "status": "Status",
             "status_active": "Active",
             "status_inactive": "Inactive",
-            "status_hint": "Inactive users cannot sign in."
+            "status_hint": "Inactive users cannot sign in.",
+            "status_inactive_tooltip": "This account is inactive. Activate it from Edit."
         },
         "actions": {
             "save": "Save",

@@ -22,11 +22,6 @@ class UserController extends Controller
         $manageableRole = app(UserPolicy::class)->manageableRole($actor);
 
         return Inertia::render('users/Index', [
-            'users' => User::query()
-                ->role($manageableRole?->value)
-                ->select(['id', 'name', 'email', 'created_at'])
-                ->latest()
-                ->get(),
             'manageableRole' => $manageableRole?->value,
         ]);
     }
