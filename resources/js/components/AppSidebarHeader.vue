@@ -9,7 +9,7 @@ import { dashboard } from '@/routes';
 import { clearCache as dashboardClearCache } from '@/routes/dashboard';
 import type { BreadcrumbItem } from '@/types';
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         breadcrumbs?: BreadcrumbItem[];
         pageTitle?: string;
@@ -24,6 +24,12 @@ const page = usePage();
 const { t } = useTranslations();
 
 const isAuthenticated = computed(() => page.props.auth.user !== null);
+
+const showRefreshDataLink = computed(
+    () =>
+        isAuthenticated.value &&
+        !(props.pageTitle && props.pageDescription),
+);
 
 function refreshDashboardData(): void {
     router.post(
@@ -41,42 +47,52 @@ function refreshDashboardData(): void {
 
 <template>
     <header
-        class="flex h-16 shrink-0 items-center gap-2 border-b border-sidebar-border/70 px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-4 dark:border-sidebar-border"
+        class="flex min-h-16 shrink-0 items-center gap-2 border-b border-sidebar-border/70 px-6 py-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:min-h-12 md:px-4 dark:border-sidebar-border"
     >
         <SidebarTrigger class="-ml-1 shrink-0" />
-        <div class="flex min-w-0 flex-1 items-center overflow-hidden">
-            <template v-if="breadcrumbs && breadcrumbs.length > 0">
-                <Breadcrumbs :breadcrumbs="breadcrumbs" />
-            </template>
-        </div>
-        <div class="flex shrink-0 items-center gap-2">
+        <div
+            class="flex min-w-0 flex-1 items-center gap-4 md:gap-6"
+        >
             <div
-                v-if="pageTitle"
-                class="hidden min-w-0 flex-col justify-center gap-0.5 overflow-hidden sm:flex"
+                v-if="breadcrumbs && breadcrumbs.length > 0"
+                class="flex min-w-0 max-w-[min(100%,40%)] shrink-0 items-center overflow-hidden"
             >
-                <h1
-                    class="m-0 max-w-48 truncate text-right text-sm leading-tight font-semibold tracking-tight text-foreground md:max-w-64"
-                >
-                    {{ pageTitle }}
-                </h1>
-                <p
-                    v-if="pageDescription"
-                    class="m-0 max-w-48 truncate text-right text-[11px] leading-tight whitespace-nowrap text-muted-foreground md:max-w-64 sm:text-xs"
-                >
-                    {{ pageDescription }}
-                </p>
+                <Breadcrumbs :breadcrumbs="breadcrumbs" />
             </div>
-            <div v-if="$slots.pageActions" class="flex shrink-0 items-center">
-                <slot name="pageActions" />
-            </div>
-            <Button
-                v-if="isAuthenticated"
-                class="h-8 shrink-0 cursor-pointer px-3 text-sm"
-                variant="ghost"
-                @click="refreshDashboardData"
+            <div
+                class="flex min-w-0 flex-1 items-center justify-end gap-2"
             >
-                {{ t('dashboard.refresh_data') }}
-            </Button>
+                <div
+                    v-if="pageTitle"
+                    class="hidden min-w-0 w-full flex-col items-end justify-center gap-0.5 sm:flex"
+                >
+                    <h1
+                        class="m-0 w-full text-right text-sm leading-tight font-semibold tracking-tight text-foreground"
+                    >
+                        {{ pageTitle }}
+                    </h1>
+                    <p
+                        v-if="pageDescription"
+                        class="m-0 w-full text-right text-[11px] leading-snug text-pretty text-muted-foreground sm:text-xs"
+                    >
+                        {{ pageDescription }}
+                    </p>
+                </div>
+                <div
+                    v-if="$slots.pageActions"
+                    class="flex shrink-0 items-center"
+                >
+                    <slot name="pageActions" />
+                </div>
+                <Button
+                    v-if="showRefreshDataLink"
+                    class="h-8 shrink-0 cursor-pointer px-3 text-sm"
+                    variant="ghost"
+                    @click="refreshDashboardData"
+                >
+                    {{ t('dashboard.refresh_data') }}
+                </Button>
+            </div>
         </div>
     </header>
 </template>
