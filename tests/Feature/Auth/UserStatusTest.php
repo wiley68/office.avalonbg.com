@@ -9,7 +9,6 @@ use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertGuest;
 use function Pest\Laravel\get;
 use function Pest\Laravel\post;
-use function Pest\Laravel\put;
 
 uses(RefreshDatabase::class);
 
@@ -78,7 +77,7 @@ test('admin can deactivate user on update', function () {
             'password' => '',
             'password_confirmation' => '',
         ])
-        ->assertRedirect('/users');
+        ->assertRedirect(route('users.edit', $managedUser));
 
     expect($managedUser->refresh()->status)->toBe(0)
         ->and($managedUser->isActive())->toBeFalse();

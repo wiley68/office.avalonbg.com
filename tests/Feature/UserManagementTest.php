@@ -239,7 +239,7 @@ test('profiler can update and delete admin role account', function () {
         'password' => '',
         'password_confirmation' => '',
     ])
-        ->assertRedirect('/users');
+        ->assertRedirect(route('users.edit', $managedAdmin));
 
     expect($managedAdmin->refresh()->name)->toBe('Updated Admin')
         ->and($managedAdmin->email)->toBe('updated.admin@example.com');
@@ -266,7 +266,7 @@ test('admin can update and delete user role account', function () {
         'password' => '',
         'password_confirmation' => '',
     ])
-        ->assertRedirect('/users');
+        ->assertRedirect(route('users.edit', $managedUser));
 
     expect($managedUser->refresh()->name)->toBe('Updated Name')
         ->and($managedUser->email)->toBe('updated@example.com');

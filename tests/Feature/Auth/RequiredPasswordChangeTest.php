@@ -117,7 +117,7 @@ test('admin password reset requires user to change password on next login', func
             'password' => 'ResetPass1!',
             'password_confirmation' => 'ResetPass1!',
         ])
-        ->assertRedirect('/users');
+        ->assertRedirect(route('users.edit', $managedUser));
 
     expect($managedUser->refresh()->must_change_password)->toBeTrue();
 });

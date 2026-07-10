@@ -92,7 +92,7 @@ class UserController extends Controller
 
         $user->update($validated);
 
-        return to_route('users.index');
+        return to_route('users.edit', $user);
     }
 
     public function destroy(User $user): RedirectResponse
