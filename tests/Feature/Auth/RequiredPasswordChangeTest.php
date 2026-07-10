@@ -113,6 +113,7 @@ test('admin password reset requires user to change password on next login', func
         ->put("/users/{$managedUser->id}", [
             'name' => $managedUser->name,
             'email' => $managedUser->email,
+            'status' => 1,
             'password' => 'ResetPass1!',
             'password_confirmation' => 'ResetPass1!',
         ])

@@ -11,16 +11,37 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'must_change_password', 'appearance'])]
+#[Fillable(['name', 'email', 'password', 'must_change_password', 'status', 'appearance'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
+
+    protected static function booted(): void
+    {
+        static::updated(function (User $user): void {
+            if (! $user->wasChanged('status') || $user->isActive()) {
+                return;
+            }
+
+            DB::table('sessions')->where('user_id', $user->id)->delete();
+
+            if ($user->remember_token !== null) {
+                $user->forceFill(['remember_token' => null])->saveQuietly();
+            }
+        });
+    }
+
+    public function isActive(): bool
+    {
+        return (int) $this->status === 1;
+    }
 
     /**
      * @return HasMany<Note, $this>
@@ -73,6 +94,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'must_change_password' => 'boolean',
+            'status' => 'integer',
             'two_factor_confirmed_at' => 'datetime',
         ];
     }

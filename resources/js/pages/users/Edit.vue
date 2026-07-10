@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
     Tabs,
     TabsContent,
@@ -35,6 +36,7 @@ type EditableUser = {
     id: number;
     name: string;
     email: string;
+    status: number;
     two_factor_enabled?: boolean;
 };
 
@@ -52,6 +54,14 @@ const form = useForm({
     email: props.user.email,
     password: '',
     password_confirmation: '',
+    status: props.user.status,
+});
+
+const userStatus = computed({
+    get: () => form.status === 1,
+    set: (value: boolean) => {
+        form.status = value ? 1 : 0;
+    },
 });
 
 const isNavigating = ref(false);
@@ -168,6 +178,33 @@ const onSubmit = () => {
                                         class="text-sm text-destructive"
                                     >
                                         {{ form.errors.email }}
+                                    </p>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <Label for="status">{{ t('users.fields.status') }}</Label>
+                                    <div class="flex items-center gap-3">
+                                        <Switch
+                                            id="status"
+                                            v-model="userStatus"
+                                            class="cursor-pointer"
+                                        />
+                                        <Label for="status" class="cursor-pointer">
+                                            {{
+                                                form.status === 1
+                                                    ? t('users.fields.status_active')
+                                                    : t('users.fields.status_inactive')
+                                            }}
+                                        </Label>
+                                    </div>
+                                    <p
+                                        v-if="form.errors.status"
+                                        class="text-sm text-destructive"
+                                    >
+                                        {{ form.errors.status }}
+                                    </p>
+                                    <p class="text-xs text-muted-foreground">
+                                        {{ t('users.fields.status_hint') }}
                                     </p>
                                 </div>
 

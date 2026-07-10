@@ -178,6 +178,7 @@ test('profiler can update and delete admin role account', function () {
     put("/users/{$managedAdmin->id}", [
         'name' => 'Updated Admin',
         'email' => 'updated.admin@example.com',
+        'status' => 1,
         'password' => '',
         'password_confirmation' => '',
     ])
@@ -204,6 +205,7 @@ test('admin can update and delete user role account', function () {
     put("/users/{$managedUser->id}", [
         'name' => 'Updated Name',
         'email' => 'updated@example.com',
+        'status' => 1,
         'password' => '',
         'password_confirmation' => '',
     ])

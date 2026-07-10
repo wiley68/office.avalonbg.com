@@ -73,6 +73,7 @@ class UserController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'status' => $user->status,
                 'two_factor_enabled' => $user->hasEnabledTwoFactorAuthentication(),
             ],
             'manageableRole' => app(UserPolicy::class)->manageableRole($actor)?->value,

@@ -90,6 +90,9 @@
             "required_message": "You must change your password before continuing."
         }
     },
+    "auth": {
+        "inactive": "This account is inactive. Please contact an administrator."
+    },
     "users": {
         "card_title": "User information",
         "create_subtitle": "Creating a new :role",
@@ -100,7 +103,11 @@
         "fields": {
             "user": "User",
             "user_placeholder": "User name",
-            "email_placeholder": "User email"
+            "email_placeholder": "User email",
+            "status": "Status",
+            "status_active": "Active",
+            "status_inactive": "Inactive",
+            "status_hint": "Inactive users cannot sign in."
         },
         "actions": {
             "save": "Save",
@@ -215,7 +222,8 @@
         },
         "reasons": {
             "invalid_credentials": "Invalid login credentials",
-            "invalid_mfa_code": "Invalid MFA code"
+            "invalid_mfa_code": "Invalid MFA code",
+            "inactive_account": "Inactive account"
         },
         "event_types": {
             "login_success": "Successful login",

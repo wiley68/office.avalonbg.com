@@ -135,6 +135,7 @@ class AuditLogsXlsxExportService
         return match ($value) {
             'invalid_credentials', 'невалидни данни за вход' => Translations::get('audit_logs.reasons.invalid_credentials'),
             'invalid_mfa_code', 'невалиден MFA код' => Translations::get('audit_logs.reasons.invalid_mfa_code'),
+            'inactive_account', 'неактивен акаунт' => Translations::get('audit_logs.reasons.inactive_account'),
             default => $value,
         };
     }

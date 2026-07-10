@@ -7,11 +7,16 @@ use App\Actions\Fortify\RedirectIfTwoFactorAuthenticatable;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Http\Responses\LoginResponse;
 use App\Http\Responses\TwoFactorLoginResponse;
+use App\Models\User;
+use App\Support\AuditLogger;
+use App\Support\Translations;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Laravel\Fortify\Actions\CanonicalizeUsername;
 use Laravel\Fortify\Actions\PrepareAuthenticatedSession;
@@ -47,6 +52,28 @@ class FortifyServiceProvider extends ServiceProvider
     private function configureActions(): void
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
+
+        Fortify::authenticateUsing(function (Request $request): ?User {
+            $email = Str::lower((string) $request->input(Fortify::username()));
+
+            $user = User::query()
+                ->where('email', $email)
+                ->first();
+
+            if ($user === null || ! Hash::check((string) $request->password, $user->password)) {
+                return null;
+            }
+
+            if (! $user->isActive()) {
+                AuditLogger::logLoginFailed($email, 'inactive_account', $user);
+
+                throw ValidationException::withMessages([
+                    'email' => Translations::get('auth.inactive'),
+                ]);
+            }
+
+            return $user;
+        });
 
         Fortify::authenticateThrough(function (Request $request) {
             return [

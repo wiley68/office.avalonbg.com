@@ -45,6 +45,7 @@ const auditFieldTranslationKeys: Record<string, string> = {
 const auditReasonTranslationKeys: Record<string, string> = {
     invalid_credentials: 'audit_logs.reasons.invalid_credentials',
     invalid_mfa_code: 'audit_logs.reasons.invalid_mfa_code',
+    inactive_account: 'audit_logs.reasons.inactive_account',
     'невалидни данни за вход': 'audit_logs.reasons.invalid_credentials',
     'невалиден MFA код': 'audit_logs.reasons.invalid_mfa_code',
 };

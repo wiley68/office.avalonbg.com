@@ -90,6 +90,9 @@
             "required_message": "Трябва да смените паролата си, преди да продължите."
         }
     },
+    "auth": {
+        "inactive": "Профилът е неактивен. Моля, свържете се с администратор."
+    },
     "users": {
         "card_title": "Информация за потребителя",
         "create_subtitle": "Създаване на нов :role",
@@ -100,7 +103,11 @@
         "fields": {
             "user": "Потребител",
             "user_placeholder": "Име на потребителя",
-            "email_placeholder": "Имейл на потребителя"
+            "email_placeholder": "Имейл на потребителя",
+            "status": "Статус",
+            "status_active": "Активен",
+            "status_inactive": "Неактивен",
+            "status_hint": "Неактивните потребители не могат да влязат в системата."
         },
         "actions": {
             "save": "Запиши",
@@ -215,7 +222,8 @@
         },
         "reasons": {
             "invalid_credentials": "Невалидни данни за вход",
-            "invalid_mfa_code": "Невалиден MFA код"
+            "invalid_mfa_code": "Невалиден MFA код",
+            "inactive_account": "Неактивен акаунт"
         },
         "event_types": {
             "login_success": "Успешен вход",

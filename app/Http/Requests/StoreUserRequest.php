@@ -26,6 +26,7 @@ class StoreUserRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => $this->passwordRules(),
+            'status' => ['sometimes', 'integer', 'in:0,1'],
         ];
     }
 }
