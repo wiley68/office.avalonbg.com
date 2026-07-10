@@ -22,7 +22,14 @@ defineProps<{
         title="Log in to your account"
         description="Enter your email and password below to log in"
     >
-        <Head title="Log in" />
+        <Head title="Log in">
+            <meta
+                http-equiv="Cache-Control"
+                content="no-cache, no-store, must-revalidate"
+            />
+            <meta http-equiv="Pragma" content="no-cache" />
+            <meta http-equiv="Expires" content="0" />
+        </Head>
 
         <div
             v-if="status"
@@ -34,6 +41,7 @@ defineProps<{
         <Form
             v-bind="store.form()"
             :reset-on-success="['password']"
+            autocomplete="off"
             v-slot="{ errors, processing }"
             class="flex flex-col gap-6"
         >
@@ -47,7 +55,7 @@ defineProps<{
                         required
                         autofocus
                         :tabindex="1"
-                        autocomplete="email"
+                        autocomplete="off"
                         placeholder="email@example.com"
                     />
                     <InputError :message="errors.email" />
@@ -70,7 +78,7 @@ defineProps<{
                         name="password"
                         required
                         :tabindex="2"
-                        autocomplete="current-password"
+                        autocomplete="off"
                         placeholder="Password"
                     />
                     <InputError :message="errors.password" />

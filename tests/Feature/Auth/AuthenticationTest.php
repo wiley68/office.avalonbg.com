@@ -14,8 +14,16 @@ use function Pest\Laravel\post;
 uses(RefreshDatabase::class);
 
 test('login screen can be rendered', function () {
-    get(route('login'))
-        ->assertOk();
+    $response = get(route('login'));
+
+    $response
+        ->assertOk()
+        ->assertHeader('Pragma', 'no-cache');
+
+    expect($response->headers->get('Cache-Control'))
+        ->toContain('no-store')
+        ->toContain('no-cache')
+        ->toContain('must-revalidate');
 });
 
 test('users can authenticate using the login screen', function () {
