@@ -174,15 +174,18 @@ test('two factor setup mail contains qr code and recovery codes', function () {
 });
 
 test('admin fallback setup mail explains forwarding to user', function () {
-    $admin = User::factory()->create();
-    $managedUser = User::factory()->withTwoFactor()->create(['email' => '']);
+    $admin = User::factory()->create(['name' => "Zoila D'Amore"]);
+    $managedUser = User::factory()->withTwoFactor()->create([
+        'email' => '',
+        'name' => "O'Brien User",
+    ]);
 
     $mail = new UserTwoFactorSetupMail($managedUser, forAdministrator: true, initiatorName: $admin->name);
     $html = $mail->render();
 
     expect($html)
-        ->toContain($admin->name)
-        ->toContain($managedUser->name)
+        ->toContain(e($admin->name))
+        ->toContain(e($managedUser->name))
         ->toContain('pass the details');
 });
 
@@ -222,7 +225,7 @@ test('user edit page includes two factor status', function () {
     actingAs($profiler)
         ->get(route('users.edit', $managedAdmin))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('users/Edit')
             ->where('user.two_factor_enabled', true));
 });
@@ -234,7 +237,7 @@ test('user create page renders card layout', function () {
     actingAs($profiler)
         ->get(route('users.create'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('users/Create')
             ->where('manageableRole', 'admin'));
 });
