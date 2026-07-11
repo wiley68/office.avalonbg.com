@@ -24,7 +24,7 @@ test('dashboard page can be rendered', function (): void {
 
     get(route('dashboard'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page->component('Dashboard'));
+        ->assertInertia(fn(Assert $page) => $page->component('Dashboard'));
 });
 
 test('composer page can be rendered for office users', function (): void {
@@ -35,7 +35,7 @@ test('composer page can be rendered for office users', function (): void {
 
     get(route('dashboard.composer'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page->component('office/Composer'));
+        ->assertInertia(fn(Assert $page) => $page->component('office/Composer'));
 });
 
 test('profiler is redirected from composer page to dashboard', function (): void {
@@ -59,9 +59,26 @@ test('profiler dashboard shares admin user count', function (): void {
 
     get(route('dashboard'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn(Assert $page) => $page
             ->component('Dashboard')
             ->where('admin_user_count', 2));
+});
+
+test('admin dashboard shares office user count', function (): void {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    User::factory()->count(3)->create()->each->assignRole('user');
+    User::factory()->create()->assignRole('admin');
+
+    actingAs($admin);
+
+    get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn(Assert $page) => $page
+            ->component('Dashboard')
+            ->where('admin_user_count', null)
+            ->where('office_user_count', 3));
 });
 
 test('admin dashboard does not share admin user count', function (): void {
@@ -72,6 +89,6 @@ test('admin dashboard does not share admin user count', function (): void {
 
     get(route('dashboard'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn(Assert $page) => $page
             ->where('admin_user_count', null));
 });

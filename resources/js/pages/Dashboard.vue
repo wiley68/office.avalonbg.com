@@ -16,8 +16,32 @@ const isProfiler = computed(
     () => page.props.auth.user?.is_profiler === true,
 );
 
-const adminUserCount = computed(
-    () => Number(page.props.admin_user_count ?? 0),
+const isAdmin = computed(
+    () => page.props.auth.user?.is_admin === true,
+);
+
+const showUsersPanel = computed(
+    () => isProfiler.value || isAdmin.value,
+);
+
+const usersPanelTitle = computed(() =>
+    isProfiler.value
+        ? t('users.admin.plural')
+        : t('users.office_user.plural'),
+);
+
+const usersPanelSubtitle = computed(() =>
+    isProfiler.value
+        ? t('dashboard.administrators_subtitle')
+        : t('dashboard.office_users_subtitle'),
+);
+
+const usersPanelCount = computed(() =>
+    Number(
+        isProfiler.value
+            ? (page.props.admin_user_count ?? 0)
+            : (page.props.office_user_count ?? 0),
+    ),
 );
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
@@ -38,7 +62,7 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => [
             class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4"
         >
             <div
-                v-if="isProfiler"
+                v-if="showUsersPanel"
                 class="grid auto-rows-min gap-4 md:grid-cols-1"
             >
                 <div
@@ -54,16 +78,16 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => [
                                     <Shield class="h-5 w-5 text-blue-600" />
                                     <div>
                                         <p class="font-medium">
-                                            {{ t('users.admin.plural') }}
+                                            {{ usersPanelTitle }}
                                         </p>
                                         <p class="text-sm text-muted-foreground">
-                                            {{ t('dashboard.administrators_subtitle') }}
+                                            {{ usersPanelSubtitle }}
                                         </p>
                                     </div>
                                 </div>
                                 <div class="text-right">
                                     <p class="text-2xl font-bold text-blue-600">
-                                        {{ adminUserCount }}
+                                        {{ usersPanelCount }}
                                     </p>
                                 </div>
                             </Link>

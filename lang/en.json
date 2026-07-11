@@ -28,6 +28,7 @@
     },
     "dashboard": {
         "administrators_subtitle": "System administrators",
+        "office_users_subtitle": "Office platform users",
         "refresh_data": "Refresh data"
     },
     "common": {

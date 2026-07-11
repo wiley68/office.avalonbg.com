@@ -28,6 +28,7 @@
     },
     "dashboard": {
         "administrators_subtitle": "Системни администратори",
+        "office_users_subtitle": "Потребители на офис платформата",
         "refresh_data": "Обнови данните"
     },
     "common": {

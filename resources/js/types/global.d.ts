@@ -28,6 +28,7 @@ declare module '@inertiajs/core' {
             auth: Auth;
             sidebarOpen: boolean;
             admin_user_count: number | null;
+            office_user_count: number | null;
             [key: string]: unknown;
         };
     }

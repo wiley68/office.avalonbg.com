@@ -8,7 +8,7 @@ class DashboardCache
 {
     public static function key(string $name, int $userId): string
     {
-        return 'dashboard.'.$name.'.'.$userId;
+        return 'dashboard.' . $name . '.' . $userId;
     }
 
     public static function remember(string $name, int $userId, callable $callback): mixed
@@ -34,6 +34,7 @@ class DashboardCache
     {
         return [
             'admin_user_count',
+            'office_user_count',
         ];
     }
 }

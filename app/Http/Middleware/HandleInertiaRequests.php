@@ -78,7 +78,20 @@ class HandleInertiaRequests extends Middleware
                 return DashboardCache::remember(
                     'admin_user_count',
                     $user->id,
-                    fn () => User::role(UserRole::Admin->value)->count(),
+                    fn() => User::role(UserRole::Admin->value)->count(),
+                );
+            },
+            'office_user_count' => function () use ($request) {
+                $user = $request->user();
+
+                if ($user === null || ! $user->hasRole(UserRole::Admin->value)) {
+                    return null;
+                }
+
+                return DashboardCache::remember(
+                    'office_user_count',
+                    $user->id,
+                    fn() => User::role(UserRole::User->value)->count(),
                 );
             },
         ];
