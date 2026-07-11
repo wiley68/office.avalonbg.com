@@ -62,6 +62,30 @@ const usersNavItem = (user: NonNullable<typeof page.props.auth.user>): NavItem |
     };
 };
 
+const agentsNavItem = (): NavItem => ({
+    title: t('nav.agents'),
+    href: '',
+    icon: Users,
+    collapsibleVariant: 'agents',
+    children: [
+        {
+            title: t('nav.notes'),
+            href: dashboardRoutes.notes.url(),
+            icon: StickyNote,
+        },
+        {
+            title: t('nav.statistics'),
+            href: dashboardRoutes.admin.statistics.url(),
+            icon: BarChart3,
+        },
+        {
+            title: t('nav.export'),
+            href: dashboardRoutes.admin.export.url(),
+            icon: Table,
+        },
+    ],
+});
+
 const mainNavItems = computed<NavItem[]>(() => {
     const user = page.props.auth.user;
 
@@ -94,7 +118,7 @@ const mainNavItems = computed<NavItem[]>(() => {
         ];
     }
 
-    if (user.is_admin) {
+    if (user.has_office_access) {
         return [
             {
                 title: t('common.dashboard'),
@@ -106,73 +130,12 @@ const mainNavItems = computed<NavItem[]>(() => {
                 href: dashboardRoutes.composer.url(),
                 icon: Bot,
             },
-            {
-                title: t('nav.agents'),
-                href: '',
-                icon: Users,
-                collapsibleVariant: 'agents',
-                children: [
-                    {
-                        title: t('nav.notes'),
-                        href: dashboardRoutes.notes.url(),
-                        icon: StickyNote,
-                    },
-                    {
-                        title: t('nav.statistics'),
-                        href: dashboardRoutes.admin.statistics.url(),
-                        icon: BarChart3,
-                    },
-                    {
-                        title: t('nav.export'),
-                        href: dashboardRoutes.admin.export.url(),
-                        icon: Table,
-                    },
-                ],
-            },
+            agentsNavItem(),
             ...(usersItem ? [usersItem] : []),
         ];
     }
 
-    const items: NavItem[] = [
-        {
-            title: t('common.dashboard'),
-            href: dashboard(),
-            icon: LayoutGrid,
-        },
-        ...(usersItem ? [usersItem] : []),
-        {
-            title: t('nav.composer'),
-            href: dashboardRoutes.composer.url(),
-            icon: Bot,
-        },
-        {
-            title: t('nav.agents'),
-            href: dashboard(),
-            separator: true,
-        },
-        {
-            title: t('nav.notes'),
-            href: dashboardRoutes.notes.url(),
-            icon: StickyNote,
-        },
-    ];
-
-    if (user.has_office_access) {
-        items.push(
-            {
-                title: t('nav.statistics'),
-                href: dashboardRoutes.admin.statistics.url(),
-                icon: BarChart3,
-            },
-            {
-                title: t('nav.export'),
-                href: dashboardRoutes.admin.export.url(),
-                icon: Table,
-            },
-        );
-    }
-
-    return items;
+    return [];
 });
 
 const footerNavItems = computed<NavItem[]>(() => {
