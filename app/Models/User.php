@@ -59,6 +59,22 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Access::class);
     }
 
+    /**
+     * @return HasMany<Project, $this>
+     */
+    public function projects(): HasMany
+    {
+        return $this->hasMany(Project::class);
+    }
+
+    /**
+     * @return HasMany<Document, $this>
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class);
+    }
+
     public function primaryRole(): ?UserRole
     {
         $role = $this->getRoleNames()->first();

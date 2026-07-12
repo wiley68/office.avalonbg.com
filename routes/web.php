@@ -7,16 +7,30 @@ use App\Http\Controllers\AgentConversationMessagesController;
 use App\Http\Controllers\Api\AccessApiController;
 use App\Http\Controllers\Api\AccessDataTransformController;
 use App\Http\Controllers\Api\AuditLogApiController;
+use App\Http\Controllers\Api\DocumentApiController;
+use App\Http\Controllers\Api\ProjectApiController;
+use App\Http\Controllers\Api\TaskApiController;
 use App\Http\Controllers\Api\UserApiController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\DashboardAgentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\DocumentDownloadController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NotesAgentController;
 use App\Http\Controllers\NotesExportDownloadController;
+use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectDocumentController;
+use App\Http\Controllers\ProjectRevisionController;
+use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TaskDocumentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserTwoFactorController;
 use App\Models\Access;
+use App\Models\Document;
+use App\Models\Project;
+use App\Models\ProjectRevision;
+use App\Models\Task;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -136,7 +150,98 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
 
             Route::post('accesses/transform-data', AccessDataTransformController::class)
                 ->name('accesses.transform-data');
+
+            Route::get('projects', [ProjectApiController::class, 'index'])
+                ->name('projects.index');
+
+            Route::get('projects/{project}/tasks', [TaskApiController::class, 'index'])
+                ->name('projects.tasks.index');
+
+            Route::get('documents', [DocumentApiController::class, 'index'])
+                ->name('documents.index');
         });
+
+    Route::bind('project', function (string $value): Project {
+        $userId = Auth::id();
+
+        abort_unless($userId !== null, 404);
+
+        return Project::query()
+            ->where('user_id', $userId)
+            ->findOrFail($value);
+    });
+
+    Route::bind('revision', function (string $value): ProjectRevision {
+        $project = request()->route('project');
+
+        abort_unless($project instanceof Project, 404);
+
+        return ProjectRevision::query()
+            ->where('project_id', $project->id)
+            ->findOrFail($value);
+    });
+
+    Route::bind('task', function (string $value): Task {
+        $userId = Auth::id();
+
+        abort_unless($userId !== null, 404);
+
+        return Task::query()
+            ->where('user_id', $userId)
+            ->findOrFail($value);
+    });
+
+    Route::bind('document', function (string $value): Document {
+        $userId = Auth::id();
+
+        abort_unless($userId !== null, 404);
+
+        return Document::query()
+            ->where('user_id', $userId)
+            ->findOrFail($value);
+    });
+
+    Route::resource('projects', ProjectController::class)
+        ->except(['create', 'edit']);
+
+    Route::post('projects/{project}/revisions', [ProjectRevisionController::class, 'store'])
+        ->name('projects.revisions.store');
+    Route::put('projects/{project}/revisions/{revision}', [ProjectRevisionController::class, 'update'])
+        ->name('projects.revisions.update');
+    Route::delete('projects/{project}/revisions/{revision}', [ProjectRevisionController::class, 'destroy'])
+        ->name('projects.revisions.destroy');
+
+    Route::post('projects/{project}/tasks', [TaskController::class, 'store'])
+        ->name('projects.tasks.store');
+    Route::put('tasks/{task}', [TaskController::class, 'update'])
+        ->name('tasks.update');
+    Route::patch('tasks/{task}/complete', [TaskController::class, 'complete'])
+        ->name('tasks.complete');
+    Route::patch('tasks/{task}/reorder', [TaskController::class, 'reorder'])
+        ->name('tasks.reorder');
+    Route::delete('tasks/{task}', [TaskController::class, 'destroy'])
+        ->name('tasks.destroy');
+
+    Route::get('documents', [DocumentController::class, 'index'])
+        ->name('documents.index');
+    Route::post('documents', [DocumentController::class, 'store'])
+        ->name('documents.store');
+    Route::put('documents/{document}', [DocumentController::class, 'update'])
+        ->name('documents.update');
+    Route::delete('documents/{document}', [DocumentController::class, 'destroy'])
+        ->name('documents.destroy');
+    Route::get('documents/{document}/download', DocumentDownloadController::class)
+        ->name('documents.download');
+
+    Route::post('projects/{project}/documents/{document}', [ProjectDocumentController::class, 'store'])
+        ->name('projects.documents.store');
+    Route::delete('projects/{project}/documents/{document}', [ProjectDocumentController::class, 'destroy'])
+        ->name('projects.documents.destroy');
+
+    Route::post('tasks/{task}/documents/{document}', [TaskDocumentController::class, 'store'])
+        ->name('tasks.documents.store');
+    Route::delete('tasks/{task}/documents/{document}', [TaskDocumentController::class, 'destroy'])
+        ->name('tasks.documents.destroy');
 });
 
 Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled', 'role:user|admin'])->group(function () {
@@ -148,4 +253,4 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
         ->name('dashboard.admin.export');
 });
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';

@@ -4,6 +4,7 @@ import { Link } from '@inertiajs/vue3';
 import {
     BarChart3,
     Bot,
+    FolderKanban,
     HardDriveDownload,
     History,
     KeyRound,
@@ -14,6 +15,7 @@ import {
     Table,
     User,
     Users,
+    FileText,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
@@ -34,6 +36,8 @@ import { dashboard } from '@/routes';
 import { index as accessesIndex } from '@/routes/accesses';
 import { index as auditLogsIndex } from '@/routes/audit-logs';
 import dashboardRoutes from '@/routes/dashboard';
+import { index as documentsIndex } from '@/routes/documents';
+import { index as projectsIndex } from '@/routes/projects';
 import { index as usersIndex } from '@/routes/users';
 import type { NavItem } from '@/types';
 
@@ -141,6 +145,16 @@ const mainNavItems = computed<NavItem[]>(() => {
                 title: t('nav.accesses'),
                 href: accessesIndex(),
                 icon: KeyRound,
+            });
+            items.push({
+                title: t('nav.projects'),
+                href: projectsIndex(),
+                icon: FolderKanban,
+            });
+            items.push({
+                title: t('nav.documents'),
+                href: documentsIndex(),
+                icon: FileText,
             });
         }
 

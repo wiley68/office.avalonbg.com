@@ -20,7 +20,9 @@
         "notes": "Notes",
         "statistics": "Statistics",
         "export": "Export",
-        "accesses": "Accesses"
+        "accesses": "Accesses",
+        "projects": "Projects",
+        "documents": "Documents"
     },
     "roles": {
         "profiler": "Profiler",
@@ -358,6 +360,123 @@
             "current_password": "Current password",
             "rotate_button": "Change key",
             "rotated": "Encryption key changed and records were re-encrypted."
+        }
+    },
+    "projects": {
+        "title": "Projects",
+        "add": "Add project",
+        "create_title": "New project",
+        "edit_title": "Edit project",
+        "empty": "No projects found.",
+        "delete_confirm": "Are you sure you want to delete this project?",
+        "search_placeholder": "Search by name, description or ID...",
+        "no_description": "No description provided.",
+        "tabs": {
+            "overview": "Overview",
+            "revisions": "Revisions",
+            "tasks": "Tasks",
+            "documents": "Documents"
+        },
+        "status": {
+            "active": "Active",
+            "completed": "Completed",
+            "deferred": "Deferred"
+        },
+        "fields": {
+            "name": "Project name",
+            "description": "Description",
+            "status": "Status",
+            "expected_completion_at": "Expected completion date",
+            "completed_at": "Completed at",
+            "created_at": "Created at"
+        },
+        "columns": {
+            "id": "ID",
+            "name": "Name",
+            "status": "Status",
+            "expected_completion_at": "Expected completion",
+            "completed_at": "Completed at",
+            "created_at": "Created",
+            "actions": "Actions"
+        },
+        "errors": {
+            "incomplete_tasks": "Complete all tasks before marking the project as completed."
+        },
+        "revisions": {
+            "title": "Revisions / versions",
+            "add": "Add revision",
+            "empty": "No revisions yet.",
+            "create_title": "New revision",
+            "edit_title": "Edit revision",
+            "saved": "Revision saved.",
+            "delete_confirm": "Are you sure you want to delete this revision?",
+            "fields": {
+                "label": "Label",
+                "description": "Description",
+                "sort_order": "Sort order"
+            }
+        },
+        "tasks": {
+            "title": "Tasks",
+            "add": "Add task",
+            "empty": "No tasks yet.",
+            "create_title": "New task",
+            "edit_title": "Edit task",
+            "saved": "Task saved.",
+            "delete_confirm": "Are you sure you want to delete this task?",
+            "load_error": "Failed to load tasks.",
+            "status": {
+                "active": "Active",
+                "completed": "Completed",
+                "deferred": "Deferred"
+            },
+            "fields": {
+                "name": "Task name",
+                "description": "Description",
+                "status": "Status",
+                "parent": "Parent task",
+                "no_parent": "No parent",
+                "revision": "Revision / version",
+                "no_revision": "No revision"
+            },
+            "errors": {
+                "parent_not_completed": "Complete the parent task before completing this task.",
+                "invalid_parent": "Invalid parent task."
+            }
+        },
+        "documents": {
+            "title": "Project documents",
+            "attach": "Attach document",
+            "attached": "Attached documents"
+        }
+    },
+    "documents": {
+        "title": "Documents",
+        "upload": "Upload",
+        "upload_title": "Upload document",
+        "uploaded": "Document uploaded.",
+        "edit_title": "Edit document",
+        "empty": "No documents found.",
+        "delete_confirm": "Are you sure you want to delete this document?",
+        "search_placeholder": "Search by name, description or ID...",
+        "fields": {
+            "file": "File",
+            "description": "Description"
+        },
+        "columns": {
+            "id": "ID",
+            "name": "Name",
+            "size": "Size",
+            "description": "Description",
+            "created_at": "Uploaded",
+            "actions": "Actions"
+        },
+        "actions": {
+            "download": "Download"
+        },
+        "picker": {
+            "title": "Select document",
+            "select": "Attach"
         }
     }
 }
