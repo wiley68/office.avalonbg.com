@@ -38,12 +38,14 @@ const page = usePage();
 
 const isTransforming = ref(false);
 
-const form = useForm({
+const emptyFormState = {
     name: '',
     category: '',
     content: '',
     is_encrypted: false,
-});
+};
+
+const form = useForm({ ...emptyFormState });
 
 const dialogTitle = computed(() =>
     props.mode === 'create'
@@ -55,9 +57,11 @@ const hasEncryptionKey = computed(
     () => page.props.auth.user?.has_access_encryption_key === true,
 );
 
-const resetForm = (): void => {
+const clearForm = (): void => {
+    form.defaults({ ...emptyFormState });
     form.reset();
     form.clearErrors();
+    isTransforming.value = false;
 };
 
 watch(
@@ -67,13 +71,22 @@ watch(
             return;
         }
 
-        resetForm();
+        clearForm();
 
         if (mode === 'edit' && access) {
             form.name = access.name;
             form.category = access.category ?? '';
             form.content = access.content;
             form.is_encrypted = access.is_encrypted;
+        }
+    },
+);
+
+watch(
+    () => props.open,
+    (open) => {
+        if (!open) {
+            clearForm();
         }
     },
 );

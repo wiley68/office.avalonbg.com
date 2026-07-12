@@ -16,6 +16,8 @@ use App\Http\Controllers\NotesAgentController;
 use App\Http\Controllers\NotesExportDownloadController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserTwoFactorController;
+use App\Models\Access;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
@@ -113,9 +115,18 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
 });
 
 Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled', 'role:user'])->group(function () {
+    Route::bind('access', function (string $value): Access {
+        $userId = Auth::id();
+
+        abort_unless($userId !== null, 404);
+
+        return Access::query()
+            ->where('user_id', $userId)
+            ->findOrFail($value);
+    });
+
     Route::resource('accesses', AccessController::class)
-        ->except(['show', 'create', 'edit'])
-        ->scoped(['access' => 'user_id']);
+        ->except(['show', 'create', 'edit']);
 
     Route::prefix('internal-api')
         ->name('internal.')
@@ -137,4 +148,4 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
         ->name('dashboard.admin.export');
 });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';

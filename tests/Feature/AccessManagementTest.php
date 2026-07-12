@@ -26,7 +26,7 @@ test('office user can view accesses index page', function () {
     actingAs($user)
         ->get(route('accesses.index'))
         ->assertOk()
-        ->assertInertia(fn(Assert $page) => $page->component('accesses/Index'));
+        ->assertInertia(fn (Assert $page) => $page->component('accesses/Index'));
 });
 
 test('admin cannot access accesses pages', function () {
@@ -93,10 +93,10 @@ test('office user cannot manage another users access record', function () {
         'category' => null,
         'content' => 'x',
         'is_encrypted' => false,
-    ])->assertForbidden();
+    ])->assertNotFound();
 
     delete(route('accesses.destroy', $access))
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 test('accesses api returns only current user records', function () {
