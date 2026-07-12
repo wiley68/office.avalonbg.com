@@ -19,7 +19,8 @@
         "agents": "Agents",
         "notes": "Notes",
         "statistics": "Statistics",
-        "export": "Export"
+        "export": "Export",
+        "accesses": "Accesses"
     },
     "roles": {
         "profiler": "Profiler",
@@ -304,6 +305,56 @@
                 "final_value": "Final value",
                 "value": "Value"
             }
+        }
+    },
+    "accesses": {
+        "title": "Accesses",
+        "add": "Add access",
+        "create_title": "New access",
+        "edit_title": "Edit access",
+        "empty": "No access records found.",
+        "delete_confirm": "Are you sure you want to delete this access record?",
+        "search_placeholder": "Search by name, data or ID...",
+        "fields": {
+            "name": "Name",
+            "name_placeholder": "Access name",
+            "data": "Data",
+            "data_placeholder": "Access data",
+            "encrypted": "Encrypted",
+            "plain": "Plain text"
+        },
+        "actions": {
+            "encrypt": "Encrypt",
+            "decrypt": "Decrypt",
+            "encrypting": "Encrypting...",
+            "decrypting": "Decrypting..."
+        },
+        "columns": {
+            "id": "ID",
+            "name": "Name",
+            "data": "Data",
+            "is_encrypted": "Storage",
+            "created_at": "Created",
+            "actions": "Actions"
+        },
+        "errors": {
+            "not_encrypted": "The data is not marked as encrypted.",
+            "no_encryption_key": "Set an encryption key in Security settings first."
+        },
+        "encryption_key": {
+            "title": "Access encryption key",
+            "description": "Personal key for optional encryption of access data. Stored securely and used only for your records.",
+            "field": "Encryption key",
+            "confirm_field": "Confirm encryption key",
+            "save": "Save key",
+            "saved": "Encryption key saved.",
+            "already_set": "An encryption key is already configured. Use key rotation to change it.",
+            "not_set": "No encryption key is configured yet.",
+            "rotate_title": "Change encryption key",
+            "rotate_description": "All encrypted access records will be decrypted with the current key and re-encrypted with the new one.",
+            "current_password": "Current password",
+            "rotate_button": "Change key",
+            "rotated": "Encryption key changed and records were re-encrypted."
         }
     }
 }

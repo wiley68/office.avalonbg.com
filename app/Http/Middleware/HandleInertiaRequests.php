@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Enums\Appearance;
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Services\AccessEncryptionService;
 use App\Support\DashboardCache;
 use App\Support\Translations;
 use Illuminate\Http\Request;
@@ -64,6 +65,8 @@ class HandleInertiaRequests extends Middleware
                         'is_admin' => $request->user()->isAdmin(),
                         'can_manage_users' => $request->user()->canManageUsers(),
                         'has_office_access' => $request->user()->hasOfficeAccess(),
+                        'is_office_user' => $request->user()->isOfficeUser(),
+                        'has_access_encryption_key' => app(AccessEncryptionService::class)->hasStoredKey($request->user()),
                     ]
                     : null,
             ],
@@ -78,7 +81,7 @@ class HandleInertiaRequests extends Middleware
                 return DashboardCache::remember(
                     'admin_user_count',
                     $user->id,
-                    fn() => User::role(UserRole::Admin->value)->count(),
+                    fn () => User::role(UserRole::Admin->value)->count(),
                 );
             },
             'office_user_count' => function () use ($request) {
@@ -91,7 +94,7 @@ class HandleInertiaRequests extends Middleware
                 return DashboardCache::remember(
                     'office_user_count',
                     $user->id,
-                    fn() => User::role(UserRole::User->value)->count(),
+                    fn () => User::role(UserRole::User->value)->count(),
                 );
             },
         ];

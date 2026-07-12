@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Access;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+
+class AccessApiController extends Controller
+{
+    public function index(Request $request): JsonResponse
+    {
+        Gate::authorize('viewAny', Access::class);
+
+        /** @var User $user */
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'per_page' => 'integer|min:1|max:100',
+            'page' => 'integer|min:1',
+            'sort_by' => 'nullable|string|in:id,name,is_encrypted,created_at',
+            'sort_desc' => 'in:0,1',
+            'search' => 'nullable|string|max:255',
+        ]);
+
+        $perPage = $validated['per_page'] ?? 10;
+        $page = $validated['page'] ?? 1;
+        $sortBy = $validated['sort_by'] ?? 'id';
+        $sortOrder = ($validated['sort_desc'] ?? 1) ? 'desc' : 'asc';
+        $filter = $validated['search'] ?? '';
+
+        $query = Access::query()
+            ->where('user_id', $user->id)
+            ->select(['id', 'name', 'content', 'is_encrypted', 'created_at']);
+
+        if ($filter !== '') {
+            $query->where(function ($q) use ($filter) {
+                $q->where('name', 'like', "%{$filter}%")
+                    ->orWhere('content', 'like', "%{$filter}%");
+
+                if (is_numeric($filter)) {
+                    $q->orWhere('id', (int) $filter);
+                }
+            });
+        }
+
+        $accesses = $query
+            ->orderBy($sortBy, $sortOrder)
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json($accesses);
+    }
+}

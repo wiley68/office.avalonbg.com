@@ -16,8 +16,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'must_change_password', 'status', 'appearance'])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
+#[Fillable(['name', 'email', 'password', 'must_change_password', 'status', 'appearance', 'access_encryption_key'])]
+#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'access_encryption_key'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
@@ -49,6 +49,14 @@ class User extends Authenticatable implements MustVerifyEmail
     public function notes(): HasMany
     {
         return $this->hasMany(Note::class);
+    }
+
+    /**
+     * @return HasMany<Access, $this>
+     */
+    public function accesses(): HasMany
+    {
+        return $this->hasMany(Access::class);
     }
 
     public function primaryRole(): ?UserRole

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\PasswordUpdateRequest;
 use App\Http\Requests\Settings\TwoFactorAuthenticationRequest;
+use App\Models\Access;
+use App\Services\AccessEncryptionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -21,8 +23,8 @@ class SecurityController extends Controller implements HasMiddleware
     {
         return Features::canManageTwoFactorAuthentication()
             && Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword')
-                ? [new Middleware('password.confirm', only: ['edit'])]
-                : [];
+            ? [new Middleware('password.confirm', only: ['edit'])]
+            : [];
     }
 
     /**
@@ -30,8 +32,13 @@ class SecurityController extends Controller implements HasMiddleware
      */
     public function edit(TwoFactorAuthenticationRequest $request): Response
     {
+        $user = $request->user();
+        $encryptionService = app(AccessEncryptionService::class);
+
         $props = [
             'canManageTwoFactor' => Features::canManageTwoFactorAuthentication(),
+            'canManageAccessEncryptionKey' => $user !== null && $user->can('manageEncryptionKey', Access::class),
+            'hasAccessEncryptionKey' => $user !== null && $encryptionService->hasStoredKey($user),
         ];
 
         if (Features::canManageTwoFactorAuthentication()) {

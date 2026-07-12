@@ -10,6 +10,8 @@ export type User = {
     is_admin: boolean;
     can_manage_users: boolean;
     has_office_access: boolean;
+    is_office_user: boolean;
+    has_access_encryption_key: boolean;
     avatar?: string;
     email_verified_at: string | null;
     created_at: string;

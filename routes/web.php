@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Controllers\AccessController;
 use App\Http\Controllers\Admin\AgentFeedbackStatisticsController;
 use App\Http\Controllers\Admin\DataExportController;
 use App\Http\Controllers\AgentConversationMessagesController;
+use App\Http\Controllers\Api\AccessApiController;
+use App\Http\Controllers\Api\AccessDataTransformController;
 use App\Http\Controllers\Api\AuditLogApiController;
 use App\Http\Controllers\Api\UserApiController;
 use App\Http\Controllers\AuditLogController;
@@ -106,6 +109,22 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
         ->group(function () {
             Route::get('audit-logs', [AuditLogApiController::class, 'index'])
                 ->name('audit-logs.index');
+        });
+});
+
+Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled', 'role:user'])->group(function () {
+    Route::resource('accesses', AccessController::class)
+        ->except(['show', 'create', 'edit'])
+        ->scoped(['access' => 'user_id']);
+
+    Route::prefix('internal-api')
+        ->name('internal.')
+        ->group(function () {
+            Route::get('accesses', [AccessApiController::class, 'index'])
+                ->name('accesses.index');
+
+            Route::post('accesses/transform-data', AccessDataTransformController::class)
+                ->name('accesses.transform-data');
         });
 });
 

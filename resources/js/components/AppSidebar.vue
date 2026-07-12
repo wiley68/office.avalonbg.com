@@ -6,6 +6,7 @@ import {
     Bot,
     HardDriveDownload,
     History,
+    KeyRound,
     LayoutGrid,
     Mail,
     ScrollText,
@@ -30,6 +31,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useTranslations } from '@/composables/useTranslations';
 import { dashboard } from '@/routes';
+import { index as accessesIndex } from '@/routes/accesses';
 import { index as auditLogsIndex } from '@/routes/audit-logs';
 import dashboardRoutes from '@/routes/dashboard';
 import { index as usersIndex } from '@/routes/users';
@@ -119,7 +121,7 @@ const mainNavItems = computed<NavItem[]>(() => {
     }
 
     if (user.has_office_access) {
-        return [
+        const items: NavItem[] = [
             {
                 title: t('common.dashboard'),
                 href: dashboard(),
@@ -133,6 +135,16 @@ const mainNavItems = computed<NavItem[]>(() => {
             agentsNavItem(),
             ...(usersItem ? [usersItem] : []),
         ];
+
+        if (user.is_office_user) {
+            items.push({
+                title: t('nav.accesses'),
+                href: accessesIndex(),
+                icon: KeyRound,
+            });
+        }
+
+        return items;
     }
 
     return [];

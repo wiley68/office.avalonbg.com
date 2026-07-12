@@ -3,6 +3,7 @@ import { Form, Head } from '@inertiajs/vue3';
 import { ShieldCheck } from 'lucide-vue-next';
 import { onUnmounted, ref } from 'vue';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
+import AccessEncryptionKeyPanel from '@/components/accesses/AccessEncryptionKeyPanel.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
@@ -19,12 +20,16 @@ import type { BreadcrumbItem } from '@/types';
 
 type Props = {
     canManageTwoFactor?: boolean;
+    canManageAccessEncryptionKey?: boolean;
+    hasAccessEncryptionKey?: boolean;
     requiresConfirmation?: boolean;
     twoFactorEnabled?: boolean;
 };
 
 withDefaults(defineProps<Props>(), {
     canManageTwoFactor: false,
+    canManageAccessEncryptionKey: false,
+    hasAccessEncryptionKey: false,
     requiresConfirmation: false,
     twoFactorEnabled: false,
 });
@@ -132,6 +137,11 @@ onUnmounted(() => clearTwoFactorAuthData());
                     </div>
                 </Form>
             </div>
+
+            <AccessEncryptionKeyPanel
+                v-if="canManageAccessEncryptionKey"
+                :has-access-encryption-key="hasAccessEncryptionKey"
+            />
 
             <div v-if="canManageTwoFactor" class="space-y-6">
                 <Heading

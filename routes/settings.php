@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\AccessEncryptionKeyController;
 use App\Http\Controllers\Settings\AppearanceController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\RequiredPasswordChangeController;
@@ -30,6 +31,14 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
     Route::put('settings/password', [SecurityController::class, 'update'])
         ->middleware('throttle:6,1')
         ->name('user-password.update');
+
+    Route::post('settings/access-encryption-key', [AccessEncryptionKeyController::class, 'store'])
+        ->middleware(['role:user', 'throttle:6,1'])
+        ->name('access-encryption-key.store');
+
+    Route::put('settings/access-encryption-key/rotate', [AccessEncryptionKeyController::class, 'rotate'])
+        ->middleware(['role:user', 'throttle:6,1'])
+        ->name('access-encryption-key.rotate');
 
     Route::get('settings/appearance', [AppearanceController::class, 'edit'])->name('appearance.edit');
     Route::patch('settings/appearance', [AppearanceController::class, 'update'])->name('appearance.update');

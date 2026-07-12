@@ -20,6 +20,7 @@ return new class extends Migration
             $table->boolean('must_change_password')->default(false);
             $table->unsignedTinyInteger('status')->default(1);
             $table->string('appearance', 16)->default('system');
+            $table->text('access_encryption_key')->nullable();
             $table->text('two_factor_secret')->nullable();
             $table->text('two_factor_recovery_codes')->nullable();
             $table->timestamp('two_factor_confirmed_at')->nullable();

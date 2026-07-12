@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Ai\Storage\ContextualDatabaseConversationStore;
+use App\Models\Access;
 use App\Models\User;
 use App\Support\AuditLogger;
 use Carbon\CarbonImmutable;
@@ -11,6 +12,7 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -37,6 +39,13 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configureUrlForReverseProxy();
         $this->configureAuditLogging();
+        $this->configureAccessGates();
+    }
+
+    protected function configureAccessGates(): void
+    {
+        Gate::define('manage-accesses', fn (User $user): bool => $user->can('viewAny', Access::class));
+        Gate::define('manage-access-encryption-key', fn (User $user): bool => $user->can('manageEncryptionKey', Access::class));
     }
 
     /**
