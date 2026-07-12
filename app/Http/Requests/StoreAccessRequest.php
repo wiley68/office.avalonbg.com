@@ -20,6 +20,7 @@ class StoreAccessRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:40'],
+            'category' => ['nullable', 'string', 'max:40'],
             'content' => ['required', 'string'],
             'is_encrypted' => ['required', 'boolean'],
         ];

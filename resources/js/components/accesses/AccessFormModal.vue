@@ -40,6 +40,7 @@ const isTransforming = ref(false);
 
 const form = useForm({
     name: '',
+    category: '',
     content: '',
     is_encrypted: false,
 });
@@ -70,6 +71,7 @@ watch(
 
         if (mode === 'edit' && access) {
             form.name = access.name;
+            form.category = access.category ?? '';
             form.content = access.content;
             form.is_encrypted = access.is_encrypted;
         }
@@ -187,6 +189,19 @@ const submit = (): void => {
                         required
                     />
                     <InputError :message="form.errors.name" />
+                </div>
+
+                <div class="grid gap-2">
+                    <Label for="access-category">{{
+                        t('accesses.fields.category')
+                    }}</Label>
+                    <Input
+                        id="access-category"
+                        v-model="form.category"
+                        :placeholder="t('accesses.fields.category_placeholder')"
+                        maxlength="40"
+                    />
+                    <InputError :message="form.errors.category" />
                 </div>
 
                 <div class="grid gap-2">

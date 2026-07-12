@@ -46,6 +46,7 @@ test('office user can create update and delete own access records', function () 
 
     post(route('accesses.store'), [
         'name' => 'GitHub',
+        'category' => 'Work',
         'content' => 'secret-token',
         'is_encrypted' => false,
     ])->assertRedirect(route('accesses.index'));
@@ -55,16 +56,19 @@ test('office user can create update and delete own access records', function () 
     expect($access)
         ->not->toBeNull()
         ->and($access->user_id)->toBe($user->id)
-        ->and($access->name)->toBe('GitHub');
+        ->and($access->name)->toBe('GitHub')
+        ->and($access->category)->toBe('Work');
 
     put(route('accesses.update', $access), [
         'name' => 'GitLab',
+        'category' => 'Personal',
         'content' => 'updated-token',
         'is_encrypted' => true,
     ])->assertRedirect(route('accesses.index'));
 
     expect($access->fresh())
         ->name->toBe('GitLab')
+        ->category->toBe('Personal')
         ->is_encrypted->toBeTrue();
 
     delete(route('accesses.destroy', $access))
@@ -86,6 +90,7 @@ test('office user cannot manage another users access record', function () {
 
     put(route('accesses.update', $access), [
         'name' => 'Hacked',
+        'category' => null,
         'content' => 'x',
         'is_encrypted' => false,
     ])->assertForbidden();

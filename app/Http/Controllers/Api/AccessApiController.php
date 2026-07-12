@@ -22,7 +22,7 @@ class AccessApiController extends Controller
         $validated = $request->validate([
             'per_page' => 'integer|min:1|max:100',
             'page' => 'integer|min:1',
-            'sort_by' => 'nullable|string|in:id,name,is_encrypted,created_at',
+            'sort_by' => 'nullable|string|in:id,name,category,is_encrypted,created_at',
             'sort_desc' => 'in:0,1',
             'search' => 'nullable|string|max:255',
         ]);
@@ -35,11 +35,12 @@ class AccessApiController extends Controller
 
         $query = Access::query()
             ->where('user_id', $user->id)
-            ->select(['id', 'name', 'content', 'is_encrypted', 'created_at']);
+            ->select(['id', 'name', 'category', 'content', 'is_encrypted', 'created_at']);
 
         if ($filter !== '') {
             $query->where(function ($q) use ($filter) {
                 $q->where('name', 'like', "%{$filter}%")
+                    ->orWhere('category', 'like', "%{$filter}%")
                     ->orWhere('content', 'like', "%{$filter}%");
 
                 if (is_numeric($filter)) {

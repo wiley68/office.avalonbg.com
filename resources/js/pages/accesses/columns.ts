@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 export interface AccessListItem {
     id: number;
     name: string;
+    category: string | null;
     content: string;
     is_encrypted: boolean;
     created_at: string;
@@ -23,6 +24,7 @@ export function createAccessColumnTitleMap(
     return {
         id: t('accesses.columns.id'),
         name: t('accesses.columns.name'),
+        category: t('accesses.columns.category'),
         content: t('accesses.columns.data'),
         is_encrypted: t('accesses.columns.is_encrypted'),
         created_at: t('accesses.columns.created_at'),
@@ -84,6 +86,20 @@ export const createAccessColumns = (
                 sortableHeader(t('accesses.columns.name'), column),
             cell: ({ row }) =>
                 h('div', { class: 'font-medium' }, row.getValue('name')),
+        },
+        {
+            accessorKey: 'category',
+            header: ({ column }) =>
+                sortableHeader(t('accesses.columns.category'), column),
+            cell: ({ row }) => {
+                const category = row.getValue('category') as string | null;
+
+                return h(
+                    'div',
+                    { class: 'text-muted-foreground' },
+                    category ?? '—',
+                );
+            },
         },
         {
             accessorKey: 'content',

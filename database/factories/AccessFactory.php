@@ -21,6 +21,7 @@ class AccessFactory extends Factory
         return [
             'user_id' => User::factory(),
             'name' => fake()->unique()->words(2, true),
+            'category' => fake()->optional()->word(),
             'content' => fake()->sentence(),
             'is_encrypted' => false,
         ];

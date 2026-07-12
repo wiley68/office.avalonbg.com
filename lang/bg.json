@@ -314,10 +314,12 @@
         "edit_title": "Редакция на достъп",
         "empty": "Няма намерени записи за достъп.",
         "delete_confirm": "Сигурни ли сте, че искате да изтриете този запис?",
-        "search_placeholder": "Търсене по име, данни или ID...",
+        "search_placeholder": "Търсене по име, категория, данни или ID...",
         "fields": {
             "name": "Име",
             "name_placeholder": "Име на достъпа",
+            "category": "Категория",
+            "category_placeholder": "Категория на достъпа",
             "data": "Данни",
             "data_placeholder": "Данни за достъпа",
             "encrypted": "Криптирани",
@@ -332,6 +334,7 @@
         "columns": {
             "id": "ID",
             "name": "Име",
+            "category": "Категория",
             "data": "Данни",
             "is_encrypted": "Съхранение",
             "created_at": "Създаден",

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('name', 40);
+            $table->string('category', 40)->nullable();
             $table->text('content');
             $table->boolean('is_encrypted')->default(false);
             $table->timestamps();

@@ -314,10 +314,12 @@
         "edit_title": "Edit access",
         "empty": "No access records found.",
         "delete_confirm": "Are you sure you want to delete this access record?",
-        "search_placeholder": "Search by name, data or ID...",
+        "search_placeholder": "Search by name, category, data or ID...",
         "fields": {
             "name": "Name",
             "name_placeholder": "Access name",
+            "category": "Category",
+            "category_placeholder": "Access category",
             "data": "Data",
             "data_placeholder": "Access data",
             "encrypted": "Encrypted",
@@ -332,6 +334,7 @@
         "columns": {
             "id": "ID",
             "name": "Name",
+            "category": "Category",
             "data": "Data",
             "is_encrypted": "Storage",
             "created_at": "Created",

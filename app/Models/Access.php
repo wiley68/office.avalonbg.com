@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['user_id', 'name', 'content', 'is_encrypted'])]
+#[Fillable(['user_id', 'name', 'category', 'content', 'is_encrypted'])]
 class Access extends Model
 {
     /** @use HasFactory<AccessFactory> */
