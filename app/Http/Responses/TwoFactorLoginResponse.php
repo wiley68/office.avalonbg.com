@@ -14,7 +14,13 @@ class TwoFactorLoginResponse implements TwoFactorLoginResponseContract
             return new JsonResponse('', 204);
         }
 
-        if ($request->user()?->must_change_password) {
+        $user = $request->user();
+
+        if ($user !== null && ! $user->hasVerifiedEmail()) {
+            return redirect()->intended(route('verification.notice'));
+        }
+
+        if ($user?->must_change_password) {
             return redirect()->route('password.change.edit');
         }
 
