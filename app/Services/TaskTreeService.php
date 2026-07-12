@@ -50,7 +50,7 @@ class TaskTreeService
                     'sort_order' => $task->sort_order,
                     'completed_at' => $task->completed_at?->toIso8601String(),
                     'created_at' => $task->created_at?->toIso8601String(),
-                    'documents' => $task->documents->map(fn ($document) => [
+                    'documents' => $task->documents->map(fn($document) => [
                         'id' => $document->id,
                         'original_name' => $document->original_name,
                     ])->values()->all(),
@@ -128,6 +128,20 @@ class TaskTreeService
             'parent_id' => $parentId,
             'sort_order' => $sortOrder,
         ]);
+    }
+
+    /**
+     * @param  list<int>  $taskIds
+     */
+    public function reorderSiblings(Project $project, ?int $parentId, array $taskIds): void
+    {
+        foreach ($taskIds as $index => $taskId) {
+            Task::query()
+                ->where('project_id', $project->id)
+                ->where('id', $taskId)
+                ->where('parent_id', $parentId)
+                ->update(['sort_order' => $index]);
+        }
     }
 
     /**

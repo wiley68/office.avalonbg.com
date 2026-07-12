@@ -82,7 +82,75 @@ test('office user can manage tasks within own project', function () {
     expect(Task::query()->count())->toBe(0);
 });
 
-test('office user can reorder tasks', function () {
+test('office user can bulk reorder sibling tasks', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $project = Project::factory()->for($user)->create();
+
+    actingAs($user);
+
+    $first = $project->tasks()->create([
+        'user_id' => $user->id,
+        'name' => 'First',
+        'status' => TaskStatus::Active,
+        'sort_order' => 0,
+    ]);
+
+    $second = $project->tasks()->create([
+        'user_id' => $user->id,
+        'name' => 'Second',
+        'status' => TaskStatus::Active,
+        'sort_order' => 1,
+    ]);
+
+    patch(route('projects.tasks.reorder', $project), [
+        'parent_id' => null,
+        'task_ids' => [$second->id, $first->id],
+    ])->assertRedirect();
+
+    expect($second->fresh()->sort_order)->toBe(0);
+    expect($first->fresh()->sort_order)->toBe(1);
+
+    actingAs($user)
+        ->getJson(route('internal.projects.tasks.index', $project))
+        ->assertOk()
+        ->assertJsonPath('data.0.name', 'Second')
+        ->assertJsonPath('data.1.name', 'First');
+});
+
+test('office user cannot bulk reorder tasks from another users project', function () {
+    $owner = User::factory()->create();
+    $owner->assignRole('user');
+
+    $other = User::factory()->create();
+    $other->assignRole('user');
+
+    $project = Project::factory()->for($owner)->create();
+
+    $first = $project->tasks()->create([
+        'user_id' => $owner->id,
+        'name' => 'First',
+        'status' => TaskStatus::Active,
+        'sort_order' => 0,
+    ]);
+
+    $second = $project->tasks()->create([
+        'user_id' => $owner->id,
+        'name' => 'Second',
+        'status' => TaskStatus::Active,
+        'sort_order' => 1,
+    ]);
+
+    actingAs($other);
+
+    patch(route('projects.tasks.reorder', $project), [
+        'parent_id' => null,
+        'task_ids' => [$second->id, $first->id],
+    ])->assertNotFound();
+});
+
+test('office user can reorder a single task', function () {
     $user = User::factory()->create();
     $user->assignRole('user');
 

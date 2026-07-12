@@ -213,6 +213,8 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
 
     Route::post('projects/{project}/tasks', [TaskController::class, 'store'])
         ->name('projects.tasks.store');
+    Route::patch('projects/{project}/tasks/reorder', [TaskController::class, 'reorderMany'])
+        ->name('projects.tasks.reorder');
     Route::put('tasks/{task}', [TaskController::class, 'update'])
         ->name('tasks.update');
     Route::patch('tasks/{task}/complete', [TaskController::class, 'complete'])
@@ -253,4 +255,4 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
         ->name('dashboard.admin.export');
 });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';

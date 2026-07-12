@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\TaskStatus;
 use App\Http\Requests\ReorderTaskRequest;
+use App\Http\Requests\ReorderTasksRequest;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Models\Project;
@@ -93,6 +94,25 @@ class TaskController extends Controller
             $task,
             $request->validated('parent_id'),
             $request->integer('sort_order'),
+        );
+
+        return back();
+    }
+
+    public function reorderMany(
+        ReorderTasksRequest $request,
+        Project $project,
+        TaskTreeService $taskTreeService,
+    ): RedirectResponse {
+        $this->authorize('update', $project);
+
+        /** @var list<int> $taskIds */
+        $taskIds = $request->validated('task_ids');
+
+        $taskTreeService->reorderSiblings(
+            $project,
+            $request->validated('parent_id'),
+            $taskIds,
         );
 
         return back();

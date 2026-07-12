@@ -425,6 +425,8 @@
             "saved": "Task saved.",
             "delete_confirm": "Are you sure you want to delete this task?",
             "load_error": "Failed to load tasks.",
+            "drag_hint": "Drag tasks to change their priority.",
+            "drag_handle": "Drag to reorder",
             "status": {
                 "active": "Active",
                 "completed": "Completed",
@@ -441,7 +443,8 @@
             },
             "errors": {
                 "parent_not_completed": "Complete the parent task before completing this task.",
-                "invalid_parent": "Invalid parent task."
+                "invalid_parent": "Invalid parent task.",
+                "invalid_reorder": "Invalid task reordering."
             }
         },
         "documents": {

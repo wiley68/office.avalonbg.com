@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3';
-import { ArrowDown, ArrowUp, Check, Pencil, Plus, Trash2 } from 'lucide-vue-next';
-import { computed, onMounted, ref } from 'vue';
+import { Plus } from 'lucide-vue-next';
+import { computed, onMounted, provide, ref } from 'vue';
 import AppAlertDialog from '@/components/AppAlertDialog.vue';
-import AttachedDocumentsList from '@/components/documents/AttachedDocumentsList.vue';
 import DocumentPickerModal from '@/components/documents/DocumentPickerModal.vue';
 import InputError from '@/components/InputError.vue';
 import type { ProjectRevisionItem } from '@/components/projects/RevisionList.vue';
+import TaskTreeList from '@/components/projects/TaskTreeList.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -26,32 +26,16 @@ import {
 } from '@/components/ui/select';
 import { useAppToast } from '@/composables/useAppToast';
 import { useTranslations } from '@/composables/useTranslations';
-import { store as storeTask } from '@/routes/projects/tasks';
+import { reorder as reorderTasks, store as storeTask } from '@/routes/projects/tasks';
 import {
     complete as completeTask,
     destroy as destroyTask,
-    reorder as reorderTask,
     update as updateTask,
 } from '@/routes/tasks';
 import { store as attachTaskDocument } from '@/routes/tasks/documents';
+import type { TaskStatus, TaskTreeNode } from '@/types/task-tree';
 
-export type TaskStatus = 'active' | 'completed' | 'deferred';
-
-export type TaskTreeNode = {
-    id: number;
-    project_id: number;
-    parent_id: number | null;
-    project_revision_id: number | null;
-    revision: { id: number; label: string } | null;
-    name: string;
-    description: string | null;
-    status: TaskStatus;
-    sort_order: number;
-    completed_at: string | null;
-    created_at: string | null;
-    documents: { id: number; original_name: string }[];
-    children: TaskTreeNode[];
-};
+export type { TaskStatus, TaskTreeNode };
 
 type Props = {
     projectId: number;
@@ -209,44 +193,30 @@ const complete = (taskId: number): void => {
     });
 };
 
-const moveTask = (task: TaskTreeNode, direction: 'up' | 'down'): void => {
-    const siblings = flatTasks.value.filter(
-        (item) => item.parent_id === task.parent_id,
-    );
-    const index = siblings.findIndex((item) => item.id === task.id);
-
-    if (index === -1) {
-        return;
-    }
-
-    const swapIndex = direction === 'up' ? index - 1 : index + 1;
-
-    if (swapIndex < 0 || swapIndex >= siblings.length) {
-        return;
-    }
-
-    const swapTask = siblings[swapIndex];
-
+const persistOrder = (parentId: number | null, taskIds: number[]): void => {
     router.patch(
-        reorderTask(task.id).url,
+        reorderTasks(props.projectId).url,
         {
-            parent_id: task.parent_id,
-            sort_order: swapTask.sort_order,
+            parent_id: parentId,
+            task_ids: taskIds,
         },
         {
             preserveScroll: true,
             onSuccess: () => {
-                router.patch(
-                    reorderTask(swapTask.id).url,
-                    {
-                        parent_id: swapTask.parent_id,
-                        sort_order: task.sort_order,
-                    },
-                    {
-                        preserveScroll: true,
-                        onSuccess: () => fetchTasks(),
-                    },
+                taskIds.forEach((taskId, index) => {
+                    const task = flatTasks.value.find((item) => item.id === taskId);
+
+                    if (task) {
+                        task.sort_order = index;
+                    }
+                });
+            },
+            onError: (errors: Record<string, string>) => {
+                showError(
+                    t('common.error'),
+                    Object.values(errors).flat().join('\n'),
                 );
+                fetchTasks();
             },
         },
     );
@@ -306,6 +276,17 @@ const statusClass = (status: TaskStatus): string => {
     }
 };
 
+provide('taskTreeActions', {
+    complete,
+    openCreate,
+    openEdit,
+    openDocumentPicker,
+    persistOrder,
+    refreshTasks: fetchTasks,
+    requestDelete,
+    statusClass,
+});
+
 onMounted(() => {
     fetchTasks();
 });
@@ -314,7 +295,12 @@ onMounted(() => {
 <template>
     <div class="space-y-4">
         <div class="flex items-center justify-between">
-            <h3 class="text-sm font-medium">{{ t('projects.tasks.title') }}</h3>
+            <div>
+                <h3 class="text-sm font-medium">{{ t('projects.tasks.title') }}</h3>
+                <p class="text-xs text-muted-foreground">
+                    {{ t('projects.tasks.drag_hint') }}
+                </p>
+            </div>
             <Button type="button" size="sm" variant="outline" @click="openCreate()">
                 <Plus class="mr-2 h-4 w-4" />
                 {{ t('projects.tasks.add') }}
@@ -335,105 +321,7 @@ onMounted(() => {
             {{ t('projects.tasks.empty') }}
         </div>
 
-        <div v-else class="space-y-2">
-            <template v-for="task in flatTasks" :key="task.id">
-                <div
-                    class="rounded-lg border p-4"
-                    :style="{ marginLeft: `${(task.parent_id ? 1 : 0) * 24}px` }"
-                >
-                    <div class="flex items-start justify-between gap-4">
-                        <div class="space-y-2">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <p class="font-medium">{{ task.name }}</p>
-                                <span
-                                    class="inline-block rounded px-2 py-1 text-xs font-medium"
-                                    :class="statusClass(task.status)"
-                                >
-                                    {{ t(`projects.tasks.status.${task.status}`) }}
-                                </span>
-                                <span
-                                    v-if="task.revision"
-                                    class="text-xs text-muted-foreground"
-                                >
-                                    {{ task.revision.label }}
-                                </span>
-                            </div>
-                            <p
-                                v-if="task.description"
-                                class="text-sm text-muted-foreground"
-                            >
-                                {{ task.description }}
-                            </p>
-                            <AttachedDocumentsList
-                                :documents="task.documents"
-                                :detach-url-builder="(documentId) =>
-                                    `/tasks/${task.id}/documents/${documentId}`"
-                                @detached="fetchTasks"
-                            />
-                        </div>
-                        <div class="flex flex-wrap gap-1">
-                            <Button
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                @click="moveTask(task, 'up')"
-                            >
-                                <ArrowUp class="h-4 w-4" />
-                            </Button>
-                            <Button
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                @click="moveTask(task, 'down')"
-                            >
-                                <ArrowDown class="h-4 w-4" />
-                            </Button>
-                            <Button
-                                v-if="task.status !== 'completed'"
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                @click="complete(task.id)"
-                            >
-                                <Check class="h-4 w-4" />
-                            </Button>
-                            <Button
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                @click="openCreate(task.id)"
-                            >
-                                <Plus class="h-4 w-4" />
-                            </Button>
-                            <Button
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                @click="openDocumentPicker(task.id)"
-                            >
-                                {{ t('projects.documents.attach') }}
-                            </Button>
-                            <Button
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                @click="openEdit(task)"
-                            >
-                                <Pencil class="h-4 w-4" />
-                            </Button>
-                            <Button
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                @click="requestDelete(task.id)"
-                            >
-                                <Trash2 class="h-4 w-4 text-destructive" />
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </template>
-        </div>
+        <TaskTreeList v-else v-model="tasks" :parent-id="null" />
 
         <Dialog :open="showForm" @update:open="showForm = $event">
             <DialogContent>
