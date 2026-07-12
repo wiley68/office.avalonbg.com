@@ -109,11 +109,7 @@ const confirmDelete = (): void => {
     router.delete(destroy(accessId).url, {
         preserveScroll: true,
         onSuccess: async () => {
-            rows.value = rows.value.filter((row) => row.id !== accessId);
-            pagination.value.rowsNumber = Math.max(
-                0,
-                pagination.value.rowsNumber - 1,
-            );
+            await fetch();
 
             if (rows.value.length === 0 && pagination.value.page > 1) {
                 pagination.value.page--;
