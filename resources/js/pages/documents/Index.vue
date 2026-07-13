@@ -136,30 +136,35 @@ onMounted(async () => {
     <AppLayout :breadcrumbs="breadcrumbs">
         <Head :title="t('documents.title')" />
 
-        <div class="flex flex-1 flex-col gap-4 p-4">
+        <div class="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4">
             <div
-                class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+                class="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
             >
                 <h1 class="text-xl font-semibold">
                     {{ t('documents.title') }} ({{ total }})
                 </h1>
-                <Button
-                    class="shrink-0 self-start sm:self-auto"
-                    @click="showUploadDialog = true"
+                <div
+                    class="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center"
                 >
-                    <Upload class="mr-2 h-4 w-4" />
-                    {{ t('documents.upload') }}
-                </Button>
+                    <Input
+                        v-model="search"
+                        type="search"
+                        :placeholder="t('documents.search_placeholder')"
+                        class="w-full sm:max-w-md"
+                    />
+                    <Button
+                        class="shrink-0 self-start sm:self-auto"
+                        @click="showUploadDialog = true"
+                    >
+                        <Upload class="mr-2 h-4 w-4" />
+                        {{ t('documents.upload') }}
+                    </Button>
+                </div>
             </div>
 
-            <div class="flex flex-col gap-4 rounded-xl border p-4 shadow-sm">
-                <Input
-                    v-model="search"
-                    type="search"
-                    :placeholder="t('documents.search_placeholder')"
-                    class="max-w-md"
-                />
-
+            <div
+                class="min-h-0 flex-1 overflow-y-auto rounded-xl border p-4 shadow-sm"
+            >
                 <div
                     v-if="loading"
                     class="flex items-center justify-center gap-2 py-16 text-muted-foreground"
@@ -193,7 +198,7 @@ onMounted(async () => {
 
                     <div
                         v-if="hasMore"
-                        class="flex justify-center pt-2"
+                        class="flex justify-center pt-4"
                     >
                         <Button
                             variant="outline"

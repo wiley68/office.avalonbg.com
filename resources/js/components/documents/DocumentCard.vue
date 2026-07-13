@@ -53,12 +53,12 @@ const typeLabel = computed(() =>
 
 <template>
     <Card
-        class="gap-0 py-4 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-primary/25 hover:bg-muted/30 hover:shadow-lg"
+        class="gap-0 py-3 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-primary/25 hover:bg-muted/30 hover:shadow-lg"
     >
-        <CardContent class="space-y-4 px-6">
+        <CardContent class="space-y-3 px-4">
             <TooltipProvider :delay-duration="200">
                 <div
-                    class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4"
+                    class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3"
                 >
                     <div class="flex min-w-0 items-center justify-start">
                         <button
@@ -145,7 +145,7 @@ const typeLabel = computed(() =>
                 </div>
             </TooltipProvider>
 
-            <div class="space-y-1 border-b pb-4">
+            <div class="space-y-1 border-b pb-3">
                 <p
                     class="text-base leading-snug font-semibold break-all"
                     :title="document.original_name"
@@ -157,7 +157,7 @@ const typeLabel = computed(() =>
                 </p>
             </div>
 
-            <dl class="grid grid-cols-2 gap-4 text-sm">
+            <dl class="grid grid-cols-2 gap-3 text-sm">
                 <div>
                     <dt class="text-muted-foreground">
                         {{ t('documents.columns.size') }}

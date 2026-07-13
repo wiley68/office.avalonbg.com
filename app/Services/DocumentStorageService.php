@@ -44,6 +44,33 @@ class DocumentStorageService
         'image/svg+xml',
     ];
 
+    /**
+     * @var array<string, string>
+     */
+    private const ExtensionToMime = [
+        'pdf' => 'application/pdf',
+        'doc' => 'application/msword',
+        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'xls' => 'application/vnd.ms-excel',
+        'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'txt' => 'text/plain',
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'webp' => 'image/webp',
+        'gif' => 'image/gif',
+        'svg' => 'image/svg+xml',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    private const GenericMimeTypes = [
+        'application/octet-stream',
+        'inode/x-empty',
+        'application/x-empty',
+    ];
+
     public function store(User $user, UploadedFile $file, ?string $description = null): Document
     {
         $originalName = $file->getClientOriginalName();
@@ -56,7 +83,7 @@ class DocumentStorageService
             'user_id' => $user->id,
             'original_name' => $originalName,
             'storage_path' => $path,
-            'mime_type' => $file->getMimeType() ?? 'application/octet-stream',
+            'mime_type' => $this->resolveMimeType($file),
             'size_bytes' => $file->getSize(),
             'description' => $description,
         ]);
@@ -119,7 +146,7 @@ class DocumentStorageService
         $document->update([
             'original_name' => $file->getClientOriginalName(),
             'storage_path' => $newPath,
-            'mime_type' => $file->getMimeType() ?? 'application/octet-stream',
+            'mime_type' => $this->resolveMimeType($file),
             'size_bytes' => $file->getSize(),
         ]);
 
@@ -159,5 +186,39 @@ class DocumentStorageService
     public function allowedMimeTypes(): array
     {
         return self::AllowedMimeTypes;
+    }
+
+    public function isAllowedUpload(UploadedFile $file): bool
+    {
+        $mimeType = $file->getMimeType();
+
+        if ($mimeType !== null && in_array($mimeType, self::AllowedMimeTypes, true)) {
+            return true;
+        }
+
+        $extension = strtolower($file->getClientOriginalExtension());
+
+        if ($extension === '' || ! isset(self::ExtensionToMime[$extension])) {
+            return false;
+        }
+
+        if ($mimeType === null || in_array($mimeType, self::GenericMimeTypes, true)) {
+            return true;
+        }
+
+        return $mimeType === self::ExtensionToMime[$extension];
+    }
+
+    public function resolveMimeType(UploadedFile $file): string
+    {
+        $mimeType = $file->getMimeType();
+
+        if ($mimeType !== null && in_array($mimeType, self::AllowedMimeTypes, true)) {
+            return $mimeType;
+        }
+
+        $extension = strtolower($file->getClientOriginalExtension());
+
+        return self::ExtensionToMime[$extension] ?? $mimeType ?? 'application/octet-stream';
     }
 }

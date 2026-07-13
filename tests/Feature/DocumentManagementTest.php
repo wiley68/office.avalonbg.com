@@ -247,3 +247,23 @@ test('office user can upload svg documents', function () {
         ->assertHeader('Content-Type', 'image/svg+xml')
         ->assertHeader('Content-Disposition', 'inline; filename="logo.svg"; filename*=UTF-8\'\'logo.svg');
 });
+
+test('office user can upload txt file reported as octet-stream', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    actingAs($user);
+
+    $file = UploadedFile::fake()->create('notes.txt', 1, 'application/octet-stream');
+
+    post(route('documents.store'), [
+        'file' => $file,
+        'description' => 'Plain notes',
+    ])->assertRedirect();
+
+    $document = Document::query()->firstOrFail();
+
+    expect($document)
+        ->original_name->toBe('notes.txt')
+        ->and($document->mime_type)->toBe('text/plain');
+});

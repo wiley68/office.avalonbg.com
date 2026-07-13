@@ -3,7 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Document;
-use App\Services\DocumentStorageService;
+use App\Rules\AllowedDocumentFile;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -22,10 +22,8 @@ class ReplaceDocumentFileRequest extends FormRequest
      */
     public function rules(): array
     {
-        $allowedMimes = app(DocumentStorageService::class)->allowedMimeTypes();
-
         return [
-            'file' => ['required', 'file', 'max:20480', 'mimetypes:'.implode(',', $allowedMimes)],
+            'file' => ['required', 'file', 'max:20480', new AllowedDocumentFile],
         ];
     }
 }
