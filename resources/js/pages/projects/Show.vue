@@ -5,6 +5,8 @@ import { computed, onMounted, ref } from 'vue';
 import AttachedDocumentsList from '@/components/documents/AttachedDocumentsList.vue';
 import DocumentPickerModal from '@/components/documents/DocumentPickerModal.vue';
 import DocumentUploadModal from '@/components/documents/DocumentUploadModal.vue';
+import GitPanel from '@/components/projects/GitPanel.vue';
+import type { ProjectGitRepositoryConfig } from '@/components/projects/GitPanel.vue';
 import ProjectFormModal from '@/components/projects/ProjectFormModal.vue';
 import RevisionList from '@/components/projects/RevisionList.vue';
 import TaskTree from '@/components/projects/TaskTree.vue';
@@ -44,6 +46,7 @@ type Props = {
         created_at: string | null;
         revisions: ProjectRevision[];
         documents: ProjectDocument[];
+        git_repository: ProjectGitRepositoryConfig | null;
     };
 };
 
@@ -51,7 +54,7 @@ const props = defineProps<Props>();
 
 const { t } = useTranslations();
 
-const projectTabs = ['overview', 'revisions', 'tasks', 'documents'] as const;
+const projectTabs = ['overview', 'revisions', 'tasks', 'documents', 'git'] as const;
 type ProjectTab = (typeof projectTabs)[number];
 
 function resolveTabFromUrl(): ProjectTab {
@@ -90,6 +93,7 @@ const projectForEdit = computed<ProjectListItem>(() => ({
     created_at: props.project.created_at ?? '',
     documents_count: props.project.documents.length,
     tasks_count: 0,
+    tasks_timeline: [],
     latest_revision: props.project.revisions[0]
         ? {
               id: props.project.revisions[0].id,
@@ -190,6 +194,9 @@ const handleDocumentUploaded = (documentId: number): void => {
                     <TabsTrigger value="documents">
                         {{ t('projects.tabs.documents') }}
                     </TabsTrigger>
+                    <TabsTrigger value="git">
+                        {{ t('projects.tabs.git') }}
+                    </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" class="mt-4">
@@ -255,6 +262,15 @@ const handleDocumentUploaded = (documentId: number): void => {
                             :detach-url-builder="(documentId) =>
                                 `/projects/${project.id}/documents/${documentId}`"
                             @detached="router.reload({ only: ['project'] })"
+                        />
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="git" class="mt-4">
+                    <div class="rounded-xl border p-4 shadow-sm">
+                        <GitPanel
+                            :project-id="project.id"
+                            :git-repository="project.git_repository"
                         />
                     </div>
                 </TabsContent>

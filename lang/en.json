@@ -376,7 +376,8 @@
             "overview": "Overview",
             "revisions": "Revisions",
             "tasks": "Tasks",
-            "documents": "Documents"
+            "documents": "Documents",
+            "git": "Git"
         },
         "status": {
             "active": "Active",
@@ -470,6 +471,47 @@
             "attached": "Attached documents",
             "open_tab": "Open documents",
             "none_attached": "No documents attached to this project"
+        },
+        "git": {
+            "settings_title": "GitHub repository",
+            "settings_hint": "Connect a public GitHub repository to track commits and activity. Your actual git work stays outside this app.",
+            "connect": "Connect",
+            "saved": "Git settings saved.",
+            "removed": "Git connection removed.",
+            "remove": "Remove connection",
+            "refresh": "Refresh",
+            "open_on_github": "Open on GitHub",
+            "not_configured": "No GitHub repository connected yet.",
+            "load_error": "Failed to load Git information.",
+            "commits_title": "Recent commits",
+            "commits_empty": "No commits found for the selected branch.",
+            "latest_commit": "Latest commit",
+            "load_more": "Load more",
+            "fields": {
+                "repository": "Repository",
+                "default_branch": "Branch",
+                "access_token": "Access token (optional)",
+                "token_optional": "Only for private repos",
+                "token_configured": "Token is saved — leave blank to keep it"
+            },
+            "stats": {
+                "branch": "Branch",
+                "stars": "Stars",
+                "forks": "Forks",
+                "last_push": "Last push"
+            },
+            "columns": {
+                "commit": "Commit",
+                "message": "Message",
+                "author": "Author",
+                "date": "Date"
+            },
+            "errors": {
+                "invalid_repository": "Invalid GitHub address. Use owner/repo or https://github.com/owner/repo.",
+                "repository_not_found": "Repository not found or access denied.",
+                "rate_limited": "GitHub rate limit reached. Try again later or add a token.",
+                "fetch_failed": "Failed to fetch data from GitHub."
+            }
         }
     },
     "documents": {

@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\AccessDataTransformController;
 use App\Http\Controllers\Api\AuditLogApiController;
 use App\Http\Controllers\Api\DocumentApiController;
 use App\Http\Controllers\Api\ProjectApiController;
+use App\Http\Controllers\Api\ProjectGitApiController;
 use App\Http\Controllers\Api\TaskApiController;
 use App\Http\Controllers\Api\UserApiController;
 use App\Http\Controllers\AuditLogController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\NotesAgentController;
 use App\Http\Controllers\NotesExportDownloadController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectDocumentController;
+use App\Http\Controllers\ProjectGitRepositoryController;
 use App\Http\Controllers\ProjectRevisionController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskDocumentController;
@@ -157,6 +159,9 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
             Route::get('projects/{project}/tasks', [TaskApiController::class, 'index'])
                 ->name('projects.tasks.index');
 
+            Route::get('projects/{project}/git', [ProjectGitApiController::class, 'show'])
+                ->name('projects.git.show');
+
             Route::get('documents', [DocumentApiController::class, 'index'])
                 ->name('documents.index');
 
@@ -247,6 +252,11 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
     Route::delete('projects/{project}/documents/{document}', [ProjectDocumentController::class, 'destroy'])
         ->name('projects.documents.destroy');
 
+    Route::put('projects/{project}/git', [ProjectGitRepositoryController::class, 'upsert'])
+        ->name('projects.git.upsert');
+    Route::delete('projects/{project}/git', [ProjectGitRepositoryController::class, 'destroy'])
+        ->name('projects.git.destroy');
+
     Route::post('tasks/{task}/documents/{document}', [TaskDocumentController::class, 'store'])
         ->name('tasks.documents.store');
     Route::delete('tasks/{task}/documents/{document}', [TaskDocumentController::class, 'destroy'])
@@ -262,4 +272,4 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
         ->name('dashboard.admin.export');
 });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';

@@ -376,7 +376,8 @@
             "overview": "Преглед",
             "revisions": "Ревизии",
             "tasks": "Задачи",
-            "documents": "Документи"
+            "documents": "Документи",
+            "git": "Git"
         },
         "status": {
             "active": "Активен",
@@ -470,6 +471,47 @@
             "attached": "Прикачени документи",
             "open_tab": "Отвори документите",
             "none_attached": "Няма прикрепени документи към проекта"
+        },
+        "git": {
+            "settings_title": "GitHub хранилище",
+            "settings_hint": "Свържете публично GitHub хранилище, за да следите commits и активност. Работата по кода остава извън този софтуер.",
+            "connect": "Свържи",
+            "saved": "Git настройките са записани.",
+            "removed": "Git връзката е премахната.",
+            "remove": "Премахни връзката",
+            "refresh": "Обнови",
+            "open_on_github": "Отвори в GitHub",
+            "not_configured": "Все още няма свързано GitHub хранилище.",
+            "load_error": "Грешка при зареждане на Git информацията.",
+            "commits_title": "Последни commits",
+            "commits_empty": "Няма намерени commits за избрания клон.",
+            "latest_commit": "Последен commit",
+            "load_more": "Зареди още",
+            "fields": {
+                "repository": "Хранилище",
+                "default_branch": "Клон",
+                "access_token": "Токен за достъп (по избор)",
+                "token_optional": "Само за private repo",
+                "token_configured": "Токенът е записан — оставете празно, за да го запазите"
+            },
+            "stats": {
+                "branch": "Клон",
+                "stars": "Звезди",
+                "forks": "Forks",
+                "last_push": "Последен push"
+            },
+            "columns": {
+                "commit": "Commit",
+                "message": "Съобщение",
+                "author": "Автор",
+                "date": "Дата"
+            },
+            "errors": {
+                "invalid_repository": "Невалиден GitHub адрес. Използвайте owner/repo или https://github.com/owner/repo.",
+                "repository_not_found": "Хранилището не е намерено или нямате достъп.",
+                "rate_limited": "GitHub лимитът е достигнат. Опитайте по-късно или добавете токен.",
+                "fetch_failed": "Неуспешно зареждане на данни от GitHub."
+            }
         }
     },
     "documents": {

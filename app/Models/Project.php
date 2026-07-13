@@ -69,6 +69,14 @@ class Project extends Model
     }
 
     /**
+     * @return HasOne<ProjectGitRepository, $this>
+     */
+    public function gitRepository(): HasOne
+    {
+        return $this->hasOne(ProjectGitRepository::class);
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
