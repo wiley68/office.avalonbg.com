@@ -411,10 +411,14 @@
             "edit_title": "Edit revision",
             "saved": "Revision saved.",
             "delete_confirm": "Are you sure you want to delete this revision?",
+            "drag_hint": "Drag revisions to change their order. Newest versions appear at the top.",
+            "drag_handle": "Drag to reorder",
             "fields": {
                 "label": "Label",
-                "description": "Description",
-                "sort_order": "Sort order"
+                "description": "Description"
+            },
+            "errors": {
+                "invalid_reorder": "Invalid revision order."
             }
         },
         "tasks": {

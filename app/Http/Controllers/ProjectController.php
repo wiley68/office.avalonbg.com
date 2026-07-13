@@ -26,7 +26,7 @@ class ProjectController extends Controller
         $this->authorize('view', $project);
 
         $project->load([
-            'revisions' => fn ($query) => $query->orderBy('sort_order'),
+            'revisions' => fn ($query) => $query->orderByDesc('sort_order'),
             'documents:id,original_name,description',
         ]);
 

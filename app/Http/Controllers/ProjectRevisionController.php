@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ReorderProjectRevisionsRequest;
 use App\Http\Requests\StoreProjectRevisionRequest;
 use App\Http\Requests\UpdateProjectRevisionRequest;
 use App\Models\Project;
@@ -14,15 +15,12 @@ class ProjectRevisionController extends Controller
     {
         $this->authorize('update', $project);
 
-        $sortOrder = $request->validated('sort_order');
-
-        if ($sortOrder === null) {
-            $max = $project->revisions()->max('sort_order');
-            $sortOrder = $max === null ? 0 : ((int) $max + 1);
-        }
+        $sortOrder = $project->revisions()->max('sort_order');
+        $sortOrder = $sortOrder === null ? 0 : ((int) $sortOrder + 1);
 
         $project->revisions()->create([
-            ...$request->validated(),
+            'label' => $request->validated('label'),
+            'description' => $request->validated('description'),
             'sort_order' => $sortOrder,
         ]);
 
@@ -39,6 +37,26 @@ class ProjectRevisionController extends Controller
         abort_unless($revision->project_id === $project->id, 404);
 
         $revision->update($request->validated());
+
+        return back();
+    }
+
+    public function reorder(
+        ReorderProjectRevisionsRequest $request,
+        Project $project,
+    ): RedirectResponse {
+        $this->authorize('update', $project);
+
+        /** @var list<int> $revisionIds */
+        $revisionIds = $request->validated('revision_ids');
+        $count = count($revisionIds);
+
+        foreach ($revisionIds as $index => $revisionId) {
+            ProjectRevision::query()
+                ->where('project_id', $project->id)
+                ->whereKey($revisionId)
+                ->update(['sort_order' => $count - 1 - $index]);
+        }
 
         return back();
     }

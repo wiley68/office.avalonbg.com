@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3';
-import { Pencil, Plus, Trash2 } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { GripVertical, Pencil, Plus, Trash2 } from 'lucide-vue-next';
+import type { SortableEvent } from 'sortablejs';
+import { ref, watch } from 'vue';
+import draggable from 'vuedraggable';
 import AppAlertDialog from '@/components/AppAlertDialog.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -18,6 +20,7 @@ import { useAppToast } from '@/composables/useAppToast';
 import { useTranslations } from '@/composables/useTranslations';
 import {
     destroy as destroyRevision,
+    reorder as reorderRevisions,
     store as storeRevision,
     update as updateRevision,
 } from '@/routes/projects/revisions';
@@ -39,6 +42,16 @@ const props = defineProps<Props>();
 const { t } = useTranslations();
 const { showError, showMessage } = useAppToast();
 
+const orderedRevisions = ref<ProjectRevisionItem[]>([]);
+
+watch(
+    () => props.revisions,
+    (revisions) => {
+        orderedRevisions.value = [...revisions];
+    },
+    { immediate: true },
+);
+
 const showForm = ref(false);
 const formMode = ref<'create' | 'edit'>('create');
 const editingRevision = ref<ProjectRevisionItem | null>(null);
@@ -48,7 +61,6 @@ const revisionToDelete = ref<number | null>(null);
 const emptyFormState = {
     label: '',
     description: '',
-    sort_order: '',
 };
 
 const form = useForm({ ...emptyFormState });
@@ -67,7 +79,6 @@ const openEdit = (revision: ProjectRevisionItem): void => {
     editingRevision.value = revision;
     form.label = revision.label;
     form.description = revision.description ?? '';
-    form.sort_order = String(revision.sort_order);
     showForm.value = true;
 };
 
@@ -79,7 +90,6 @@ const submit = (): void => {
     const payload = {
         label: form.label,
         description: form.description || null,
-        sort_order: form.sort_order === '' ? null : Number(form.sort_order),
     };
 
     const options = {
@@ -115,6 +125,44 @@ const submit = (): void => {
     }
 };
 
+const persistOrder = (revisionIds: number[]): void => {
+    router.patch(
+        reorderRevisions(props.projectId).url,
+        { revision_ids: revisionIds },
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                const count = revisionIds.length;
+
+                revisionIds.forEach((revisionId, index) => {
+                    const revision = orderedRevisions.value.find(
+                        (item) => item.id === revisionId,
+                    );
+
+                    if (revision) {
+                        revision.sort_order = count - 1 - index;
+                    }
+                });
+            },
+            onError: (errors: Record<string, string>) => {
+                showError(
+                    t('common.error'),
+                    Object.values(errors).flat().join('\n'),
+                );
+                orderedRevisions.value = [...props.revisions];
+            },
+        },
+    );
+};
+
+const handleDragEnd = (event: SortableEvent): void => {
+    if (event.oldIndex === event.newIndex) {
+        return;
+    }
+
+    persistOrder(orderedRevisions.value.map((revision) => revision.id));
+};
+
 const requestDelete = (revisionId: number): void => {
     revisionToDelete.value = revisionId;
     showDeleteDialog.value = true;
@@ -142,9 +190,14 @@ const confirmDelete = (): void => {
 <template>
     <div class="space-y-4">
         <div class="flex items-center justify-between">
-            <h3 class="text-sm font-medium">
-                {{ t('projects.revisions.title') }}
-            </h3>
+            <div>
+                <h3 class="text-sm font-medium">
+                    {{ t('projects.revisions.title') }}
+                </h3>
+                <p class="text-xs text-muted-foreground">
+                    {{ t('projects.revisions.drag_hint') }}
+                </p>
+            </div>
             <Button type="button" size="sm" variant="outline" @click="openCreate">
                 <Plus class="mr-2 h-4 w-4" />
                 {{ t('projects.revisions.add') }}
@@ -158,43 +211,59 @@ const confirmDelete = (): void => {
             {{ t('projects.revisions.empty') }}
         </div>
 
-        <div v-else class="space-y-3">
-            <div
-                v-for="revision in revisions"
-                :key="revision.id"
-                class="rounded-lg border p-4"
-            >
-                <div class="flex items-start justify-between gap-4">
-                    <div class="space-y-1">
-                        <p class="font-medium">{{ revision.label }}</p>
-                        <p
-                            v-if="revision.description"
-                            class="text-sm text-muted-foreground"
-                        >
-                            {{ revision.description }}
-                        </p>
-                    </div>
-                    <div class="flex gap-2">
-                        <Button
+        <draggable
+            v-else
+            v-model="orderedRevisions"
+            item-key="id"
+            handle=".revision-drag-handle"
+            :animation="180"
+            class="space-y-3"
+            ghost-class="opacity-50"
+            @end="handleDragEnd"
+        >
+            <template #item="{ element: revision }">
+                <div class="rounded-lg border bg-background p-4">
+                    <div class="flex items-start gap-2">
+                        <button
                             type="button"
-                            size="icon"
-                            variant="ghost"
-                            @click="openEdit(revision)"
+                            class="revision-drag-handle mt-0.5 cursor-grab rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground active:cursor-grabbing"
+                            :aria-label="t('projects.revisions.drag_handle')"
                         >
-                            <Pencil class="h-4 w-4" />
-                        </Button>
-                        <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            @click="requestDelete(revision.id)"
-                        >
-                            <Trash2 class="h-4 w-4 text-destructive" />
-                        </Button>
+                            <GripVertical class="h-4 w-4" />
+                        </button>
+
+                        <div class="min-w-0 flex-1 space-y-1">
+                            <p class="font-medium">{{ revision.label }}</p>
+                            <p
+                                v-if="revision.description"
+                                class="text-sm text-muted-foreground"
+                            >
+                                {{ revision.description }}
+                            </p>
+                        </div>
+
+                        <div class="flex gap-1">
+                            <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                @click="openEdit(revision)"
+                            >
+                                <Pencil class="h-4 w-4" />
+                            </Button>
+                            <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                @click="requestDelete(revision.id)"
+                            >
+                                <Trash2 class="h-4 w-4 text-destructive" />
+                            </Button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </template>
+        </draggable>
 
         <Dialog :open="showForm" @update:open="showForm = $event">
             <DialogContent>
@@ -233,19 +302,6 @@ const confirmDelete = (): void => {
                             class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                         />
                         <InputError :message="form.errors.description" />
-                    </div>
-
-                    <div class="grid gap-2">
-                        <Label for="revision-sort">{{
-                            t('projects.revisions.fields.sort_order')
-                        }}</Label>
-                        <Input
-                            id="revision-sort"
-                            v-model="form.sort_order"
-                            type="number"
-                            min="0"
-                        />
-                        <InputError :message="form.errors.sort_order" />
                     </div>
 
                     <DialogFooter>

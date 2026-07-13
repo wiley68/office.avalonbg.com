@@ -145,17 +145,27 @@ test('office user can manage project revisions', function () {
     post(route('projects.revisions.store', $project), [
         'label' => 'v1.0',
         'description' => 'Initial release',
-        'sort_order' => 0,
     ])->assertRedirect();
 
     $revision = ProjectRevision::query()->firstOrFail();
 
-    expect($revision->label)->toBe('v1.0');
+    expect($revision->label)->toBe('v1.0')
+        ->and($revision->sort_order)->toBe(0);
+
+    post(route('projects.revisions.store', $project), [
+        'label' => 'v2.0',
+        'description' => 'Second release',
+    ])->assertRedirect();
+
+    $newestRevision = ProjectRevision::query()
+        ->where('label', 'v2.0')
+        ->firstOrFail();
+
+    expect($newestRevision->sort_order)->toBe(1);
 
     put(route('projects.revisions.update', [$project, $revision]), [
         'label' => 'v1.1',
         'description' => 'Bug fixes',
-        'sort_order' => 1,
     ])->assertRedirect();
 
     expect($revision->fresh()->label)->toBe('v1.1');
@@ -163,7 +173,46 @@ test('office user can manage project revisions', function () {
     delete(route('projects.revisions.destroy', [$project, $revision]))
         ->assertRedirect();
 
-    expect(ProjectRevision::query()->count())->toBe(0);
+    expect(ProjectRevision::query()->count())->toBe(1);
+});
+
+test('office user can reorder project revisions with newest at top', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $project = Project::factory()->for($user)->create();
+
+    $v1 = ProjectRevision::factory()->for($project)->create([
+        'label' => 'v1.0',
+        'sort_order' => 0,
+    ]);
+    $v2 = ProjectRevision::factory()->for($project)->create([
+        'label' => 'v2.0',
+        'sort_order' => 1,
+    ]);
+    $v3 = ProjectRevision::factory()->for($project)->create([
+        'label' => 'v3.0',
+        'sort_order' => 2,
+    ]);
+
+    actingAs($user)
+        ->patch(route('projects.revisions.reorder', $project), [
+            'revision_ids' => [$v1->id, $v3->id, $v2->id],
+        ])
+        ->assertRedirect();
+
+    expect($v1->fresh()->sort_order)->toBe(2)
+        ->and($v3->fresh()->sort_order)->toBe(1)
+        ->and($v2->fresh()->sort_order)->toBe(0);
+
+    actingAs($user)
+        ->get(route('projects.show', $project))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('projects/Show')
+            ->where('project.revisions.0.label', 'v1.0')
+            ->where('project.revisions.1.label', 'v3.0')
+            ->where('project.revisions.2.label', 'v2.0'));
 });
 
 test('completing project sets completed_at and clearing status removes it', function () {

@@ -204,6 +204,8 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
     Route::resource('projects', ProjectController::class)
         ->except(['create', 'edit']);
 
+    Route::patch('projects/{project}/revisions/reorder', [ProjectRevisionController::class, 'reorder'])
+        ->name('projects.revisions.reorder');
     Route::post('projects/{project}/revisions', [ProjectRevisionController::class, 'store'])
         ->name('projects.revisions.store');
     Route::put('projects/{project}/revisions/{revision}', [ProjectRevisionController::class, 'update'])
@@ -255,4 +257,4 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
         ->name('dashboard.admin.export');
 });
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';

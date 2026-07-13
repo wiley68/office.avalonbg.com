@@ -28,7 +28,6 @@ class UpdateProjectRevisionRequest extends FormRequest
         return [
             'label' => ['required', 'string', 'max:80'],
             'description' => ['nullable', 'string', 'max:5000'],
-            'sort_order' => ['nullable', 'integer', 'min:0'],
         ];
     }
 }
