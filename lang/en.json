@@ -431,6 +431,8 @@
             "saved": "Task saved.",
             "delete_confirm": "Are you sure you want to delete this task?",
             "load_error": "Failed to load tasks.",
+            "open_tab": "Open tasks",
+            "none": "No tasks in this project",
             "drag_hint": "Drag tasks to change their priority.",
             "drag_handle": "Drag to reorder",
             "actions": {

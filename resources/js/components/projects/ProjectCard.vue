@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { Paperclip, Pencil, Trash2 } from 'lucide-vue-next';
+import { ListTodo, Paperclip, Pencil, Trash2 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -43,8 +43,14 @@ const description = computed(
 
 const hasDocuments = computed(() => props.project.documents_count > 0);
 
+const hasTasks = computed(() => props.project.tasks_count > 0);
+
 const documentsTabUrl = computed(() =>
     show(props.project.id, { query: { tab: 'documents' } }).url,
+);
+
+const tasksTabUrl = computed(() =>
+    show(props.project.id, { query: { tab: 'tasks' } }).url,
 );
 
 const revisionsTabUrl = computed(() =>
@@ -87,6 +93,40 @@ const revisionsTabUrl = computed(() =>
                         </TooltipTrigger>
                         <TooltipContent side="top">
                             {{ t('common.edit') }}
+                        </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger as-child>
+                            <Button
+                                v-if="hasTasks"
+                                variant="ghost"
+                                size="icon"
+                                class="size-8 shrink-0 text-primary hover:text-primary"
+                                :aria-label="t('projects.tasks.open_tab')"
+                                as-child
+                            >
+                                <Link :href="tasksTabUrl">
+                                    <ListTodo class="size-4" />
+                                </Link>
+                            </Button>
+                            <span v-else class="inline-flex">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    class="size-8 shrink-0 text-muted-foreground"
+                                    disabled
+                                    :aria-label="t('projects.tasks.none')"
+                                >
+                                    <ListTodo class="size-4" />
+                                </Button>
+                            </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                            {{
+                                hasTasks
+                                    ? t('projects.tasks.open_tab')
+                                    : t('projects.tasks.none')
+                            }}
                         </TooltipContent>
                     </Tooltip>
                     <Tooltip>

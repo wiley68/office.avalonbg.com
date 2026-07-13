@@ -9,6 +9,7 @@ export interface ProjectListItem {
     completed_at: string | null;
     created_at: string;
     documents_count: number;
+    tasks_count: number;
     latest_revision: {
         id: number;
         label: string;

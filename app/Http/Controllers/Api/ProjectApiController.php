@@ -35,7 +35,7 @@ class ProjectApiController extends Controller
 
         $query = Project::query()
             ->where('user_id', $user->id)
-            ->withCount('documents')
+            ->withCount(['documents', 'tasks'])
             ->with([
                 'latestRevision' => fn ($query) => $query->select(
                     'project_revisions.id',

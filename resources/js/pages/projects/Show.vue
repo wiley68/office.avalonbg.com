@@ -86,6 +86,7 @@ const projectForEdit = computed<ProjectListItem>(() => ({
     completed_at: props.project.completed_at,
     created_at: props.project.created_at ?? '',
     documents_count: props.project.documents.length,
+    tasks_count: 0,
     latest_revision: props.project.revisions[0]
         ? {
               id: props.project.revisions[0].id,

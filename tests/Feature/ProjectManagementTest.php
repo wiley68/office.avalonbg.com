@@ -5,6 +5,7 @@ use App\Enums\TaskStatus;
 use App\Models\Document;
 use App\Models\Project;
 use App\Models\ProjectRevision;
+use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -116,7 +117,8 @@ test('projects api returns only current user records', function () {
         ->getJson(route('internal.projects.index'))
         ->assertOk()
         ->assertJsonCount(2, 'data')
-        ->assertJsonPath('data.0.documents_count', 0);
+        ->assertJsonPath('data.0.documents_count', 0)
+        ->assertJsonPath('data.0.tasks_count', 0);
 });
 
 test('projects api includes project document count excluding task attachments', function () {
@@ -164,6 +166,20 @@ test('projects api includes latest revision label', function () {
         ->getJson(route('internal.projects.index', ['search' => (string) $projectWithoutRevisions->id]))
         ->assertOk()
         ->assertJsonPath('data.0.latest_revision', null);
+});
+
+test('projects api includes task count', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $project = Project::factory()->for($user)->create();
+
+    Task::factory()->for($project)->for($user)->count(2)->create();
+
+    actingAs($user)
+        ->getJson(route('internal.projects.index', ['search' => (string) $project->id]))
+        ->assertOk()
+        ->assertJsonPath('data.0.tasks_count', 2);
 });
 
 test('office user can manage project revisions', function () {
