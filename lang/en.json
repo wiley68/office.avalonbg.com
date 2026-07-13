@@ -433,6 +433,10 @@
             "load_error": "Failed to load tasks.",
             "drag_hint": "Drag tasks to change their priority.",
             "drag_handle": "Drag to reorder",
+            "actions": {
+                "complete": "Mark as completed",
+                "add_subtask": "Add subtask"
+            },
             "status": {
                 "active": "Active",
                 "completed": "Completed",

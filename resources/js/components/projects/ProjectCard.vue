@@ -147,18 +147,18 @@ const revisionsTabUrl = computed(() =>
             <dl class="grid gap-2 text-sm sm:grid-cols-2">
                 <div>
                     <dt class="text-muted-foreground">
-                        {{ t('projects.fields.expected_completion_at') }}
+                        {{ t('projects.fields.created_at') }}
                     </dt>
                     <dd class="font-medium">
-                        {{ formatProjectDate(project.expected_completion_at) }}
+                        {{ formatProjectDate(project.created_at) }}
                     </dd>
                 </div>
                 <div>
                     <dt class="text-muted-foreground">
-                        {{ t('projects.fields.completed_at') }}
+                        {{ t('projects.fields.expected_completion_at') }}
                     </dt>
                     <dd class="font-medium">
-                        {{ formatProjectDate(project.completed_at) }}
+                        {{ formatProjectDate(project.expected_completion_at) }}
                     </dd>
                 </div>
                 <div>
@@ -178,10 +178,10 @@ const revisionsTabUrl = computed(() =>
                 </div>
                 <div>
                     <dt class="text-muted-foreground">
-                        {{ t('projects.fields.created_at') }}
+                        {{ t('projects.fields.completed_at') }}
                     </dt>
                     <dd class="font-medium">
-                        {{ formatProjectDate(project.created_at) }}
+                        {{ formatProjectDate(project.completed_at) }}
                     </dd>
                 </div>
             </dl>

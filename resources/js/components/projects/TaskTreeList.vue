@@ -2,6 +2,7 @@
 import {
     Check,
     GripVertical,
+    Paperclip,
     Pencil,
     Plus,
     Trash2,
@@ -11,6 +12,12 @@ import { inject } from 'vue';
 import draggable from 'vuedraggable';
 import AttachedDocumentsList from '@/components/documents/AttachedDocumentsList.vue';
 import { Button } from '@/components/ui/button';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useTranslations } from '@/composables/useTranslations';
 import type { TaskStatus, TaskTreeNode } from '@/types/task-tree';
 
@@ -107,49 +114,90 @@ const handleDragEnd = (event: SortableEvent): void => {
                         />
                     </div>
 
-                    <div class="flex flex-wrap gap-1">
-                        <Button
-                            v-if="task.status !== 'completed'"
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            @click="actions.complete(task.id)"
-                        >
-                            <Check class="h-4 w-4" />
-                        </Button>
-                        <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            @click="actions.openCreate(task.id)"
-                        >
-                            <Plus class="h-4 w-4" />
-                        </Button>
-                        <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            @click="actions.openDocumentPicker(task.id)"
-                        >
-                            {{ t('projects.documents.attach') }}
-                        </Button>
-                        <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            @click="actions.openEdit(task)"
-                        >
-                            <Pencil class="h-4 w-4" />
-                        </Button>
-                        <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            @click="actions.requestDelete(task.id)"
-                        >
-                            <Trash2 class="h-4 w-4 text-destructive" />
-                        </Button>
-                    </div>
+                    <TooltipProvider :delay-duration="200">
+                        <div class="flex flex-wrap gap-1">
+                            <Tooltip v-if="task.status !== 'completed'">
+                                <TooltipTrigger as-child>
+                                    <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="ghost"
+                                        :aria-label="t('projects.tasks.actions.complete')"
+                                        @click="actions.complete(task.id)"
+                                    >
+                                        <Check class="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                    {{ t('projects.tasks.actions.complete') }}
+                                </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger as-child>
+                                    <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="ghost"
+                                        :aria-label="t('projects.tasks.actions.add_subtask')"
+                                        @click="actions.openCreate(task.id)"
+                                    >
+                                        <Plus class="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                    {{ t('projects.tasks.actions.add_subtask') }}
+                                </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger as-child>
+                                    <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="ghost"
+                                        :aria-label="t('projects.documents.attach')"
+                                        @click="actions.openDocumentPicker(task.id)"
+                                    >
+                                        <Paperclip class="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                    {{ t('projects.documents.attach') }}
+                                </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger as-child>
+                                    <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="ghost"
+                                        :aria-label="t('common.edit')"
+                                        @click="actions.openEdit(task)"
+                                    >
+                                        <Pencil class="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                    {{ t('common.edit') }}
+                                </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger as-child>
+                                    <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="ghost"
+                                        :aria-label="t('common.delete')"
+                                        @click="actions.requestDelete(task.id)"
+                                    >
+                                        <Trash2 class="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                    {{ t('common.delete') }}
+                                </TooltipContent>
+                            </Tooltip>
+                        </div>
+                    </TooltipProvider>
                 </div>
 
                 <div
