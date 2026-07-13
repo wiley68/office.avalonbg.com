@@ -370,6 +370,7 @@
         "empty": "No projects found.",
         "delete_confirm": "Are you sure you want to delete this project?",
         "search_placeholder": "Search by name, description or ID...",
+        "show_more": "Show more...",
         "no_description": "No description provided.",
         "tabs": {
             "overview": "Overview",
