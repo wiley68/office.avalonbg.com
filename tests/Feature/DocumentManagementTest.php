@@ -115,3 +115,61 @@ test('documents api returns only current user records', function () {
         ->assertOk()
         ->assertJsonCount(2, 'data');
 });
+
+test('viewable documents are served inline in the browser', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $document = Document::factory()->for($user)->create([
+        'mime_type' => 'application/pdf',
+        'original_name' => 'report.pdf',
+    ]);
+
+    Storage::disk('local')->put($document->storage_path, '%PDF-1.4');
+
+    actingAs($user)
+        ->get(route('documents.download', $document))
+        ->assertOk()
+        ->assertHeader('Content-Type', 'application/pdf')
+        ->assertHeader('Content-Disposition', 'inline; filename="report.pdf"; filename*=UTF-8\'\'report.pdf');
+});
+
+test('office documents are served as attachments', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $document = Document::factory()->for($user)->create([
+        'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'original_name' => 'spec.docx',
+    ]);
+
+    Storage::disk('local')->put($document->storage_path, 'docx-content');
+
+    actingAs($user)
+        ->get(route('documents.download', $document))
+        ->assertOk()
+        ->assertHeader(
+            'Content-Disposition',
+            'attachment; filename="spec.docx"; filename*=UTF-8\'\'spec.docx',
+        );
+});
+
+test('viewable documents can be forced to download as attachments', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $document = Document::factory()->for($user)->create([
+        'mime_type' => 'application/pdf',
+        'original_name' => 'report.pdf',
+    ]);
+
+    Storage::disk('local')->put($document->storage_path, '%PDF-1.4');
+
+    actingAs($user)
+        ->get(route('documents.download', ['document' => $document, 'download' => 1]))
+        ->assertOk()
+        ->assertHeader(
+            'Content-Disposition',
+            'attachment; filename="report.pdf"; filename*=UTF-8\'\'report.pdf',
+        );
+});

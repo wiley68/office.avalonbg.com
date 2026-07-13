@@ -3,6 +3,7 @@ import { router } from '@inertiajs/vue3';
 import { Download, X } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/composables/useTranslations';
+import { download as downloadDocumentRoute } from '@/routes/documents';
 
 type DocumentItem = {
     id: number;
@@ -17,7 +18,8 @@ type Props = {
 };
 
 const props = withDefaults(defineProps<Props>(), {
-    downloadUrlBuilder: (documentId: number) => `/documents/${documentId}/download`,
+    downloadUrlBuilder: (documentId: number) =>
+        downloadDocumentRoute(documentId, { query: { download: 1 } }).url,
 });
 
 const emit = defineEmits<{
@@ -60,6 +62,8 @@ const detach = (documentId: number): void => {
                     variant="ghost"
                     as="a"
                     :href="downloadUrlBuilder(document.id)"
+                    target="_blank"
+                    rel="noopener noreferrer"
                 >
                     <Download class="h-4 w-4" />
                 </Button>

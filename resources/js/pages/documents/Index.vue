@@ -19,6 +19,7 @@ import { useApiLoadMore } from '@/composables/useApiLoadMore';
 import { useAppToast } from '@/composables/useAppToast';
 import { documentsApiIndex } from '@/composables/useDocumentsApiRoute';
 import { useTranslations } from '@/composables/useTranslations';
+import { openDocument, saveDocumentLocally } from '@/lib/openDocument';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import { destroy, index, store, update } from '@/routes/documents';
@@ -89,8 +90,12 @@ const requestDelete = (documentId: number): void => {
     showDeleteDialog.value = true;
 };
 
+const viewDocument = (documentId: number): void => {
+    openDocument(documentId);
+};
+
 const downloadDocument = (documentId: number): void => {
-    window.location.href = `/documents/${documentId}/download`;
+    saveDocumentLocally(documentId);
 };
 
 const cancelDelete = (): void => {
@@ -165,7 +170,7 @@ onMounted(async () => {
 
                 <template v-else>
                     <div
-                        class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                        class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
                     >
                         <DocumentCard
                             v-for="document in rows"
@@ -173,6 +178,7 @@ onMounted(async () => {
                             :document="document"
                             @edit="openEdit"
                             @delete="requestDelete"
+                            @view="viewDocument"
                             @download="downloadDocument"
                         />
                     </div>

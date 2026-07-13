@@ -492,6 +492,7 @@
             "actions": "Actions"
         },
         "actions": {
+            "open": "Open in browser",
             "download": "Download"
         },
         "picker": {

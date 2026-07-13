@@ -30,12 +30,24 @@ class DocumentStorageService
         'image/gif',
     ];
 
+    /**
+     * @var list<string>
+     */
+    private const InlineMimeTypes = [
+        'application/pdf',
+        'text/plain',
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'image/gif',
+    ];
+
     public function store(User $user, UploadedFile $file, ?string $description = null): Document
     {
         $originalName = $file->getClientOriginalName();
         $extension = $file->getClientOriginalExtension();
-        $filename = Str::uuid() . ($extension !== '' ? '.' . $extension : '');
-        $directory = 'documents/' . $user->id;
+        $filename = Str::uuid().($extension !== '' ? '.'.$extension : '');
+        $directory = 'documents/'.$user->id;
         $path = $file->storeAs($directory, $filename, self::Disk);
 
         return Document::query()->create([
@@ -61,11 +73,51 @@ class DocumentStorageService
         $document->delete();
     }
 
-    public function download(Document $document): StreamedResponse
+    public function download(Document $document, bool $forceAttachment = false): StreamedResponse
     {
+        $headers = [
+            'Content-Type' => $document->mime_type,
+        ];
+
+        if (! $forceAttachment && $this->displaysInlineInBrowser($document->mime_type)) {
+            $headers['Content-Disposition'] = $this->contentDisposition(
+                'inline',
+                $document->original_name,
+            );
+
+            return $this->disk()->response(
+                $document->storage_path,
+                $document->original_name,
+                $headers,
+            );
+        }
+
+        $headers['Content-Disposition'] = $this->contentDisposition(
+            'attachment',
+            $document->original_name,
+        );
+
         return $this->disk()->download(
             $document->storage_path,
             $document->original_name,
+            $headers,
+        );
+    }
+
+    public function displaysInlineInBrowser(string $mimeType): bool
+    {
+        return in_array($mimeType, self::InlineMimeTypes, true);
+    }
+
+    private function contentDisposition(string $disposition, string $filename): string
+    {
+        $fallback = preg_replace('/[^\x20-\x7E]/', '_', $filename) ?: 'document';
+
+        return sprintf(
+            '%s; filename="%s"; filename*=UTF-8\'\'%s',
+            $disposition,
+            addcslashes($fallback, '"\\'),
+            rawurlencode($filename),
         );
     }
 

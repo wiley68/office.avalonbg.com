@@ -26,6 +26,7 @@ const props = defineProps<{
 const emit = defineEmits<{
     edit: [document: DocumentListItem];
     delete: [documentId: number];
+    view: [documentId: number];
     download: [documentId: number];
 }>();
 
@@ -50,19 +51,28 @@ const typeLabel = computed(() =>
 </script>
 
 <template>
-    <Card class="gap-0 py-4">
+    <Card
+        class="gap-0 py-4 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-primary/25 hover:bg-muted/30 hover:shadow-lg"
+    >
         <CardContent class="space-y-4 px-6">
             <TooltipProvider :delay-duration="200">
                 <div
                     class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4"
                 >
                     <div class="flex min-w-0 items-center justify-start">
-                        <img
-                            :src="typeIconUrl"
-                            :alt="typeLabel"
-                            class="size-16 shrink-0 object-contain"
-                            loading="lazy"
-                        />
+                        <button
+                            type="button"
+                            class="cursor-pointer rounded-md transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            :aria-label="t('documents.actions.open')"
+                            @click="emit('view', document.id)"
+                        >
+                            <img
+                                :src="typeIconUrl"
+                                :alt="typeLabel"
+                                class="pointer-events-none size-32 shrink-0 object-contain"
+                                loading="lazy"
+                            />
+                        </button>
                     </div>
 
                     <div class="flex shrink-0 flex-col items-center gap-1">
@@ -71,7 +81,7 @@ const typeLabel = computed(() =>
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    class="size-8 shrink-0 text-primary hover:text-primary"
+                                    class="size-8 shrink-0 cursor-pointer text-primary hover:text-primary"
                                     :aria-label="t('documents.actions.download')"
                                     @click="emit('download', document.id)"
                                 >
@@ -87,7 +97,7 @@ const typeLabel = computed(() =>
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    class="size-8 shrink-0"
+                                    class="size-8 shrink-0 cursor-pointer"
                                     :aria-label="t('common.edit')"
                                     @click="emit('edit', document)"
                                 >
@@ -103,7 +113,7 @@ const typeLabel = computed(() =>
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    class="size-8 shrink-0 text-destructive hover:text-destructive"
+                                    class="size-8 shrink-0 cursor-pointer text-destructive hover:text-destructive"
                                     :aria-label="t('common.delete')"
                                     @click="emit('delete', document.id)"
                                 >
