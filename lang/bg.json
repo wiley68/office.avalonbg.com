@@ -389,7 +389,8 @@
             "status": "Статус",
             "expected_completion_at": "Очаквана дата на приключване",
             "completed_at": "Дата на приключване",
-            "created_at": "Дата на създаване"
+            "created_at": "Дата на създаване",
+            "latest_revision": "Текуща версия"
         },
         "columns": {
             "id": "ID",

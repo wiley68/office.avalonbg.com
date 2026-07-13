@@ -9,6 +9,10 @@ export interface ProjectListItem {
     completed_at: string | null;
     created_at: string;
     documents_count: number;
+    latest_revision: {
+        id: number;
+        label: string;
+    } | null;
 }
 
 export function projectStatusBadgeClass(status: ProjectStatus): string {

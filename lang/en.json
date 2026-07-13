@@ -389,7 +389,8 @@
             "status": "Status",
             "expected_completion_at": "Expected completion date",
             "completed_at": "Completed at",
-            "created_at": "Created at"
+            "created_at": "Created at",
+            "latest_revision": "Current version"
         },
         "columns": {
             "id": "ID",

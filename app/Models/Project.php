@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -39,6 +40,14 @@ class Project extends Model
     public function revisions(): HasMany
     {
         return $this->hasMany(ProjectRevision::class)->orderByDesc('sort_order');
+    }
+
+    /**
+     * @return HasOne<ProjectRevision, $this>
+     */
+    public function latestRevision(): HasOne
+    {
+        return $this->hasOne(ProjectRevision::class)->ofMany('sort_order', 'max');
     }
 
     /**

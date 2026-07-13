@@ -46,6 +46,10 @@ const hasDocuments = computed(() => props.project.documents_count > 0);
 const documentsTabUrl = computed(() =>
     show(props.project.id, { query: { tab: 'documents' } }).url,
 );
+
+const revisionsTabUrl = computed(() =>
+    show(props.project.id, { query: { tab: 'revisions' } }).url,
+);
 </script>
 
 <template>
@@ -157,7 +161,22 @@ const documentsTabUrl = computed(() =>
                         {{ formatProjectDate(project.completed_at) }}
                     </dd>
                 </div>
-                <div class="sm:col-span-2">
+                <div>
+                    <dt class="text-muted-foreground">
+                        {{ t('projects.fields.latest_revision') }}
+                    </dt>
+                    <dd class="font-medium">
+                        <Link
+                            v-if="project.latest_revision"
+                            :href="revisionsTabUrl"
+                            class="text-foreground underline-offset-4 hover:underline"
+                        >
+                            {{ project.latest_revision.label }}
+                        </Link>
+                        <span v-else>—</span>
+                    </dd>
+                </div>
+                <div>
                     <dt class="text-muted-foreground">
                         {{ t('projects.fields.created_at') }}
                     </dt>

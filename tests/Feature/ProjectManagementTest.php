@@ -134,6 +134,38 @@ test('projects api includes project document count excluding task attachments', 
         ->assertJsonPath('data.0.documents_count', 1);
 });
 
+test('projects api includes latest revision label', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $project = Project::factory()->for($user)->create();
+
+    ProjectRevision::factory()->for($project)->create([
+        'label' => 'v1.0',
+        'sort_order' => 0,
+    ]);
+    ProjectRevision::factory()->for($project)->create([
+        'label' => 'v2.0',
+        'sort_order' => 2,
+    ]);
+    ProjectRevision::factory()->for($project)->create([
+        'label' => 'v1.5',
+        'sort_order' => 1,
+    ]);
+
+    actingAs($user)
+        ->getJson(route('internal.projects.index'))
+        ->assertOk()
+        ->assertJsonPath('data.0.latest_revision.label', 'v2.0');
+
+    $projectWithoutRevisions = Project::factory()->for($user)->create();
+
+    actingAs($user)
+        ->getJson(route('internal.projects.index', ['search' => (string) $projectWithoutRevisions->id]))
+        ->assertOk()
+        ->assertJsonPath('data.0.latest_revision', null);
+});
+
 test('office user can manage project revisions', function () {
     $user = User::factory()->create();
     $user->assignRole('user');
