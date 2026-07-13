@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { Pencil } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import AttachedDocumentsList from '@/components/documents/AttachedDocumentsList.vue';
 import DocumentPickerModal from '@/components/documents/DocumentPickerModal.vue';
 import ProjectFormModal from '@/components/projects/ProjectFormModal.vue';
@@ -49,6 +49,25 @@ const props = defineProps<Props>();
 
 const { t } = useTranslations();
 
+const projectTabs = ['overview', 'revisions', 'tasks', 'documents'] as const;
+type ProjectTab = (typeof projectTabs)[number];
+
+function resolveTabFromUrl(): ProjectTab {
+    const tab = new URLSearchParams(window.location.search).get('tab');
+
+    if (tab && projectTabs.includes(tab as ProjectTab)) {
+        return tab as ProjectTab;
+    }
+
+    return 'overview';
+}
+
+const activeTab = ref<ProjectTab>('overview');
+
+onMounted(() => {
+    activeTab.value = resolveTabFromUrl();
+});
+
 const showEditModal = ref(false);
 const showDocumentPicker = ref(false);
 
@@ -66,6 +85,7 @@ const projectForEdit = computed<ProjectListItem>(() => ({
     expected_completion_at: props.project.expected_completion_at,
     completed_at: props.project.completed_at,
     created_at: props.project.created_at ?? '',
+    documents_count: props.project.documents.length,
 }));
 
 const statusVariant = computed(() => {
@@ -139,7 +159,7 @@ const attachDocument = (documentId: number): void => {
                 </Button>
             </div>
 
-            <Tabs default-value="overview" class="w-full">
+            <Tabs v-model="activeTab" class="w-full">
                 <TabsList>
                     <TabsTrigger value="overview">
                         {{ t('projects.tabs.overview') }}

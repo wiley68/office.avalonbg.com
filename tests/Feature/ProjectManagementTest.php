@@ -2,6 +2,7 @@
 
 use App\Enums\ProjectStatus;
 use App\Enums\TaskStatus;
+use App\Models\Document;
 use App\Models\Project;
 use App\Models\ProjectRevision;
 use App\Models\User;
@@ -114,7 +115,23 @@ test('projects api returns only current user records', function () {
     actingAs($user)
         ->getJson(route('internal.projects.index'))
         ->assertOk()
-        ->assertJsonCount(2, 'data');
+        ->assertJsonCount(2, 'data')
+        ->assertJsonPath('data.0.documents_count', 0);
+});
+
+test('projects api includes project document count excluding task attachments', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $project = Project::factory()->for($user)->create();
+    $document = Document::factory()->for($user)->create();
+
+    $project->documents()->attach($document);
+
+    actingAs($user)
+        ->getJson(route('internal.projects.index'))
+        ->assertOk()
+        ->assertJsonPath('data.0.documents_count', 1);
 });
 
 test('office user can manage project revisions', function () {

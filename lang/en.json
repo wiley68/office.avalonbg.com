@@ -451,7 +451,9 @@
         "documents": {
             "title": "Project documents",
             "attach": "Attach document",
-            "attached": "Attached documents"
+            "attached": "Attached documents",
+            "open_tab": "Open documents",
+            "none_attached": "No documents attached to this project"
         }
     },
     "documents": {

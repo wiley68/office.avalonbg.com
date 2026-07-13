@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { Pencil, Trash2 } from 'lucide-vue-next';
+import { Paperclip, Pencil, Trash2 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,6 +40,12 @@ const statusClass = computed(() =>
 const description = computed(
     () => props.project.description?.trim() || t('projects.no_description'),
 );
+
+const hasDocuments = computed(() => props.project.documents_count > 0);
+
+const documentsTabUrl = computed(() =>
+    show(props.project.id, { query: { tab: 'documents' } }).url,
+);
 </script>
 
 <template>
@@ -77,6 +83,37 @@ const description = computed(
                         </TooltipTrigger>
                         <TooltipContent side="top">
                             {{ t('common.edit') }}
+                        </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger as-child>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                class="size-8 shrink-0"
+                                :class="
+                                    hasDocuments
+                                        ? 'text-primary hover:text-primary'
+                                        : 'text-muted-foreground hover:text-muted-foreground'
+                                "
+                                :aria-label="
+                                    hasDocuments
+                                        ? t('projects.documents.open_tab')
+                                        : t('projects.documents.none_attached')
+                                "
+                                as-child
+                            >
+                                <Link :href="documentsTabUrl">
+                                    <Paperclip class="size-4" />
+                                </Link>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                            {{
+                                hasDocuments
+                                    ? t('projects.documents.open_tab')
+                                    : t('projects.documents.none_attached')
+                            }}
                         </TooltipContent>
                     </Tooltip>
                     <Tooltip>

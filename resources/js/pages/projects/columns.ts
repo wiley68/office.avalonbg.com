@@ -8,6 +8,7 @@ export interface ProjectListItem {
     expected_completion_at: string | null;
     completed_at: string | null;
     created_at: string;
+    documents_count: number;
 }
 
 export function projectStatusBadgeClass(status: ProjectStatus): string {
