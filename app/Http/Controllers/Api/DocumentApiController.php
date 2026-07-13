@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreDocumentRequest;
 use App\Models\Document;
 use App\Models\User;
+use App\Services\DocumentStorageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -60,5 +62,30 @@ class DocumentApiController extends Controller
             ->paginate($perPage, ['*'], 'page', $page);
 
         return response()->json($documents);
+    }
+
+    public function store(
+        StoreDocumentRequest $request,
+        DocumentStorageService $documentStorageService,
+    ): JsonResponse {
+        /** @var User $user */
+        $user = Auth::user();
+
+        $document = $documentStorageService->store(
+            $user,
+            $request->file('file'),
+            $request->validated('description'),
+        );
+
+        return response()->json([
+            'data' => [
+                'id' => $document->id,
+                'original_name' => $document->original_name,
+                'mime_type' => $document->mime_type,
+                'size_bytes' => $document->size_bytes,
+                'description' => $document->description,
+                'created_at' => $document->created_at?->toIso8601String(),
+            ],
+        ], 201);
     }
 }

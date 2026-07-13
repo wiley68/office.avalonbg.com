@@ -4,6 +4,7 @@ import { Plus } from 'lucide-vue-next';
 import { computed, onMounted, provide, ref } from 'vue';
 import AppAlertDialog from '@/components/AppAlertDialog.vue';
 import DocumentPickerModal from '@/components/documents/DocumentPickerModal.vue';
+import DocumentUploadModal from '@/components/documents/DocumentUploadModal.vue';
 import InputError from '@/components/InputError.vue';
 import type { ProjectRevisionItem } from '@/components/projects/RevisionList.vue';
 import TaskTreeList from '@/components/projects/TaskTreeList.vue';
@@ -56,6 +57,7 @@ const parentForCreate = ref<number | null>(null);
 const showDeleteDialog = ref(false);
 const taskToDelete = ref<number | null>(null);
 const showDocumentPicker = ref(false);
+const showDocumentUpload = ref(false);
 const taskForDocuments = ref<number | null>(null);
 
 const emptyFormState = {
@@ -247,22 +249,45 @@ const openDocumentPicker = (taskId: number): void => {
     showDocumentPicker.value = true;
 };
 
+const openDocumentUpload = (taskId: number): void => {
+    taskForDocuments.value = taskId;
+    showDocumentUpload.value = true;
+};
+
 const attachDocument = (documentId: number): void => {
     if (taskForDocuments.value === null) {
         return;
     }
 
+    const taskId = taskForDocuments.value;
+
     router.post(
         attachTaskDocument({
-            task: taskForDocuments.value,
+            task: taskId,
             document: documentId,
         }).url,
         {},
         {
             preserveScroll: true,
-            onSuccess: () => fetchTasks(),
+            onSuccess: () => {
+                showMessage(
+                    t('common.success'),
+                    t('projects.documents.attached_success'),
+                );
+                fetchTasks();
+            },
+            onError: (errors: Record<string, string>) => {
+                showError(
+                    t('common.error'),
+                    Object.values(errors).flat().join('\n'),
+                );
+            },
         },
     );
+};
+
+const handleDocumentUploaded = (documentId: number): void => {
+    attachDocument(documentId);
 };
 
 const statusClass = (status: TaskStatus): string => {
@@ -281,6 +306,7 @@ provide('taskTreeActions', {
     openCreate,
     openEdit,
     openDocumentPicker,
+    openDocumentUpload,
     persistOrder,
     refreshTasks: fetchTasks,
     requestDelete,
@@ -435,6 +461,11 @@ onMounted(() => {
         <DocumentPickerModal
             v-model:open="showDocumentPicker"
             @select="attachDocument"
+        />
+
+        <DocumentUploadModal
+            v-model:open="showDocumentUpload"
+            @uploaded="handleDocumentUploaded"
         />
 
         <AppAlertDialog

@@ -462,6 +462,8 @@
         "documents": {
             "title": "Project documents",
             "attach": "Attach document",
+            "upload": "Upload document",
+            "attached_success": "The document has been attached to the task.",
             "detach": "Detach",
             "detach_confirm": "Are you sure you want to detach this document from the task?",
             "attached": "Attached documents",
@@ -474,6 +476,8 @@
         "upload": "Upload",
         "upload_title": "Upload document",
         "uploaded": "Document uploaded.",
+        "upload_error": "Failed to upload the document.",
+        "upload_file_required": "Select a file to upload.",
         "replace": "Replace file",
         "replace_title": "Replace document file",
         "replace_hint": "Upload a new file for “:name”. The document ID and all project or task links will be kept.",

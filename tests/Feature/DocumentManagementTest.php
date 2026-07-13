@@ -116,6 +116,23 @@ test('documents api returns only current user records', function () {
         ->assertJsonCount(2, 'data');
 });
 
+test('documents api can store a document and return its id', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    actingAs($user)
+        ->post(route('internal.documents.store'), [
+            'file' => UploadedFile::fake()->create('spec.pdf', 100, 'application/pdf'),
+            'description' => 'Task attachment',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.original_name', 'spec.pdf')
+        ->assertJsonPath('data.mime_type', 'application/pdf')
+        ->assertJsonStructure(['data' => ['id', 'original_name', 'mime_type', 'size_bytes', 'created_at']]);
+
+    expect(Document::query()->where('user_id', $user->id)->count())->toBe(1);
+});
+
 test('viewable documents are served inline in the browser', function () {
     $user = User::factory()->create();
     $user->assignRole('user');

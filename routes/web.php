@@ -159,6 +159,9 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
 
             Route::get('documents', [DocumentApiController::class, 'index'])
                 ->name('documents.index');
+
+            Route::post('documents', [DocumentApiController::class, 'store'])
+                ->name('documents.store');
         });
 
     Route::bind('project', function (string $value): Project {

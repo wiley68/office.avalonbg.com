@@ -6,6 +6,7 @@ import {
     Pencil,
     Plus,
     Trash2,
+    Upload,
 } from 'lucide-vue-next';
 import type { SortableEvent } from 'sortablejs';
 import { inject } from 'vue';
@@ -26,6 +27,7 @@ type TaskTreeActions = {
     openCreate: (parentId: number | null) => void;
     openEdit: (task: TaskTreeNode) => void;
     openDocumentPicker: (taskId: number) => void;
+    openDocumentUpload: (taskId: number) => void;
     persistOrder: (parentId: number | null, taskIds: number[]) => void;
     refreshTasks: () => Promise<void>;
     requestDelete: (taskId: number) => void;
@@ -163,6 +165,22 @@ const handleDragEnd = (event: SortableEvent): void => {
                                 </TooltipTrigger>
                                 <TooltipContent side="top">
                                     {{ t('projects.documents.attach') }}
+                                </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger as-child>
+                                    <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="ghost"
+                                        :aria-label="t('projects.documents.upload')"
+                                        @click="actions.openDocumentUpload(task.id)"
+                                    >
+                                        <Upload class="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                    {{ t('projects.documents.upload') }}
                                 </TooltipContent>
                             </Tooltip>
                             <Tooltip>
