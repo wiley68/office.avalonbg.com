@@ -11,9 +11,6 @@ use Illuminate\Validation\ValidationException;
 
 class TaskTreeService
 {
-    /**
-     * @return Collection<int, array<string, mixed>>
-     */
     public function nestedTreeForProject(Project $project): Collection
     {
         $tasks = Task::query()
@@ -23,6 +20,49 @@ class TaskTreeService
             ->get();
 
         return $this->buildTree($tasks);
+    }
+
+    /**
+     * @return list<array{id: int, name: string, status: string}>
+     */
+    public function flatTimelineForProject(Project $project): array
+    {
+        if (! $project->relationLoaded('tasks')) {
+            $project->load([
+                'tasks' => fn ($query) => $query
+                    ->select('id', 'project_id', 'parent_id', 'name', 'status', 'sort_order')
+                    ->orderBy('sort_order'),
+            ]);
+        }
+
+        /** @var \Illuminate\Database\Eloquent\Collection<int, Task> $tasks */
+        $tasks = $project->tasks;
+
+        return $this->flattenTasksForTimeline($tasks);
+    }
+
+    /**
+     * @param  Collection<int, Task>  $tasks
+     * @return list<array{id: int, name: string, status: string}>
+     */
+    private function flattenTasksForTimeline(Collection $tasks, ?int $parentId = null): array
+    {
+        $timeline = [];
+
+        foreach ($tasks->where('parent_id', $parentId)->sortBy('sort_order') as $task) {
+            $timeline[] = [
+                'id' => $task->id,
+                'name' => $task->name,
+                'status' => $task->status->value,
+            ];
+
+            $timeline = array_merge(
+                $timeline,
+                $this->flattenTasksForTimeline($tasks, $task->id),
+            );
+        }
+
+        return $timeline;
     }
 
     /**

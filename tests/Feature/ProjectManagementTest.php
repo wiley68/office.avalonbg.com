@@ -182,6 +182,43 @@ test('projects api includes task count', function () {
         ->assertJsonPath('data.0.tasks_count', 2);
 });
 
+test('projects api includes task timeline in tree order', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $project = Project::factory()->for($user)->create();
+
+    $parent = Task::factory()->for($project)->for($user)->create([
+        'name' => 'Parent task',
+        'status' => TaskStatus::Completed,
+        'sort_order' => 0,
+        'parent_id' => null,
+    ]);
+    $child = Task::factory()->for($project)->for($user)->create([
+        'name' => 'Child task',
+        'status' => TaskStatus::Active,
+        'sort_order' => 0,
+        'parent_id' => $parent->id,
+    ]);
+    Task::factory()->for($project)->for($user)->create([
+        'name' => 'Deferred task',
+        'status' => TaskStatus::Deferred,
+        'sort_order' => 1,
+        'parent_id' => null,
+    ]);
+
+    actingAs($user)
+        ->getJson(route('internal.projects.index', ['search' => (string) $project->id]))
+        ->assertOk()
+        ->assertJsonPath('data.0.tasks_timeline.0.name', 'Parent task')
+        ->assertJsonPath('data.0.tasks_timeline.0.status', TaskStatus::Completed->value)
+        ->assertJsonPath('data.0.tasks_timeline.1.name', 'Child task')
+        ->assertJsonPath('data.0.tasks_timeline.1.status', TaskStatus::Active->value)
+        ->assertJsonPath('data.0.tasks_timeline.2.name', 'Deferred task')
+        ->assertJsonPath('data.0.tasks_timeline.2.status', TaskStatus::Deferred->value)
+        ->assertJsonMissingPath('data.0.tasks');
+});
+
 test('tasks api includes mime type for attached documents', function () {
     $user = User::factory()->create();
     $user->assignRole('user');

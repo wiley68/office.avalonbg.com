@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/vue3';
 import { ListTodo, Paperclip, Pencil, Trash2 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
+import ProjectTaskTimeline from '@/components/projects/ProjectTaskTimeline.vue';
 import {
     Card,
     CardContent,
@@ -40,9 +41,17 @@ const description = computed(
     () => props.project.description?.trim() || t('projects.no_description'),
 );
 
+const hasDescription = computed(
+    () => (props.project.description?.trim() ?? '') !== '',
+);
+
 const hasDocuments = computed(() => props.project.documents_count > 0);
 
 const hasTasks = computed(() => props.project.tasks_count > 0);
+
+const tasksTimeline = computed(
+    () => props.project.tasks_timeline ?? [],
+);
 
 const documentsTabUrl = computed(() =>
     show(props.project.id, { query: { tab: 'documents' } }).url,
@@ -61,18 +70,18 @@ const revisionsTabUrl = computed(() =>
     <Card class="gap-4 py-4">
         <TooltipProvider :delay-duration="200">
             <CardHeader
-                class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-2 border-b pb-4 [.border-b]:pb-4"
+                class="grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto_1.25rem] gap-x-4 gap-y-2 border-b pb-4 [.border-b]:pb-4"
             >
-                <CardTitle class="min-w-0 text-base leading-snug">
+                <CardTitle class="min-h-6 min-w-0 text-base leading-snug">
                     <Link
                         :href="show(project.id)"
-                        class="font-semibold text-foreground underline-offset-4 hover:underline"
+                        class="line-clamp-2 block font-semibold text-foreground underline-offset-4 hover:underline"
                     >
                         {{ project.name }}
                     </Link>
                 </CardTitle>
 
-                <div class="flex shrink-0 items-center justify-end gap-1">
+                <div class="flex min-h-6 shrink-0 items-center justify-end gap-1">
                     <span
                         :class="[
                             'inline-flex rounded px-2 py-0.5 text-xs font-medium',
@@ -115,12 +124,27 @@ const revisionsTabUrl = computed(() =>
                     </Tooltip>
                 </div>
 
-                <CardDescription class="min-w-0 line-clamp-3 text-sm">
+                <Tooltip v-if="hasDescription">
+                    <TooltipTrigger as-child>
+                        <CardDescription
+                            class="min-w-0 cursor-default truncate text-sm leading-5"
+                        >
+                            {{ description }}
+                        </CardDescription>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" class="max-w-sm text-pretty">
+                        {{ description }}
+                    </TooltipContent>
+                </Tooltip>
+                <CardDescription
+                    v-else
+                    class="min-w-0 truncate text-sm leading-5"
+                >
                     {{ description }}
                 </CardDescription>
 
                 <div
-                    class="flex shrink-0 flex-wrap items-center justify-end gap-1"
+                    class="flex h-full shrink-0 flex-wrap items-center justify-end gap-1"
                 >
                     <Tooltip>
                         <TooltipTrigger as-child>
@@ -233,6 +257,13 @@ const revisionsTabUrl = computed(() =>
                     </dd>
                 </div>
             </dl>
+
+            <div
+                v-if="tasksTimeline.length > 0"
+                class="mt-4 border-t pt-4"
+            >
+                <ProjectTaskTimeline :tasks="tasksTimeline" />
+            </div>
         </CardContent>
     </Card>
 </template>

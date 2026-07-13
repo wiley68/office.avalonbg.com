@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\User;
+use App\Services\TaskTreeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Gate;
 
 class ProjectApiController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, TaskTreeService $taskTreeService): JsonResponse
     {
         Gate::authorize('viewAny', Project::class);
 
@@ -37,6 +38,9 @@ class ProjectApiController extends Controller
             ->where('user_id', $user->id)
             ->withCount(['documents', 'tasks'])
             ->with([
+                'tasks' => fn ($query) => $query
+                    ->select('id', 'project_id', 'parent_id', 'name', 'status', 'sort_order')
+                    ->orderBy('sort_order'),
                 'latestRevision' => fn ($query) => $query->select(
                     'project_revisions.id',
                     'project_revisions.project_id',
@@ -59,6 +63,16 @@ class ProjectApiController extends Controller
             ->orderBy($sortBy, $sortOrder)
             ->paginate($perPage, ['*'], 'page', $page);
 
-        return response()->json($projects);
+        return response()->json(
+            $projects->through(function (Project $project) use ($taskTreeService) {
+                $data = $project->toArray();
+                unset($data['tasks']);
+
+                return [
+                    ...$data,
+                    'tasks_timeline' => $taskTreeService->flatTimelineForProject($project),
+                ];
+            }),
+        );
     }
 }
