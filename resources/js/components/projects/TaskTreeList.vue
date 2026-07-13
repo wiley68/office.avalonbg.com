@@ -108,6 +108,7 @@ const handleDragEnd = (event: SortableEvent): void => {
                         </p>
                         <AttachedDocumentsList
                             :documents="task.documents"
+                            confirm-before-detach
                             :detach-url-builder="(documentId) =>
                                 `/tasks/${task.id}/documents/${documentId}`"
                             @detached="actions.refreshTasks"

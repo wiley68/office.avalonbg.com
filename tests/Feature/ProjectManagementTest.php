@@ -182,6 +182,51 @@ test('projects api includes task count', function () {
         ->assertJsonPath('data.0.tasks_count', 2);
 });
 
+test('tasks api includes mime type for attached documents', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $project = Project::factory()->for($user)->create();
+    $task = Task::factory()->for($project)->for($user)->create();
+    $document = Document::factory()->for($user)->create([
+        'mime_type' => 'application/pdf',
+        'original_name' => 'spec.pdf',
+    ]);
+
+    $task->documents()->attach($document);
+
+    actingAs($user)
+        ->getJson(route('internal.projects.tasks.index', $project))
+        ->assertOk()
+        ->assertJsonPath('data.0.documents.0.id', $document->id)
+        ->assertJsonPath('data.0.documents.0.original_name', 'spec.pdf')
+        ->assertJsonPath('data.0.documents.0.mime_type', 'application/pdf');
+});
+
+test('project show includes mime type for attached documents', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $project = Project::factory()->for($user)->create();
+    $mimeType = 'text/plain';
+    $fileName = 'notes.txt';
+    $document = Document::factory()->for($user)->create([
+        'mime_type' => $mimeType,
+        'original_name' => $fileName,
+    ]);
+
+    $project->documents()->attach($document);
+
+    actingAs($user)
+        ->get(route('projects.show', $project))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('projects/Show')
+            ->has('project.documents', 1, fn (Assert $page) => $page
+                ->where('mime_type', $mimeType)
+                ->where('original_name', $fileName)));
+});
+
 test('office user can manage project revisions', function () {
     $user = User::factory()->create();
     $user->assignRole('user');

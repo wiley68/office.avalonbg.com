@@ -462,6 +462,8 @@
         "documents": {
             "title": "Project documents",
             "attach": "Attach document",
+            "detach": "Detach",
+            "detach_confirm": "Are you sure you want to detach this document from the task?",
             "attached": "Attached documents",
             "open_tab": "Open documents",
             "none_attached": "No documents attached to this project"

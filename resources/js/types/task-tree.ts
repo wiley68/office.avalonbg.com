@@ -12,6 +12,6 @@ export type TaskTreeNode = {
     sort_order: number;
     completed_at: string | null;
     created_at: string | null;
-    documents: { id: number; original_name: string }[];
+    documents: { id: number; original_name: string; mime_type: string }[];
     children: TaskTreeNode[];
 };

@@ -22,6 +22,7 @@ type ProjectDocument = {
     id: number;
     original_name: string;
     description: string | null;
+    mime_type: string;
 };
 
 type ProjectRevision = {

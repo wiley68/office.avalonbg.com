@@ -18,7 +18,7 @@ class TaskTreeService
     {
         $tasks = Task::query()
             ->where('project_id', $project->id)
-            ->with(['revision:id,label', 'documents:id,original_name'])
+            ->with(['revision:id,label', 'documents:id,original_name,mime_type'])
             ->orderBy('sort_order')
             ->get();
 
@@ -50,9 +50,10 @@ class TaskTreeService
                     'sort_order' => $task->sort_order,
                     'completed_at' => $task->completed_at?->toIso8601String(),
                     'created_at' => $task->created_at?->toIso8601String(),
-                    'documents' => $task->documents->map(fn($document) => [
+                    'documents' => $task->documents->map(fn ($document) => [
                         'id' => $document->id,
                         'original_name' => $document->original_name,
+                        'mime_type' => $document->mime_type,
                     ])->values()->all(),
                     'children' => $this->buildTree($tasks, $task->id)->all(),
                 ];

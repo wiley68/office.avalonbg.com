@@ -27,7 +27,7 @@ class ProjectController extends Controller
 
         $project->load([
             'revisions' => fn ($query) => $query->orderByDesc('sort_order'),
-            'documents:id,original_name,description',
+            'documents:id,original_name,description,mime_type',
         ]);
 
         return Inertia::render('projects/Show', [
@@ -49,6 +49,7 @@ class ProjectController extends Controller
                     'id' => $document->id,
                     'original_name' => $document->original_name,
                     'description' => $document->description,
+                    'mime_type' => $document->mime_type,
                 ])->values(),
             ],
         ]);
