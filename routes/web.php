@@ -232,6 +232,8 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
         ->name('documents.store');
     Route::put('documents/{document}', [DocumentController::class, 'update'])
         ->name('documents.update');
+    Route::post('documents/{document}/replace-file', [DocumentController::class, 'replaceFile'])
+        ->name('documents.replace-file');
     Route::delete('documents/{document}', [DocumentController::class, 'destroy'])
         ->name('documents.destroy');
     Route::get('documents/{document}/download', DocumentDownloadController::class)

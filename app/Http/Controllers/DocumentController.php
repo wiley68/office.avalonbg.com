@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ReplaceDocumentFileRequest;
 use App\Http\Requests\StoreDocumentRequest;
 use App\Http\Requests\UpdateDocumentRequest;
 use App\Models\Document;
@@ -46,6 +47,21 @@ class DocumentController extends Controller
         $this->authorize('update', $document);
 
         $document->update($request->validated());
+
+        return back();
+    }
+
+    public function replaceFile(
+        ReplaceDocumentFileRequest $request,
+        Document $document,
+        DocumentStorageService $documentStorageService,
+    ): RedirectResponse {
+        $this->authorize('update', $document);
+
+        $documentStorageService->replaceFile(
+            $document,
+            $request->file('file'),
+        );
 
         return back();
     }

@@ -22,7 +22,7 @@ import { useTranslations } from '@/composables/useTranslations';
 import { openDocument, saveDocumentLocally } from '@/lib/openDocument';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
-import { destroy, index, store, update } from '@/routes/documents';
+import { destroy, index, replaceFile, store, update } from '@/routes/documents';
 import type { BreadcrumbItem } from '@/types';
 import type { DocumentListItem } from './columns';
 
@@ -36,7 +36,9 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => [
 
 const showUploadDialog = ref(false);
 const showEditDialog = ref(false);
+const showReplaceDialog = ref(false);
 const editingDocument = ref<DocumentListItem | null>(null);
+const replacingDocument = ref<DocumentListItem | null>(null);
 const editDescription = ref('');
 const showDeleteDialog = ref(false);
 const documentToDelete = ref<number | null>(null);
@@ -65,6 +67,11 @@ const openEdit = (document: DocumentListItem): void => {
     editingDocument.value = document;
     editDescription.value = document.description ?? '';
     showEditDialog.value = true;
+};
+
+const openReplace = (document: DocumentListItem): void => {
+    replacingDocument.value = document;
+    showReplaceDialog.value = true;
 };
 
 const saveEdit = (): void => {
@@ -180,6 +187,7 @@ onMounted(async () => {
                             @delete="requestDelete"
                             @view="viewDocument"
                             @download="downloadDocument"
+                            @replace="openReplace"
                         />
                     </div>
 
@@ -264,6 +272,68 @@ onMounted(async () => {
                             class="text-sm text-muted-foreground"
                         >
                             {{ t('documents.uploaded') }}
+                        </p>
+                    </DialogFooter>
+                </Form>
+            </DialogContent>
+        </Dialog>
+
+        <Dialog v-model:open="showReplaceDialog">
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{{ t('documents.replace_title') }}</DialogTitle>
+                </DialogHeader>
+
+                <Form
+                    v-if="replacingDocument"
+                    v-bind="replaceFile.form(replacingDocument.id)"
+                    :options="{ preserveScroll: true }"
+                    reset-on-success
+                    class="space-y-4"
+                    v-slot="{ errors, processing, recentlySuccessful }"
+                    @success="
+                        showReplaceDialog = false;
+                        replacingDocument = null;
+                        fetch();
+                    "
+                >
+                    <p class="text-sm text-muted-foreground">
+                        {{ t('documents.replace_hint', { name: replacingDocument.original_name }) }}
+                    </p>
+
+                    <div class="grid gap-2">
+                        <Label for="replace-document-file">{{
+                            t('documents.fields.file')
+                        }}</Label>
+                        <Input
+                            id="replace-document-file"
+                            name="file"
+                            type="file"
+                            required
+                        />
+                        <InputError :message="errors.file" />
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            @click="
+                                showReplaceDialog = false;
+                                replacingDocument = null;
+                            "
+                        >
+                            {{ t('common.cancel') }}
+                        </Button>
+                        <Button type="submit" :disabled="processing">
+                            <Upload class="mr-2 h-4 w-4" />
+                            {{ t('documents.replace') }}
+                        </Button>
+                        <p
+                            v-show="recentlySuccessful"
+                            class="text-sm text-muted-foreground"
+                        >
+                            {{ t('documents.replaced') }}
                         </p>
                     </DialogFooter>
                 </Form>

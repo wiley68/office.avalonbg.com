@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Download, Pencil, Trash2 } from 'lucide-vue-next';
+import { Download, FileUp, Pencil, Trash2 } from 'lucide-vue-next';
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ const emit = defineEmits<{
     delete: [documentId: number];
     view: [documentId: number];
     download: [documentId: number];
+    replace: [document: DocumentListItem];
 }>();
 
 const { t } = useTranslations();
@@ -90,6 +91,22 @@ const typeLabel = computed(() =>
                             </TooltipTrigger>
                             <TooltipContent side="left">
                                 {{ t('documents.actions.download') }}
+                            </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger as-child>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    class="size-8 shrink-0 cursor-pointer"
+                                    :aria-label="t('documents.actions.replace')"
+                                    @click="emit('replace', document)"
+                                >
+                                    <FileUp class="size-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="left">
+                                {{ t('documents.actions.replace') }}
                             </TooltipContent>
                         </Tooltip>
                         <Tooltip>

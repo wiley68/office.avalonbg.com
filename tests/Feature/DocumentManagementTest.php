@@ -173,3 +173,48 @@ test('viewable documents can be forced to download as attachments', function () 
             'attachment; filename="report.pdf"; filename*=UTF-8\'\'report.pdf',
         );
 });
+
+test('office user can replace document file while keeping id and attachments', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $project = Project::factory()->for($user)->create();
+    $task = Task::factory()->for($project)->for($user)->create();
+
+    $document = Document::factory()->for($user)->create([
+        'original_name' => 'old.txt',
+        'mime_type' => 'text/plain',
+        'size_bytes' => 3,
+    ]);
+
+    Storage::disk('local')->put($document->storage_path, 'old');
+
+    $project->documents()->attach($document);
+    $task->documents()->attach($document);
+
+    $documentId = $document->id;
+    $oldPath = $document->storage_path;
+
+    actingAs($user);
+
+    $newFile = UploadedFile::fake()->create('updated.pdf', 120, 'application/pdf');
+
+    post(route('documents.replace-file', $document), [
+        'file' => $newFile,
+    ])->assertRedirect();
+
+    $document->refresh();
+
+    expect($document->id)->toBe($documentId)
+        ->and($document->original_name)->toBe('updated.pdf')
+        ->and($document->mime_type)->toBe('application/pdf')
+        ->and($document->storage_path)->not->toBe($oldPath);
+
+    Storage::assertMissing($oldPath);
+    Storage::assertExists($document->storage_path);
+
+    expect($project->fresh()->documents)->toHaveCount(1)
+        ->and($project->documents->first()?->id)->toBe($documentId)
+        ->and($task->fresh()->documents)->toHaveCount(1)
+        ->and($task->documents->first()?->id)->toBe($documentId);
+});

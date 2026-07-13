@@ -104,6 +104,28 @@ class DocumentStorageService
         );
     }
 
+    public function replaceFile(Document $document, UploadedFile $file): void
+    {
+        $disk = $this->disk();
+        $oldPath = $document->storage_path;
+
+        $extension = $file->getClientOriginalExtension();
+        $filename = Str::uuid().($extension !== '' ? '.'.$extension : '');
+        $directory = 'documents/'.$document->user_id;
+        $newPath = $file->storeAs($directory, $filename, self::Disk);
+
+        $document->update([
+            'original_name' => $file->getClientOriginalName(),
+            'storage_path' => $newPath,
+            'mime_type' => $file->getMimeType() ?? 'application/octet-stream',
+            'size_bytes' => $file->getSize(),
+        ]);
+
+        if ($disk->exists($oldPath)) {
+            $disk->delete($oldPath);
+        }
+    }
+
     public function displaysInlineInBrowser(string $mimeType): bool
     {
         return in_array($mimeType, self::InlineMimeTypes, true);

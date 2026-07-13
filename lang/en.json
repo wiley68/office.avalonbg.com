@@ -472,6 +472,10 @@
         "upload": "Upload",
         "upload_title": "Upload document",
         "uploaded": "Document uploaded.",
+        "replace": "Replace file",
+        "replace_title": "Replace document file",
+        "replace_hint": "Upload a new file for “:name”. The document ID and all project or task links will be kept.",
+        "replaced": "Document file replaced.",
         "edit_title": "Edit document",
         "empty": "No documents found.",
         "show_more": "Show more...",
@@ -493,7 +497,8 @@
         },
         "actions": {
             "open": "Open in browser",
-            "download": "Download"
+            "download": "Download",
+            "replace": "Replace file"
         },
         "picker": {
             "title": "Select document",
