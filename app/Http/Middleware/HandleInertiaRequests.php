@@ -48,6 +48,7 @@ class HandleInertiaRequests extends Middleware
             'email' => (string) config('app.contact_email'),
             'shopUrl' => (string) config('app.shop_url'),
             'version' => (string) config('app.version'),
+            'documentIconsVersion' => (string) config('documents.icons_version'),
             'locale' => app()->getLocale(),
             'locales' => [
                 ['code' => 'en', 'label' => 'English'],

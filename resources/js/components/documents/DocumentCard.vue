@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Download, Pencil, Trash2 } from 'lucide-vue-next';
+import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -29,6 +30,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useTranslations();
+const page = usePage();
 
 const description = computed(
     () =>
@@ -36,7 +38,10 @@ const description = computed(
 );
 
 const typeIconUrl = computed(() =>
-    documentTypeIconUrl(props.document.mime_type),
+    documentTypeIconUrl(
+        props.document.mime_type,
+        page.props.documentIconsVersion as string,
+    ),
 );
 
 const typeLabel = computed(() =>

@@ -15,10 +15,18 @@ const MIME_TYPE_ICON_MAP: Record<string, string> = {
 
 const ICON_BASE_PATH = '/images/document-types';
 
-export function documentTypeIconUrl(mimeType: string): string {
+export function documentTypeIconUrl(
+    mimeType: string,
+    version?: string | number | null,
+): string {
     const iconName = MIME_TYPE_ICON_MAP[mimeType] ?? 'file';
+    const baseUrl = `${ICON_BASE_PATH}/${iconName}.svg`;
 
-    return `${ICON_BASE_PATH}/${iconName}.svg`;
+    if (version === undefined || version === null || version === '') {
+        return baseUrl;
+    }
+
+    return `${baseUrl}?v=${encodeURIComponent(String(version))}`;
 }
 
 export const ALLOWED_DOCUMENT_MIME_TYPES = Object.keys(MIME_TYPE_ICON_MAP);
