@@ -149,28 +149,25 @@ const revisionsTabUrl = computed(() =>
                     <Tooltip>
                         <TooltipTrigger as-child>
                             <Button
-                                v-if="hasTasks"
                                 variant="ghost"
                                 size="icon"
-                                class="size-8 shrink-0 text-primary hover:text-primary"
-                                :aria-label="t('projects.tasks.open_tab')"
+                                class="size-8 shrink-0"
+                                :class="
+                                    hasTasks
+                                        ? 'text-primary hover:text-primary'
+                                        : 'text-muted-foreground/50 hover:text-muted-foreground/65'
+                                "
+                                :aria-label="
+                                    hasTasks
+                                        ? t('projects.tasks.open_tab')
+                                        : t('projects.tasks.none')
+                                "
                                 as-child
                             >
                                 <Link :href="tasksTabUrl">
                                     <ListTodo class="size-4" />
                                 </Link>
                             </Button>
-                            <span v-else class="inline-flex">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    class="size-8 shrink-0 text-muted-foreground"
-                                    disabled
-                                    :aria-label="t('projects.tasks.none')"
-                                >
-                                    <ListTodo class="size-4" />
-                                </Button>
-                            </span>
                         </TooltipTrigger>
                         <TooltipContent side="top">
                             {{
@@ -189,7 +186,7 @@ const revisionsTabUrl = computed(() =>
                                 :class="
                                     hasDocuments
                                         ? 'text-primary hover:text-primary'
-                                        : 'text-muted-foreground hover:text-muted-foreground'
+                                        : 'text-muted-foreground/50 hover:text-muted-foreground/65'
                                 "
                                 :aria-label="
                                     hasDocuments
@@ -262,7 +259,10 @@ const revisionsTabUrl = computed(() =>
                 v-if="tasksTimeline.length > 0"
                 class="mt-4 border-t pt-4"
             >
-                <ProjectTaskTimeline :tasks="tasksTimeline" />
+                <ProjectTaskTimeline
+                    :tasks="tasksTimeline"
+                    :project-status="project.status"
+                />
             </div>
         </CardContent>
     </Card>
