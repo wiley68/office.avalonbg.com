@@ -5,7 +5,6 @@ import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     Card,
-    CardAction,
     CardContent,
     CardDescription,
     CardHeader,
@@ -60,25 +59,28 @@ const revisionsTabUrl = computed(() =>
 
 <template>
     <Card class="gap-4 py-4">
-        <CardHeader class="gap-2 border-b pb-4 [.border-b]:pb-4">
-            <CardTitle class="text-base leading-snug">
-                <Link
-                    :href="show(project.id)"
-                    class="font-semibold text-foreground underline-offset-4 hover:underline"
-                >
-                    {{ project.name }}
-                </Link>
-            </CardTitle>
-            <CardAction class="flex items-center gap-1">
-                <span
-                    :class="[
-                        'inline-flex rounded px-2 py-0.5 text-xs font-medium',
-                        statusClass,
-                    ]"
-                >
-                    {{ t(`projects.status.${project.status}`) }}
-                </span>
-                <TooltipProvider :delay-duration="200">
+        <TooltipProvider :delay-duration="200">
+            <CardHeader
+                class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-2 border-b pb-4 [.border-b]:pb-4"
+            >
+                <CardTitle class="min-w-0 text-base leading-snug">
+                    <Link
+                        :href="show(project.id)"
+                        class="font-semibold text-foreground underline-offset-4 hover:underline"
+                    >
+                        {{ project.name }}
+                    </Link>
+                </CardTitle>
+
+                <div class="flex shrink-0 items-center justify-end gap-1">
+                    <span
+                        :class="[
+                            'inline-flex rounded px-2 py-0.5 text-xs font-medium',
+                            statusClass,
+                        ]"
+                    >
+                        {{ t(`projects.status.${project.status}`) }}
+                    </span>
                     <Tooltip>
                         <TooltipTrigger as-child>
                             <Button
@@ -95,6 +97,31 @@ const revisionsTabUrl = computed(() =>
                             {{ t('common.edit') }}
                         </TooltipContent>
                     </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger as-child>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                class="size-8 shrink-0 text-destructive hover:text-destructive"
+                                :aria-label="t('common.delete')"
+                                @click="emit('delete', project.id)"
+                            >
+                                <Trash2 class="size-4" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                            {{ t('common.delete') }}
+                        </TooltipContent>
+                    </Tooltip>
+                </div>
+
+                <CardDescription class="min-w-0 line-clamp-3 text-sm">
+                    {{ description }}
+                </CardDescription>
+
+                <div
+                    class="flex shrink-0 flex-wrap items-center justify-end gap-1"
+                >
                     <Tooltip>
                         <TooltipTrigger as-child>
                             <Button
@@ -160,28 +187,9 @@ const revisionsTabUrl = computed(() =>
                             }}
                         </TooltipContent>
                     </Tooltip>
-                    <Tooltip>
-                        <TooltipTrigger as-child>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                class="size-8 shrink-0 text-destructive hover:text-destructive"
-                                :aria-label="t('common.delete')"
-                                @click="emit('delete', project.id)"
-                            >
-                                <Trash2 class="size-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">
-                            {{ t('common.delete') }}
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </CardAction>
-            <CardDescription class="line-clamp-3 text-sm">
-                {{ description }}
-            </CardDescription>
-        </CardHeader>
+                </div>
+            </CardHeader>
+        </TooltipProvider>
 
         <CardContent class="px-6 pt-0">
             <dl class="grid gap-2 text-sm sm:grid-cols-2">
