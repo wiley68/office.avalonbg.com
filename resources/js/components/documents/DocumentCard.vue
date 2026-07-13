@@ -2,13 +2,7 @@
 import { Download, Pencil, Trash2 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
     Tooltip,
     TooltipContent,
@@ -16,6 +10,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useTranslations } from '@/composables/useTranslations';
+import { documentTypeIconUrl } from '@/lib/documentTypeIcon';
 import type { DocumentListItem } from '@/pages/documents/columns';
 import {
     formatDocumentDate,
@@ -39,85 +34,98 @@ const description = computed(
     () =>
         props.document.description?.trim() || t('documents.no_description'),
 );
+
+const typeIconUrl = computed(() =>
+    documentTypeIconUrl(props.document.mime_type),
+);
+
+const typeLabel = computed(() =>
+    formatDocumentMimeType(props.document.mime_type),
+);
 </script>
 
 <template>
-    <Card class="gap-4 py-4">
-        <TooltipProvider :delay-duration="200">
-            <CardHeader
-                class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-2 border-b pb-4 [.border-b]:pb-4"
-            >
-                <CardTitle
-                    class="min-w-0 text-base leading-snug font-semibold"
+    <Card class="gap-0 py-4">
+        <CardContent class="space-y-4 px-6">
+            <TooltipProvider :delay-duration="200">
+                <div
+                    class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4"
+                >
+                    <div class="flex min-w-0 items-center justify-start">
+                        <img
+                            :src="typeIconUrl"
+                            :alt="typeLabel"
+                            class="size-16 shrink-0 object-contain"
+                            loading="lazy"
+                        />
+                    </div>
+
+                    <div class="flex shrink-0 flex-col items-center gap-1">
+                        <Tooltip>
+                            <TooltipTrigger as-child>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    class="size-8 shrink-0 text-primary hover:text-primary"
+                                    :aria-label="t('documents.actions.download')"
+                                    @click="emit('download', document.id)"
+                                >
+                                    <Download class="size-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="left">
+                                {{ t('documents.actions.download') }}
+                            </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger as-child>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    class="size-8 shrink-0"
+                                    :aria-label="t('common.edit')"
+                                    @click="emit('edit', document)"
+                                >
+                                    <Pencil class="size-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="left">
+                                {{ t('common.edit') }}
+                            </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger as-child>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    class="size-8 shrink-0 text-destructive hover:text-destructive"
+                                    :aria-label="t('common.delete')"
+                                    @click="emit('delete', document.id)"
+                                >
+                                    <Trash2 class="size-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="left">
+                                {{ t('common.delete') }}
+                            </TooltipContent>
+                        </Tooltip>
+                    </div>
+                </div>
+            </TooltipProvider>
+
+            <div class="space-y-1 border-b pb-4">
+                <p
+                    class="text-base leading-snug font-semibold break-all"
                     :title="document.original_name"
                 >
-                    <span class="line-clamp-2 break-all">
-                        {{ document.original_name }}
-                    </span>
-                </CardTitle>
-
-                <div class="flex shrink-0 items-center justify-end gap-1">
-                    <Tooltip>
-                        <TooltipTrigger as-child>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                class="size-8 shrink-0"
-                                :aria-label="t('common.edit')"
-                                @click="emit('edit', document)"
-                            >
-                                <Pencil class="size-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">
-                            {{ t('common.edit') }}
-                        </TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                        <TooltipTrigger as-child>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                class="size-8 shrink-0 text-destructive hover:text-destructive"
-                                :aria-label="t('common.delete')"
-                                @click="emit('delete', document.id)"
-                            >
-                                <Trash2 class="size-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">
-                            {{ t('common.delete') }}
-                        </TooltipContent>
-                    </Tooltip>
-                </div>
-
-                <CardDescription class="min-w-0 line-clamp-3 text-sm">
+                    {{ document.original_name }}
+                </p>
+                <p class="line-clamp-3 text-sm text-muted-foreground">
                     {{ description }}
-                </CardDescription>
+                </p>
+            </div>
 
-                <div class="flex shrink-0 items-center justify-end">
-                    <Tooltip>
-                        <TooltipTrigger as-child>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                class="size-8 shrink-0 text-primary hover:text-primary"
-                                :aria-label="t('documents.actions.download')"
-                                @click="emit('download', document.id)"
-                            >
-                                <Download class="size-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">
-                            {{ t('documents.actions.download') }}
-                        </TooltipContent>
-                    </Tooltip>
-                </div>
-            </CardHeader>
-        </TooltipProvider>
-
-        <CardContent class="px-6 pt-0">
-            <dl class="grid gap-2 text-sm sm:grid-cols-2">
+            <dl class="grid grid-cols-2 gap-4 text-sm">
                 <div>
                     <dt class="text-muted-foreground">
                         {{ t('documents.columns.size') }}
@@ -132,14 +140,6 @@ const description = computed(
                     </dt>
                     <dd class="font-medium">
                         {{ formatDocumentDate(document.created_at) }}
-                    </dd>
-                </div>
-                <div class="sm:col-span-2">
-                    <dt class="text-muted-foreground">
-                        {{ t('documents.fields.type') }}
-                    </dt>
-                    <dd class="font-medium">
-                        {{ formatDocumentMimeType(document.mime_type) }}
                     </dd>
                 </div>
             </dl>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-hidden="true">
+  <rect x="6" y="10" width="52" height="44" rx="4" fill="#EDE9FE" stroke="#7C3AED" stroke-width="2"/>
+  <circle cx="22" cy="26" r="6" fill="#DDD6FE" stroke="#7C3AED" stroke-width="2"/>
+  <path d="M10 46l14-12 10 8 8-6 12 10" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="32" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" font-weight="700" fill="#6D28D9">PNG</text>
+</svg>
