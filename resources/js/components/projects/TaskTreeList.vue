@@ -88,7 +88,14 @@ const handleDragEnd = (event: SortableEvent): void => {
 
                     <div class="min-w-0 flex-1 space-y-2">
                         <div class="flex flex-wrap items-center gap-2">
-                            <p class="font-medium">{{ task.name }}</p>
+                            <p
+                                class="font-medium"
+                                :class="{
+                                    'line-through': task.status === 'completed',
+                                }"
+                            >
+                                {{ task.name }}
+                            </p>
                             <span
                                 class="inline-block rounded px-2 py-1 text-xs font-medium"
                                 :class="actions.statusClass(task.status)"
@@ -98,6 +105,9 @@ const handleDragEnd = (event: SortableEvent): void => {
                             <span
                                 v-if="task.revision"
                                 class="text-xs text-muted-foreground"
+                                :class="{
+                                    'line-through': task.status === 'completed',
+                                }"
                             >
                                 {{ task.revision.label }}
                             </span>
@@ -105,6 +115,9 @@ const handleDragEnd = (event: SortableEvent): void => {
                         <p
                             v-if="task.description"
                             class="text-sm text-muted-foreground"
+                            :class="{
+                                'line-through': task.status === 'completed',
+                            }"
                         >
                             {{ task.description }}
                         </p>
