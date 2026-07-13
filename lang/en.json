@@ -474,11 +474,14 @@
         "uploaded": "Document uploaded.",
         "edit_title": "Edit document",
         "empty": "No documents found.",
+        "show_more": "Show more...",
+        "no_description": "No description provided.",
         "delete_confirm": "Are you sure you want to delete this document?",
         "search_placeholder": "Search by name, description or ID...",
         "fields": {
             "file": "File",
-            "description": "Description"
+            "description": "Description",
+            "type": "File type"
         },
         "columns": {
             "id": "ID",

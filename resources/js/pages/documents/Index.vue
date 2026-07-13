@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Form, Head, router } from '@inertiajs/vue3';
-import { Plus, Upload } from 'lucide-vue-next';
+import { Loader2, Plus, Upload } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 import AppAlertDialog from '@/components/AppAlertDialog.vue';
-import DataTable from '@/components/DataTable.vue';
+import DocumentCard from '@/components/documents/DocumentCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useApiTable } from '@/composables/useApiTable';
+import { useApiLoadMore } from '@/composables/useApiLoadMore';
 import { useAppToast } from '@/composables/useAppToast';
 import { documentsApiIndex } from '@/composables/useDocumentsApiRoute';
 import { useTranslations } from '@/composables/useTranslations';
@@ -23,10 +23,6 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import { destroy, index, store, update } from '@/routes/documents';
 import type { BreadcrumbItem } from '@/types';
-import {
-    createDocumentColumnTitleMap,
-    createDocumentColumns,
-} from './columns';
 import type { DocumentListItem } from './columns';
 
 const { t } = useTranslations();
@@ -44,31 +40,25 @@ const editDescription = ref('');
 const showDeleteDialog = ref(false);
 const documentToDelete = ref<number | null>(null);
 
-const { rows, pagination, loading, search, fetch } =
-    useApiTable<DocumentListItem>({
-        endpoint: documentsApiIndex().url,
-        initial: {
-            page: 1,
-            rowsPerPage: 10,
-            sortBy: 'created_at',
-            descending: true,
-            search: '',
-        },
-        onError: (message) => {
-            showError(t('common.error'), message);
-        },
-        autoload: false,
-        searchDebounceMs: 400,
-    });
-
-const totalPages = computed(() =>
-    Math.max(
-        1,
-        Math.ceil(pagination.value.rowsNumber / pagination.value.rowsPerPage),
-    ),
-);
-
-const columnTitleMap = computed(() => createDocumentColumnTitleMap(t));
+const {
+    rows,
+    loading,
+    loadingMore,
+    search,
+    total,
+    hasMore,
+    fetch,
+    loadMore,
+} = useApiLoadMore<DocumentListItem>({
+    endpoint: documentsApiIndex().url,
+    perPage: 12,
+    sortBy: 'created_at',
+    sortDesc: true,
+    onError: (message) => {
+        showError(t('common.error'), message);
+    },
+    autoload: false,
+});
 
 const openEdit = (document: DocumentListItem): void => {
     editingDocument.value = document;
@@ -103,14 +93,10 @@ const downloadDocument = (documentId: number): void => {
     window.location.href = `/documents/${documentId}/download`;
 };
 
-const columns = computed(() =>
-    createDocumentColumns({
-        t,
-        onEdit: openEdit,
-        onDelete: requestDelete,
-        onDownload: downloadDocument,
-    }),
-);
+const cancelDelete = (): void => {
+    documentToDelete.value = null;
+    showDeleteDialog.value = false;
+};
 
 const confirmDelete = (): void => {
     if (documentToDelete.value === null) {
@@ -129,28 +115,6 @@ const confirmDelete = (): void => {
     });
 };
 
-const handlePaginationChange = (page: number, pageSize: number) => {
-    pagination.value.page = page;
-    pagination.value.rowsPerPage = pageSize;
-    fetch();
-};
-
-const handleSortingChange = (sorting: { id: string; desc: boolean }[]) => {
-    if (sorting.length > 0) {
-        pagination.value.sortBy = sorting[0].id;
-        pagination.value.descending = sorting[0].desc;
-    } else {
-        pagination.value.sortBy = 'created_at';
-        pagination.value.descending = true;
-    }
-
-    fetch();
-};
-
-const updateSearch = (value: string) => {
-    search.value = value;
-};
-
 onMounted(async () => {
     await fetch();
 });
@@ -160,37 +124,77 @@ onMounted(async () => {
     <AppLayout :breadcrumbs="breadcrumbs">
         <Head :title="t('documents.title')" />
 
-        <div class="flex flex-1 flex-col gap-4 overflow-x-auto p-4">
-            <div class="flex items-center justify-between">
-                <h1 class="grow text-xl font-semibold">
-                    {{ t('documents.title') }} ({{ pagination.rowsNumber }})
+        <div class="flex flex-1 flex-col gap-4 p-4">
+            <div
+                class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+            >
+                <h1 class="text-xl font-semibold">
+                    {{ t('documents.title') }} ({{ total }})
                 </h1>
-                <Button @click="showUploadDialog = true">
+                <Button
+                    class="shrink-0 self-start sm:self-auto"
+                    @click="showUploadDialog = true"
+                >
                     <Upload class="mr-2 h-4 w-4" />
                     {{ t('documents.upload') }}
                 </Button>
             </div>
 
-            <div class="flex flex-col rounded-xl border p-4 shadow-sm">
-                <DataTable
-                    :columns="columns"
-                    :data="rows"
-                    :loading="loading"
-                    :search="search"
-                    :column-title-map="columnTitleMap"
-                    :search-placeholder="t('documents.search_placeholder')"
-                    :empty-message="t('documents.empty')"
-                    server-side
-                    :show-pagination="true"
-                    :show-column-toggle="true"
-                    :page-size="pagination.rowsPerPage"
-                    :current-page="pagination.page"
-                    :total-pages="totalPages"
-                    :total-items="pagination.rowsNumber"
-                    @search-change="updateSearch"
-                    @pagination-change="handlePaginationChange"
-                    @sorting-change="handleSortingChange"
+            <div class="flex flex-col gap-4 rounded-xl border p-4 shadow-sm">
+                <Input
+                    v-model="search"
+                    type="search"
+                    :placeholder="t('documents.search_placeholder')"
+                    class="max-w-md"
                 />
+
+                <div
+                    v-if="loading"
+                    class="flex items-center justify-center gap-2 py-16 text-muted-foreground"
+                >
+                    <Loader2 class="size-5 animate-spin" />
+                    {{ t('common.table.loading') }}
+                </div>
+
+                <p
+                    v-else-if="rows.length === 0"
+                    class="py-16 text-center text-muted-foreground"
+                >
+                    {{ t('documents.empty') }}
+                </p>
+
+                <template v-else>
+                    <div
+                        class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+                    >
+                        <DocumentCard
+                            v-for="document in rows"
+                            :key="document.id"
+                            :document="document"
+                            @edit="openEdit"
+                            @delete="requestDelete"
+                            @download="downloadDocument"
+                        />
+                    </div>
+
+                    <div
+                        v-if="hasMore"
+                        class="flex justify-center pt-2"
+                    >
+                        <Button
+                            variant="outline"
+                            class="min-w-40"
+                            :disabled="loadingMore"
+                            @click="loadMore"
+                        >
+                            <Loader2
+                                v-if="loadingMore"
+                                class="mr-2 size-4 animate-spin"
+                            />
+                            {{ t('documents.show_more') }}
+                        </Button>
+                    </div>
+                </template>
             </div>
         </div>
 
@@ -212,7 +216,9 @@ onMounted(async () => {
                     "
                 >
                     <div class="grid gap-2">
-                        <Label for="document-file">{{ t('documents.fields.file') }}</Label>
+                        <Label for="document-file">{{
+                            t('documents.fields.file')
+                        }}</Label>
                         <Input
                             id="document-file"
                             name="file"
@@ -298,7 +304,7 @@ onMounted(async () => {
             :title="t('users.delete_confirm_title')"
             :description="t('documents.delete_confirm')"
             @confirm="confirmDelete"
-            @cancel="documentToDelete = null; showDeleteDialog = false"
+            @cancel="cancelDelete"
         />
     </AppLayout>
 </template>
