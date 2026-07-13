@@ -165,7 +165,7 @@ onMounted(async () => {
 
                 <template v-else>
                     <div
-                        class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+                        class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                     >
                         <DocumentCard
                             v-for="document in rows"
