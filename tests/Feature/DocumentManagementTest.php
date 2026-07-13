@@ -218,3 +218,33 @@ test('office user can replace document file while keeping id and attachments', f
         ->and($task->fresh()->documents)->toHaveCount(1)
         ->and($task->documents->first()?->id)->toBe($documentId);
 });
+
+test('office user can upload svg documents', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    actingAs($user);
+
+    $file = UploadedFile::fake()->createWithContent(
+        'logo.svg',
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>',
+        'image/svg+xml',
+    );
+
+    post(route('documents.store'), [
+        'file' => $file,
+        'description' => 'Vector logo',
+    ])->assertRedirect();
+
+    $document = Document::query()->firstOrFail();
+
+    expect($document)
+        ->original_name->toBe('logo.svg')
+        ->and($document->mime_type)->toBe('image/svg+xml');
+
+    actingAs($user)
+        ->get(route('documents.download', $document))
+        ->assertOk()
+        ->assertHeader('Content-Type', 'image/svg+xml')
+        ->assertHeader('Content-Disposition', 'inline; filename="logo.svg"; filename*=UTF-8\'\'logo.svg');
+});

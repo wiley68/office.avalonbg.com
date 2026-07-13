@@ -28,6 +28,7 @@ class DocumentStorageService
         'image/png',
         'image/webp',
         'image/gif',
+        'image/svg+xml',
     ];
 
     /**
@@ -40,6 +41,7 @@ class DocumentStorageService
         'image/png',
         'image/webp',
         'image/gif',
+        'image/svg+xml',
     ];
 
     public function store(User $user, UploadedFile $file, ?string $description = null): Document

@@ -11,6 +11,7 @@ const MIME_TYPE_ICON_MAP: Record<string, string> = {
     'image/png': 'png',
     'image/webp': 'webp',
     'image/gif': 'gif',
+    'image/svg+xml': 'svg',
 };
 
 const ICON_BASE_PATH = '/images/document-types';
