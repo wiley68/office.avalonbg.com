@@ -228,7 +228,6 @@ test('office user can upload svg documents', function () {
     $file = UploadedFile::fake()->createWithContent(
         'logo.svg',
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>',
-        'image/svg+xml',
     );
 
     post(route('documents.store'), [
