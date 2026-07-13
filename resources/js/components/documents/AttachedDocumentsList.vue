@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { router, usePage } from '@inertiajs/vue3';
 import { Download, X } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import AppAlertDialog from '@/components/AppAlertDialog.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,12 +28,14 @@ type Props = {
     detachUrlBuilder: (documentId: number) => string;
     downloadUrlBuilder?: (documentId: number) => string;
     confirmBeforeDetach?: boolean;
+    detachConfirmDescription?: string;
 };
 
 const props = withDefaults(defineProps<Props>(), {
     downloadUrlBuilder: (documentId: number) =>
         downloadDocumentRoute(documentId, { query: { download: 1 } }).url,
     confirmBeforeDetach: false,
+    detachConfirmDescription: undefined,
 });
 
 const emit = defineEmits<{
@@ -85,6 +87,12 @@ const iconUrl = (mimeType: string): string =>
         mimeType,
         page.props.documentIconsVersion as string,
     );
+
+const resolvedDetachConfirmDescription = computed(
+    () =>
+        props.detachConfirmDescription ??
+        t('projects.documents.detach_confirm'),
+);
 </script>
 
 <template>
@@ -177,7 +185,7 @@ const iconUrl = (mimeType: string): string =>
         <AppAlertDialog
             v-model:open="showDetachDialog"
             :title="t('users.delete_confirm_title')"
-            :description="t('projects.documents.detach_confirm')"
+            :description="resolvedDetachConfirmDescription"
             @confirm="confirmDetach"
             @cancel="cancelDetach"
         />

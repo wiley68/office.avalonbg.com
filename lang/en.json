@@ -466,6 +466,7 @@
             "attached_success": "The document has been attached to the task.",
             "detach": "Detach",
             "detach_confirm": "Are you sure you want to detach this document from the task?",
+            "detach_confirm_project": "Are you sure you want to detach this document from the project?",
             "attached": "Attached documents",
             "open_tab": "Open documents",
             "none_attached": "No documents attached to this project"

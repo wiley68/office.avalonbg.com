@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { Pencil } from 'lucide-vue-next';
+import { Paperclip, Pencil, Upload } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 import AttachedDocumentsList from '@/components/documents/AttachedDocumentsList.vue';
 import DocumentPickerModal from '@/components/documents/DocumentPickerModal.vue';
+import DocumentUploadModal from '@/components/documents/DocumentUploadModal.vue';
 import ProjectFormModal from '@/components/projects/ProjectFormModal.vue';
 import RevisionList from '@/components/projects/RevisionList.vue';
 import TaskTree from '@/components/projects/TaskTree.vue';
@@ -71,6 +72,7 @@ onMounted(() => {
 
 const showEditModal = ref(false);
 const showDocumentPicker = ref(false);
+const showDocumentUpload = ref(false);
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     { title: t('common.dashboard'), href: dashboard() },
@@ -122,8 +124,15 @@ const attachDocument = (documentId: number): void => {
             document: documentId,
         }).url,
         {},
-        { preserveScroll: true },
+        {
+            preserveScroll: true,
+            onSuccess: () => router.reload({ only: ['project'] }),
+        },
     );
+};
+
+const handleDocumentUploaded = (documentId: number): void => {
+    attachDocument(documentId);
 };
 </script>
 
@@ -215,18 +224,34 @@ const attachDocument = (documentId: number): void => {
                             <h3 class="text-sm font-medium">
                                 {{ t('projects.documents.title') }}
                             </h3>
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                @click="showDocumentPicker = true"
-                            >
-                                {{ t('projects.documents.attach') }}
-                            </Button>
+                            <div class="flex gap-2">
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    @click="showDocumentUpload = true"
+                                >
+                                    <Upload class="mr-2 h-4 w-4" />
+                                    {{ t('projects.documents.upload') }}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    @click="showDocumentPicker = true"
+                                >
+                                    <Paperclip class="mr-2 h-4 w-4" />
+                                    {{ t('projects.documents.attach') }}
+                                </Button>
+                            </div>
                         </div>
 
                         <AttachedDocumentsList
                             :documents="project.documents"
+                            confirm-before-detach
+                            :detach-confirm-description="
+                                t('projects.documents.detach_confirm_project')
+                            "
                             :detach-url-builder="(documentId) =>
                                 `/projects/${project.id}/documents/${documentId}`"
                             @detached="router.reload({ only: ['project'] })"
@@ -245,6 +270,11 @@ const attachDocument = (documentId: number): void => {
         <DocumentPickerModal
             v-model:open="showDocumentPicker"
             @select="attachDocument"
+        />
+
+        <DocumentUploadModal
+            v-model:open="showDocumentUpload"
+            @uploaded="handleDocumentUploaded"
         />
     </AppLayout>
 </template>
