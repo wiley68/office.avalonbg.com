@@ -222,9 +222,8 @@ test('project show includes mime type for attached documents', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('projects/Show')
-            ->has('project.documents', 1, fn (Assert $page) => $page
-                ->where('mime_type', $mimeType)
-                ->where('original_name', $fileName)));
+            ->where('project.documents.0.mime_type', $mimeType)
+            ->where('project.documents.0.original_name', $fileName));
 });
 
 test('office user can manage project revisions', function () {
