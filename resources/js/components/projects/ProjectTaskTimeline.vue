@@ -44,7 +44,7 @@ const segments = computed(() =>
 
 <template>
     <TooltipProvider :delay-duration="150">
-        <div class="relative h-8 w-full px-1">
+        <div class="relative h-10 w-full px-1">
             <div
                 class="absolute top-1/2 right-1 left-1 h-0.5 -translate-y-1/2 rounded-full bg-red-500/25"
             />
@@ -67,7 +67,7 @@ const segments = computed(() =>
                 <TooltipTrigger as-child>
                     <button
                         type="button"
-                        class="absolute top-1/2 z-10 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background shadow-sm transition-all duration-200 hover:scale-125 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        class="absolute top-1/2 z-10 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background shadow-sm transition-all duration-200 hover:scale-125 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                         :class="taskTimelineCircleClass(task.status)"
                         :style="{ left: `${positions[index]}%` }"
                         :aria-label="task.name"
