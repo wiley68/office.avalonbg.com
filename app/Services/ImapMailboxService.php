@@ -161,7 +161,7 @@ class ImapMailboxService
     /**
      * @return list<array{
      *     id: string,
-     *     grouping: 'imap_thread'|'subject',
+     *     grouping: 'imap_thread'|'subject'|'merged'|'conversation',
      *     message_count: int,
      *     subject: string,
      *     latest_sent_at: string|null,
@@ -238,6 +238,8 @@ class ImapMailboxService
                     messages: $threadMessages,
                 );
             }
+
+            $threads = $this->mergeThreadsByConversationKey($threads);
 
             usort(
                 $threads,
@@ -707,15 +709,99 @@ class ImapMailboxService
 
     private function normalizeSubject(string $subject): string
     {
-        $normalized = preg_replace(
-            '/^(?:(?:re|fwd?|fw|aw|sv|antw|ответ|относно)\s*:\s*)+/iu',
-            '',
-            trim($subject),
-        );
+        $normalized = trim($subject);
+
+        do {
+            $previous = $normalized;
+            $normalized = preg_replace(
+                '/^(?:(?:re|fwd?|fw|aw|sv|antw|ответ|относно)(?:\[\d+\])?\s*:\s*)+/iu',
+                '',
+                $normalized,
+            ) ?? $normalized;
+        } while ($normalized !== $previous && $normalized !== '');
 
         $normalized = preg_replace('/\s+/u', ' ', $normalized ?? '');
 
         return mb_strtolower(trim($normalized ?? ''));
+    }
+
+    private function conversationKey(string $subject): string
+    {
+        if (preg_match('/#(\d+)/u', $subject, $matches) === 1) {
+            return 'ticket:#'.$matches[1];
+        }
+
+        if (preg_match('/\b(dem-\d+)\b/iu', $subject, $matches) === 1) {
+            return 'ticket:'.mb_strtolower($matches[1]);
+        }
+
+        $normalized = $this->normalizeSubject($subject);
+
+        return $normalized !== '' ? 'subject:'.md5($normalized) : 'subject:empty';
+    }
+
+    /**
+     * @param  list<array{
+     *     id: string,
+     *     grouping: string,
+     *     message_count: int,
+     *     subject: string,
+     *     latest_sent_at: string|null,
+     *     messages: list<array<string, mixed>>
+     * }>  $threads
+     * @return list<array{
+     *     id: string,
+     *     grouping: string,
+     *     message_count: int,
+     *     subject: string,
+     *     latest_sent_at: string|null,
+     *     messages: list<array<string, mixed>>
+     * }>
+     */
+    private function mergeThreadsByConversationKey(array $threads): array
+    {
+        /** @var array<string, array{messages: array<int, array<string, mixed>>, source_ids: list<string>, groupings: list<string>}> $buckets */
+        $buckets = [];
+
+        foreach ($threads as $thread) {
+            $key = $this->conversationKey($thread['subject']);
+            $buckets[$key] ??= [
+                'messages' => [],
+                'source_ids' => [],
+                'groupings' => [],
+            ];
+
+            foreach ($thread['messages'] as $message) {
+                $buckets[$key]['messages'][(int) $message['uid']] = $message;
+            }
+
+            $buckets[$key]['source_ids'][] = $thread['id'];
+            $buckets[$key]['groupings'][] = $thread['grouping'];
+        }
+
+        $mergedThreads = [];
+
+        foreach ($buckets as $key => $bucket) {
+            $messages = array_values($bucket['messages']);
+
+            usort(
+                $messages,
+                fn (array $left, array $right): int => strtotime($left['sent_at'] ?? '') <=> strtotime($right['sent_at'] ?? ''),
+            );
+
+            $uniqueSources = array_values(array_unique($bucket['source_ids']));
+            $grouping = count($uniqueSources) > 1
+                ? 'merged'
+                : ($bucket['groupings'][0] ?? 'conversation');
+
+            $mergedThreads[] = $this->formatThread(
+                id: 'conversation-'.str_replace(':', '-', $key),
+                grouping: $grouping,
+                messages: $messages,
+            );
+        }
+
+        return $mergedThreads;
     }
 
     /**
@@ -766,7 +852,7 @@ class ImapMailboxService
      * }>  $messages
      * @return array{
      *     id: string,
-     *     grouping: 'imap_thread'|'subject',
+     *     grouping: 'imap_thread'|'subject'|'merged'|'conversation',
      *     message_count: int,
      *     subject: string,
      *     latest_sent_at: string|null,
