@@ -29,14 +29,19 @@
                 "default_folder": "Default folder"
             },
             "encryption": {
-                "ssl": "SSL",
-                "tls": "TLS",
-                "none": "None"
+                "ssl": "SSL (port 993)",
+                "tls": "STARTTLS (port 143)",
+                "none": "No encryption"
             },
             "errors": {
                 "not_configured": "IMAP settings are not configured.",
                 "connection_failed": "IMAP connection failed.",
-                "extension_missing": "The PHP IMAP extension is not available in PHP-FPM. Install php8.4-imap and reload PHP-FPM."
+                "extension_missing": "The PHP IMAP extension is not available in PHP-FPM. Install php8.4-imap and reload PHP-FPM.",
+                "starttls_unsupported": "STARTTLS (port 143) is not supported by PHP IMAP with modern TLS versions. Use SSL on port 993 with the same credentials as your mail client."
+            },
+            "hints": {
+                "ssl_port": "SSL uses port 993 (IMAPS).",
+                "tls_port": "STARTTLS on port 143 in mail clients is not supported here — use SSL / 993 instead."
             }
         }
     },

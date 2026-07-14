@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Settings\TestImapConnectionRequest;
 use App\Http\Requests\Settings\UpdateImapAccountRequest;
 use App\Models\User;
+use App\Models\UserImapAccount;
 use App\Services\ImapMailboxService;
 use App\Support\Translations;
 use Illuminate\Http\JsonResponse;
@@ -53,16 +55,12 @@ class EmailController extends Controller
         return to_route('email.edit');
     }
 
-    public function testConnection(Request $request, ImapMailboxService $imapMailboxService): JsonResponse
+    public function testConnection(TestImapConnectionRequest $request, ImapMailboxService $imapMailboxService): JsonResponse
     {
-        abort_unless($request->user()?->isOfficeUser() ?? false, 403);
-
         /** @var User $user */
         $user = $request->user();
 
-        $account = $user->imapAccount;
-
-        abort_if($account === null, 422, Translations::get('settings.email.errors.not_configured'));
+        $account = $this->resolveAccountForConnectionTest($request, $user);
 
         try {
             $imapMailboxService->testConnection($account);
@@ -75,5 +73,24 @@ class EmailController extends Controller
         return response()->json([
             'message' => Translations::get('settings.email.test_success'),
         ]);
+    }
+
+    private function resolveAccountForConnectionTest(TestImapConnectionRequest $request, User $user): UserImapAccount
+    {
+        $existingAccount = $user->imapAccount;
+
+        abort_if($existingAccount === null && ! $request->filled('password'), 422, Translations::get('settings.email.errors.not_configured'));
+
+        $account = $existingAccount ?? new UserImapAccount([
+            'user_id' => $user->id,
+        ]);
+
+        $account->fill($request->safe()->except('password'));
+
+        if ($request->filled('password')) {
+            $account->password = $request->validated('password');
+        }
+
+        return $account;
     }
 }

@@ -29,14 +29,19 @@
                 "default_folder": "Папка по подразбиране"
             },
             "encryption": {
-                "ssl": "SSL",
-                "tls": "TLS",
-                "none": "Без"
+                "ssl": "SSL (порт 993)",
+                "tls": "STARTTLS (порт 143)",
+                "none": "Без криптиране"
             },
             "errors": {
                 "not_configured": "IMAP настройките не са конфигурирани.",
                 "connection_failed": "Неуспешна IMAP връзка.",
-                "extension_missing": "PHP IMAP разширението не е налично в PHP-FPM на сървъра. Инсталирайте php8.4-imap и рестартирайте PHP-FPM."
+                "extension_missing": "PHP IMAP разширението не е налично в PHP-FPM на сървъра. Инсталирайте php8.4-imap и рестартирайте PHP-FPM.",
+                "starttls_unsupported": "STARTTLS (порт 143) не се поддържа от PHP IMAP с модерни TLS версии. Използвайте SSL на порт 993 — същите credentials като в пощенския клиент."
+            },
+            "hints": {
+                "ssl_port": "SSL използва порт 993 (IMAPS).",
+                "tls_port": "STARTTLS в пощенския клиент на порт 143 не работи тук — използвайте SSL / 993."
             }
         }
     },

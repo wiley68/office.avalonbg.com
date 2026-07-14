@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Form, Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { Loader2, PlugZap } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
@@ -60,6 +60,29 @@ const form = useForm({
     default_folder: props.imapAccount?.default_folder ?? 'INBOX',
 });
 
+const encryptionHint = computed(() => {
+    if (form.encryption === 'ssl') {
+        return t('settings.email.hints.ssl_port');
+    }
+
+    if (form.encryption === 'tls') {
+        return t('settings.email.hints.tls_port');
+    }
+
+    return null;
+});
+
+watch(
+    () => form.encryption,
+    (encryption) => {
+        if (encryption === 'ssl') {
+            form.port = 993;
+        } else if (encryption === 'tls') {
+            form.port = 143;
+        }
+    },
+);
+
 const getCsrfToken = (): string => {
     const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
 
@@ -79,6 +102,14 @@ const testConnection = async (): Promise<void> => {
                 'X-XSRF-TOKEN': getCsrfToken(),
             },
             credentials: 'same-origin',
+            body: JSON.stringify({
+                host: form.host,
+                port: form.port,
+                encryption: form.encryption,
+                username: form.username,
+                password: form.password || null,
+                default_folder: form.default_folder,
+            }),
         });
 
         const payload = (await response.json()) as { message?: string };
@@ -170,6 +201,12 @@ const saveSettings = (): void => {
                                 </SelectContent>
                             </Select>
                             <InputError :message="form.errors.encryption" />
+                            <p
+                                v-if="encryptionHint"
+                                class="text-sm text-muted-foreground"
+                            >
+                                {{ encryptionHint }}
+                            </p>
                         </div>
 
                         <div class="grid gap-2 sm:col-span-2">
@@ -215,7 +252,7 @@ const saveSettings = (): void => {
                         <Button
                             type="button"
                             variant="outline"
-                            :disabled="testing || !imapAccount"
+                            :disabled="testing"
                             @click="testConnection"
                         >
                             <Loader2

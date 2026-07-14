@@ -136,6 +136,10 @@ class ImapMailboxService
             throw new ImapConnectionException(Translations::get('settings.email.errors.extension_missing'));
         }
 
+        if ($account->encryption->value === 'tls' && $account->port === 143) {
+            throw new ImapConnectionException(Translations::get('settings.email.errors.starttls_unsupported'));
+        }
+
         $mailbox = $account->mailboxPath($folder);
         $connection = @imap_open(
             $mailbox,

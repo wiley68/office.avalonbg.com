@@ -8,7 +8,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class UpdateImapAccountRequest extends FormRequest
+class TestImapConnectionRequest extends FormRequest
 {
     public function authorize(): bool
     {

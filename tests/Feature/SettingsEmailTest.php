@@ -55,20 +55,66 @@ test('office user can save imap account settings', function () {
         ->default_folder->toBe('INBOX');
 });
 
+test('office user cannot save starttls settings on port 143', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    actingAs($user);
+
+    put(route('email.update'), [
+        'host' => 'mail.example.com',
+        'port' => 143,
+        'encryption' => 'tls',
+        'username' => 'user@example.com',
+        'password' => 'secret-password',
+        'default_folder' => 'INBOX',
+    ])->assertSessionHasErrors('encryption');
+});
+
 test('office user can test imap connection', function () {
     $user = User::factory()->create();
     $user->assignRole('user');
 
-    UserImapAccount::factory()->for($user)->create();
+    UserImapAccount::factory()->for($user)->create([
+        'host' => 'mail.example.com',
+        'port' => 993,
+        'encryption' => 'ssl',
+    ]);
 
     mock(ImapMailboxService::class)
         ->shouldReceive('testConnection')
         ->once();
 
     actingAs($user)
-        ->postJson(route('email.test'))
+        ->postJson(route('email.test'), [
+            'host' => 'mail.example.com',
+            'port' => 993,
+            'encryption' => 'ssl',
+            'username' => 'user@example.com',
+            'password' => null,
+            'default_folder' => 'INBOX',
+        ])
         ->assertOk()
         ->assertJsonPath('message', Translations::get('settings.email.test_success'));
+});
+
+test('office user cannot test starttls settings on port 143', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    UserImapAccount::factory()->for($user)->create();
+
+    actingAs($user)
+        ->postJson(route('email.test'), [
+            'host' => 'mail.example.com',
+            'port' => 143,
+            'encryption' => 'tls',
+            'username' => 'user@example.com',
+            'password' => null,
+            'default_folder' => 'INBOX',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['encryption']);
 });
 
 test('non office user cannot access email settings', function () {
