@@ -20,6 +20,9 @@ use Laravel\Ai\Contracts\ConversationStore;
 use Laravel\Fortify\Events\TwoFactorAuthenticationFailed;
 use Laravel\Fortify\Events\ValidTwoFactorAuthenticationCodeProvided;
 use Laravel\Fortify\Fortify;
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Foundation\Http\Kernel as HttpKernel;
+use App\Http\Middleware\ForceHttps;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -38,6 +41,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureUrlForReverseProxy();
+        $this->configureHttpsOnly();
         $this->configureAuditLogging();
         $this->configureAccessGates();
     }
@@ -87,6 +91,30 @@ class AppServiceProvider extends ServiceProvider
         if (request()->header('X-Forwarded-Proto') === 'https') {
             URL::forceScheme('https');
         }
+    }
+
+    /**
+     * Redirect all non-HTTPS requests to HTTPS and force URL generation.
+     *
+     * Enable via env('APP_FORCE_HTTPS', false).
+     */
+    protected function configureHttpsOnly(): void
+    {
+        if ($this->app->runningInConsole()) {
+            return;
+        }
+
+        $forceHttps = filter_var(env('APP_FORCE_HTTPS', false), FILTER_VALIDATE_BOOLEAN);
+        if (! $forceHttps) {
+            return;
+        }
+
+        $kernel = $this->app->make(Kernel::class);
+        if (! $kernel instanceof HttpKernel) {
+            return;
+        }
+
+        $kernel->pushMiddleware(ForceHttps::class);
     }
 
     protected function configureAuditLogging(): void
