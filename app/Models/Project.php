@@ -77,6 +77,14 @@ class Project extends Model
     }
 
     /**
+     * @return HasMany<ProjectEmailLink, $this>
+     */
+    public function emailLinks(): HasMany
+    {
+        return $this->hasMany(ProjectEmailLink::class);
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

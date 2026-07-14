@@ -5,6 +5,7 @@ import { computed, onMounted, ref } from 'vue';
 import AttachedDocumentsList from '@/components/documents/AttachedDocumentsList.vue';
 import DocumentPickerModal from '@/components/documents/DocumentPickerModal.vue';
 import DocumentUploadModal from '@/components/documents/DocumentUploadModal.vue';
+import EmailPanel from '@/components/projects/EmailPanel.vue';
 import GitPanel from '@/components/projects/GitPanel.vue';
 import type { ProjectGitRepositoryConfig } from '@/components/projects/GitPanel.vue';
 import ProjectFormModal from '@/components/projects/ProjectFormModal.vue';
@@ -48,13 +49,14 @@ type Props = {
         documents: ProjectDocument[];
         git_repository: ProjectGitRepositoryConfig | null;
     };
+    hasImapConfigured: boolean;
 };
 
 const props = defineProps<Props>();
 
 const { t } = useTranslations();
 
-const projectTabs = ['overview', 'revisions', 'tasks', 'documents', 'git'] as const;
+const projectTabs = ['overview', 'revisions', 'tasks', 'documents', 'git', 'email'] as const;
 type ProjectTab = (typeof projectTabs)[number];
 
 function resolveTabFromUrl(): ProjectTab {
@@ -197,6 +199,9 @@ const handleDocumentUploaded = (documentId: number): void => {
                     <TabsTrigger value="git">
                         {{ t('projects.tabs.git') }}
                     </TabsTrigger>
+                    <TabsTrigger value="email">
+                        {{ t('projects.tabs.email') }}
+                    </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" class="mt-4">
@@ -271,6 +276,15 @@ const handleDocumentUploaded = (documentId: number): void => {
                         <GitPanel
                             :project-id="project.id"
                             :git-repository="project.git_repository"
+                        />
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="email" class="mt-4">
+                    <div class="rounded-xl border p-4 shadow-sm">
+                        <EmailPanel
+                            :project-id="project.id"
+                            :has-imap-configured="hasImapConfigured"
                         />
                     </div>
                 </TabsContent>

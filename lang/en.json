@@ -11,6 +11,35 @@
         "dark": "Dark",
         "system": "System"
     },
+    "settings": {
+        "email": {
+            "title": "E-Mail",
+            "description": "Configure IMAP access to your mailbox for linking correspondence to projects.",
+            "test_connection": "Test connection",
+            "test_success": "IMAP connection successful.",
+            "test_failed": "IMAP connection failed.",
+            "fields": {
+                "host": "IMAP server",
+                "port": "Port",
+                "encryption": "Encryption",
+                "username": "Username",
+                "password": "Password",
+                "password_required": "Required on first save",
+                "password_configured": "Password is saved — leave blank to keep it",
+                "default_folder": "Default folder"
+            },
+            "encryption": {
+                "ssl": "SSL",
+                "tls": "TLS",
+                "none": "None"
+            },
+            "errors": {
+                "not_configured": "IMAP settings are not configured.",
+                "connection_failed": "IMAP connection failed.",
+                "extension_missing": "The PHP IMAP extension is not available in PHP-FPM. Install php8.4-imap and reload PHP-FPM."
+            }
+        }
+    },
     "nav": {
         "users": "Users",
         "logs": "Logs",
@@ -377,7 +406,8 @@
             "revisions": "Revisions",
             "tasks": "Tasks",
             "documents": "Documents",
-            "git": "Git"
+            "git": "Git",
+            "email": "E-Mail"
         },
         "status": {
             "active": "Active",
@@ -511,6 +541,32 @@
                 "repository_not_found": "Repository not found or access denied.",
                 "rate_limited": "GitHub rate limit reached. Try again later or add a token.",
                 "fetch_failed": "Failed to fetch data from GitHub."
+            }
+        },
+        "email": {
+            "title": "E-Mail correspondence",
+            "hint": "Link IMAP messages to the project for quick review of related correspondence.",
+            "not_configured": "Configure IMAP access in your profile to link messages.",
+            "open_settings": "Open E-Mail settings",
+            "link_message": "Link message",
+            "refresh": "Refresh",
+            "empty": "No messages linked to this project.",
+            "linked": "Message linked to the project.",
+            "link": "Link",
+            "unlink": "Remove link",
+            "unlink_confirm": "Are you sure you want to remove the link to this message?",
+            "load_error": "Failed to load E-Mail information.",
+            "browse_error": "Failed to load messages from IMAP.",
+            "browse_title": "Select message",
+            "browse_search": "Search by subject or sender...",
+            "browse_empty": "No messages found.",
+            "no_subject": "No subject",
+            "missing_on_server": "Missing on server",
+            "loading_body": "Loading content...",
+            "body_error": "Failed to load message content.",
+            "no_body": "No text content.",
+            "errors": {
+                "missing_on_server": "The message is no longer available on the IMAP server."
             }
         }
     },

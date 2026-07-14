@@ -26,12 +26,16 @@ class ProjectController extends Controller
         $this->authorize('view', $project);
 
         $project->load([
-            'revisions' => fn($query) => $query->orderByDesc('sort_order'),
+            'revisions' => fn ($query) => $query->orderByDesc('sort_order'),
             'documents:id,original_name,description,mime_type',
             'gitRepository:id,project_id,owner,repo,default_branch,access_token',
         ]);
 
+        /** @var User $user */
+        $user = Auth::user();
+
         return Inertia::render('projects/Show', [
+            'hasImapConfigured' => $user->imapAccount !== null,
             'project' => [
                 'id' => $project->id,
                 'name' => $project->name,
@@ -40,13 +44,13 @@ class ProjectController extends Controller
                 'expected_completion_at' => $project->expected_completion_at?->format('Y-m-d'),
                 'completed_at' => $project->completed_at?->toIso8601String(),
                 'created_at' => $project->created_at?->toIso8601String(),
-                'revisions' => $project->revisions->map(fn($revision) => [
+                'revisions' => $project->revisions->map(fn ($revision) => [
                     'id' => $revision->id,
                     'label' => $revision->label,
                     'description' => $revision->description,
                     'sort_order' => $revision->sort_order,
                 ])->values(),
-                'documents' => $project->documents->map(fn($document) => [
+                'documents' => $project->documents->map(fn ($document) => [
                     'id' => $document->id,
                     'original_name' => $document->original_name,
                     'description' => $document->description,

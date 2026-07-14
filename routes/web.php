@@ -8,7 +8,9 @@ use App\Http\Controllers\Api\AccessApiController;
 use App\Http\Controllers\Api\AccessDataTransformController;
 use App\Http\Controllers\Api\AuditLogApiController;
 use App\Http\Controllers\Api\DocumentApiController;
+use App\Http\Controllers\Api\ImapBrowseApiController;
 use App\Http\Controllers\Api\ProjectApiController;
+use App\Http\Controllers\Api\ProjectEmailApiController;
 use App\Http\Controllers\Api\ProjectGitApiController;
 use App\Http\Controllers\Api\TaskApiController;
 use App\Http\Controllers\Api\UserApiController;
@@ -22,6 +24,7 @@ use App\Http\Controllers\NotesAgentController;
 use App\Http\Controllers\NotesExportDownloadController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectDocumentController;
+use App\Http\Controllers\ProjectEmailLinkController;
 use App\Http\Controllers\ProjectGitRepositoryController;
 use App\Http\Controllers\ProjectRevisionController;
 use App\Http\Controllers\TaskController;
@@ -31,6 +34,7 @@ use App\Http\Controllers\UserTwoFactorController;
 use App\Models\Access;
 use App\Models\Document;
 use App\Models\Project;
+use App\Models\ProjectEmailLink;
 use App\Models\ProjectRevision;
 use App\Models\Task;
 use Illuminate\Support\Facades\Auth;
@@ -162,6 +166,15 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
             Route::get('projects/{project}/git', [ProjectGitApiController::class, 'show'])
                 ->name('projects.git.show');
 
+            Route::get('imap/messages', [ImapBrowseApiController::class, 'index'])
+                ->name('imap.messages.index');
+
+            Route::get('projects/{project}/email', [ProjectEmailApiController::class, 'index'])
+                ->name('projects.email.index');
+
+            Route::get('projects/{project}/email/{emailLink}/body', [ProjectEmailApiController::class, 'body'])
+                ->name('projects.email.body');
+
             Route::get('documents', [DocumentApiController::class, 'index'])
                 ->name('documents.index');
 
@@ -176,6 +189,16 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
 
         return Project::query()
             ->where('user_id', $userId)
+            ->findOrFail($value);
+    });
+
+    Route::bind('emailLink', function (string $value): ProjectEmailLink {
+        $project = request()->route('project');
+
+        abort_unless($project instanceof Project, 404);
+
+        return ProjectEmailLink::query()
+            ->where('project_id', $project->id)
             ->findOrFail($value);
     });
 
@@ -257,6 +280,11 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
     Route::delete('projects/{project}/git', [ProjectGitRepositoryController::class, 'destroy'])
         ->name('projects.git.destroy');
 
+    Route::post('projects/{project}/email', [ProjectEmailLinkController::class, 'store'])
+        ->name('projects.email.store');
+    Route::delete('projects/{project}/email/{emailLink}', [ProjectEmailLinkController::class, 'destroy'])
+        ->name('projects.email.destroy');
+
     Route::post('tasks/{task}/documents/{document}', [TaskDocumentController::class, 'store'])
         ->name('tasks.documents.store');
     Route::delete('tasks/{task}/documents/{document}', [TaskDocumentController::class, 'destroy'])
@@ -272,4 +300,4 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
         ->name('dashboard.admin.export');
 });
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';

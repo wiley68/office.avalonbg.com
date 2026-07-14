@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Settings\AccessEncryptionKeyController;
 use App\Http\Controllers\Settings\AppearanceController;
+use App\Http\Controllers\Settings\EmailController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\RequiredPasswordChangeController;
 use App\Http\Controllers\Settings\SecurityController;
@@ -42,4 +43,12 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
 
     Route::get('settings/appearance', [AppearanceController::class, 'edit'])->name('appearance.edit');
     Route::patch('settings/appearance', [AppearanceController::class, 'update'])->name('appearance.update');
+
+    Route::middleware(['role:user'])->group(function () {
+        Route::get('settings/email', [EmailController::class, 'edit'])->name('email.edit');
+        Route::put('settings/email', [EmailController::class, 'update'])->name('email.update');
+        Route::post('settings/email/test', [EmailController::class, 'testConnection'])
+            ->middleware('throttle:6,1')
+            ->name('email.test');
+    });
 });
