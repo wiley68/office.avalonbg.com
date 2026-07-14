@@ -39,14 +39,16 @@ class UserImapAccount extends Model
 
     public function mailboxPath(string $folder): string
     {
-        $flag = $this->encryption->imapFlag();
+        return $this->mailboxReference().$folder;
+    }
 
+    public function mailboxReference(): string
+    {
         return sprintf(
-            '{%s:%d%s}%s',
+            '{%s:%d%s}',
             $this->host,
             $this->port,
-            $flag,
-            $folder,
+            $this->encryption->imapFlag(),
         );
     }
 

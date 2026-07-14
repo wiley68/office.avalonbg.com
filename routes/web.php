@@ -166,6 +166,9 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
             Route::get('projects/{project}/git', [ProjectGitApiController::class, 'show'])
                 ->name('projects.git.show');
 
+            Route::get('imap/folders', [ImapBrowseApiController::class, 'folders'])
+                ->name('imap.folders.index');
+
             Route::get('imap/messages', [ImapBrowseApiController::class, 'index'])
                 ->name('imap.messages.index');
 
@@ -280,6 +283,10 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
     Route::delete('projects/{project}/git', [ProjectGitRepositoryController::class, 'destroy'])
         ->name('projects.git.destroy');
 
+    Route::get('projects/{project}/email/link', [ProjectEmailLinkController::class, 'link'])
+        ->name('projects.email.link');
+    Route::post('projects/{project}/email/batch', [ProjectEmailLinkController::class, 'storeBatch'])
+        ->name('projects.email.batch.store');
     Route::post('projects/{project}/email', [ProjectEmailLinkController::class, 'store'])
         ->name('projects.email.store');
     Route::delete('projects/{project}/email/{emailLink}', [ProjectEmailLinkController::class, 'destroy'])

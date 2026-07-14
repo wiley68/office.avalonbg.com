@@ -33,6 +33,133 @@ class ImapMailboxService
 
     /**
      * @return list<array{
+     *     name: string,
+     *     path: string,
+     *     children: list<array<string, mixed>>
+     * }>
+     *
+     * @throws ImapConnectionException
+     */
+    public function listFolderTree(UserImapAccount $account): array
+    {
+        return $this->withConnection($account, $account->default_folder, function ($connection) use ($account): array {
+            $reference = $account->mailboxReference();
+            $mailboxes = imap_getmailboxes($connection, $reference, '*') ?: [];
+
+            if ($mailboxes === []) {
+                return [[
+                    'name' => $account->default_folder,
+                    'path' => $account->default_folder,
+                    'children' => [],
+                ]];
+            }
+
+            $delimiter = $mailboxes[0]->delimiter ?? '.';
+            $paths = [];
+
+            foreach ($mailboxes as $mailbox) {
+                if (! isset($mailbox->name) || ! is_string($mailbox->name)) {
+                    continue;
+                }
+
+                $decodedName = imap_utf7_decode($mailbox->name);
+                $path = str_starts_with($decodedName, $reference)
+                    ? substr($decodedName, strlen($reference))
+                    : $decodedName;
+
+                if ($path !== '') {
+                    $paths[] = $path;
+                }
+            }
+
+            $paths = array_values(array_unique($paths));
+            sort($paths);
+
+            return $this->buildFolderTree($paths, $delimiter);
+        });
+    }
+
+    /**
+     * @param  list<string>  $paths
+     * @return list<array{
+     *     name: string,
+     *     path: string,
+     *     children: list<array<string, mixed>>
+     * }>
+     */
+    private function buildFolderTree(array $paths, string $delimiter): array
+    {
+        /** @var array<string, array{name: string, path: string, children: array<string, mixed>}> $nodes */
+        $nodes = [];
+
+        foreach ($paths as $path) {
+            $parts = explode($delimiter, $path);
+            $currentPath = '';
+
+            foreach ($parts as $index => $part) {
+                if ($part === '') {
+                    continue;
+                }
+
+                $currentPath = $index === 0 ? $part : $currentPath.$delimiter.$part;
+
+                if (! array_key_exists($currentPath, $nodes)) {
+                    $nodes[$currentPath] = [
+                        'name' => $part,
+                        'path' => $currentPath,
+                        'children' => [],
+                    ];
+                }
+            }
+        }
+
+        /** @var array<string, list<array{name: string, path: string, children: list<array<string, mixed>>}>> $childrenByParent */
+        $childrenByParent = ['' => []];
+
+        foreach ($nodes as $path => $node) {
+            $parentPath = str_contains($path, $delimiter)
+                ? substr($path, 0, (int) strrpos($path, $delimiter))
+                : '';
+
+            $childrenByParent[$parentPath] ??= [];
+            $childrenByParent[$parentPath][] = [
+                'name' => $node['name'],
+                'path' => $node['path'],
+                'children' => [],
+            ];
+        }
+
+        $attachChildren = function (array $node) use (&$attachChildren, $childrenByParent): array {
+            $childNodes = $childrenByParent[$node['path']] ?? [];
+
+            usort(
+                $childNodes,
+                fn (array $left, array $right): int => strcasecmp($left['name'], $right['name']),
+            );
+
+            $node['children'] = array_map(
+                fn (array $child): array => $attachChildren($child),
+                $childNodes,
+            );
+
+            return $node;
+        };
+
+        $roots = $childrenByParent[''] ?? [];
+
+        usort(
+            $roots,
+            fn (array $left, array $right): int => strcasecmp($left['name'], $right['name']),
+        );
+
+        return array_map(
+            fn (array $root): array => $attachChildren($root),
+            $roots,
+        );
+    }
+
+    /**
+     * @return list<array{
      *     uid: int,
      *     uidvalidity: int,
      *     subject: string,
@@ -47,21 +174,20 @@ class ImapMailboxService
         UserImapAccount $account,
         ?string $folder = null,
         int $limit = 50,
+        string $search = '',
     ): array {
         $folder = $folder ?: $account->default_folder;
         $limit = min(max($limit, 1), 100);
 
-        return $this->withConnection($account, $folder, function ($connection, string $mailbox) use ($limit): array {
+        return $this->withConnection($account, $folder, function ($connection, string $mailbox) use ($limit, $search): array {
             $uidvalidity = $this->readFolderUidValidity($connection, $mailbox);
-            $check = imap_check($connection);
+            $uids = $this->resolveMessageUids($connection, $limit, $search);
 
-            if ($check === false || $check->Nmsgs === 0) {
+            if ($uids === []) {
                 return [];
             }
 
-            $start = max(1, $check->Nmsgs - $limit + 1);
-            $sequence = $start.':'.$check->Nmsgs;
-            $overviews = imap_fetch_overview($connection, $sequence) ?: [];
+            $overviews = imap_fetch_overview($connection, implode(',', $uids), FT_UID) ?: [];
 
             usort(
                 $overviews,
@@ -73,6 +199,41 @@ class ImapMailboxService
                 $overviews,
             );
         });
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function resolveMessageUids(Connection $connection, int $limit, string $search): array
+    {
+        if ($search !== '') {
+            $escaped = str_replace(['\\', '"'], ['\\\\', '\\"'], $search);
+            $searchCriteria = 'TEXT "'.$escaped.'"';
+            $matchedUids = imap_search($connection, $searchCriteria, SE_UID);
+
+            if ($matchedUids === false || $matchedUids === []) {
+                return [];
+            }
+
+            rsort($matchedUids, SORT_NUMERIC);
+
+            return array_slice($matchedUids, 0, $limit);
+        }
+
+        $check = imap_check($connection);
+
+        if ($check === false || $check->Nmsgs === 0) {
+            return [];
+        }
+
+        $start = max(1, $check->Nmsgs - $limit + 1);
+        $sequence = $start.':'.$check->Nmsgs;
+        $overviews = imap_fetch_overview($connection, $sequence) ?: [];
+
+        return array_values(array_filter(array_map(
+            fn (object $overview): int => (int) ($overview->uid ?? 0),
+            $overviews,
+        )));
     }
 
     /**

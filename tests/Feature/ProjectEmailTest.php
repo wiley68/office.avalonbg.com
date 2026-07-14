@@ -15,6 +15,7 @@ use function Pest\Laravel\delete;
 use function Pest\Laravel\getJson;
 use function Pest\Laravel\mock;
 use function Pest\Laravel\post;
+use function Pest\Laravel\withoutVite;
 
 uses(RefreshDatabase::class);
 
@@ -146,6 +147,7 @@ test('office user can browse imap messages', function () {
             Mockery::on(fn ($arg) => $arg->is($account)),
             'INBOX',
             50,
+            '',
         )
         ->andReturn([
             [
@@ -225,4 +227,87 @@ test('office user cannot manage email links for another users project', function
 
     getJson(route('internal.projects.email.index', $project))
         ->assertNotFound();
+});
+
+test('office user can open email link page for own project', function () {
+    withoutVite();
+
+    [$user] = createOfficeUserWithImap();
+
+    $project = Project::factory()->for($user)->create();
+
+    actingAs($user)
+        ->get(route('projects.email.link', $project))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('projects/email/Link')
+            ->where('project.id', $project->id)
+            ->where('defaultFolder', 'INBOX'));
+});
+
+test('office user can browse imap folders', function () {
+    [$user, $account] = createOfficeUserWithImap();
+
+    /** @var MockInterface&ImapMailboxService $imapMailboxService */
+    $imapMailboxService = mock(ImapMailboxService::class);
+
+    $imapMailboxService
+        ->shouldReceive('listFolderTree')
+        ->once()
+        ->with(Mockery::on(fn ($arg) => $arg->is($account)))
+        ->andReturn([
+            [
+                'name' => 'INBOX',
+                'path' => 'INBOX',
+                'children' => [
+                    [
+                        'name' => 'Projects',
+                        'path' => 'INBOX.Projects',
+                        'children' => [],
+                    ],
+                ],
+            ],
+        ]);
+
+    actingAs($user)
+        ->getJson(route('internal.imap.folders.index'))
+        ->assertOk()
+        ->assertJsonPath('data.0.path', 'INBOX')
+        ->assertJsonPath('data.0.children.0.path', 'INBOX.Projects');
+});
+
+test('office user can batch link messages to own project', function () {
+    [$user] = createOfficeUserWithImap();
+
+    $project = Project::factory()->for($user)->create();
+
+    actingAs($user);
+
+    post(route('projects.email.batch.store', $project), [
+        'messages' => [
+            [
+                'folder' => 'INBOX.Projects',
+                'imap_uid' => 10,
+                'uidvalidity' => 999,
+                'subject' => 'First',
+                'from_name' => 'Alice',
+                'from_address' => 'alice@example.com',
+                'sent_at' => '2026-07-10T10:00:00Z',
+            ],
+            [
+                'folder' => 'INBOX.Projects',
+                'imap_uid' => 11,
+                'uidvalidity' => 999,
+                'subject' => 'Second',
+                'from_name' => 'Bob',
+                'from_address' => 'bob@example.com',
+                'sent_at' => '2026-07-11T12:00:00Z',
+            ],
+        ],
+    ])->assertRedirect(route('projects.show', [
+        'project' => $project,
+        'tab' => 'email',
+    ]));
+
+    expect($project->fresh()->emailLinks)->toHaveCount(2);
 });

@@ -1,16 +1,9 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
 import { Loader2, MailPlus, RefreshCw, Trash2 } from 'lucide-vue-next';
-import { computed, onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import AppAlertDialog from '@/components/AppAlertDialog.vue';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import {
     Tooltip,
     TooltipContent,
@@ -20,7 +13,7 @@ import {
 import { useAppToast } from '@/composables/useAppToast';
 import { useTranslations } from '@/composables/useTranslations';
 import { edit as editEmailSettings } from '@/routes/email';
-import { destroy as destroyEmailLink, store as storeEmailLink } from '@/routes/projects/email';
+import { destroy as destroyEmailLink, link as linkProjectEmail } from '@/routes/projects/email';
 
 type EmailLink = {
     id: number;
@@ -35,15 +28,6 @@ type EmailLink = {
     last_verified_at: string | null;
 };
 
-type BrowseMessage = {
-    uid: number;
-    uidvalidity: number;
-    subject: string;
-    from_name: string | null;
-    from_address: string | null;
-    sent_at: string | null;
-};
-
 type Props = {
     projectId: number;
     hasImapConfigured: boolean;
@@ -52,36 +36,16 @@ type Props = {
 const props = defineProps<Props>();
 
 const { t } = useTranslations();
-const { showError, showMessage } = useAppToast();
+const { showError } = useAppToast();
 
 const links = ref<EmailLink[]>([]);
 const loading = ref(false);
 const loadError = ref<string | null>(null);
-const showBrowseDialog = ref(false);
-const browseLoading = ref(false);
-const browseMessages = ref<BrowseMessage[]>([]);
-const browseFolder = ref('INBOX');
-const browseSearch = ref('');
 const expandedLinkId = ref<number | null>(null);
 const bodyLoadingId = ref<number | null>(null);
 const bodies = ref<Record<number, { text: string | null; html: string | null }>>({});
 const linkToDelete = ref<number | null>(null);
 const showDeleteDialog = ref(false);
-
-const filteredBrowseMessages = computed(() => {
-    const query = browseSearch.value.trim().toLowerCase();
-
-    if (query === '') {
-        return browseMessages.value;
-    }
-
-    return browseMessages.value.filter(
-        (message) =>
-            message.subject.toLowerCase().includes(query)
-            || (message.from_name ?? '').toLowerCase().includes(query)
-            || (message.from_address ?? '').toLowerCase().includes(query),
-    );
-});
 
 const formatDateTime = (value: string | null): string => {
     if (!value) {
@@ -91,7 +55,7 @@ const formatDateTime = (value: string | null): string => {
     return new Date(value).toLocaleString();
 };
 
-const fromLabel = (link: EmailLink | BrowseMessage): string => {
+const fromLabel = (link: EmailLink): string => {
     if (link.from_name && link.from_address) {
         return `${link.from_name} <${link.from_address}>`;
     }
@@ -137,64 +101,6 @@ const fetchLinks = async (): Promise<void> => {
     } finally {
         loading.value = false;
     }
-};
-
-const openBrowse = async (): Promise<void> => {
-    showBrowseDialog.value = true;
-    browseLoading.value = true;
-
-    try {
-        const response = await fetch('/internal-api/imap/messages?limit=50', {
-            headers: {
-                Accept: 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            credentials: 'same-origin',
-        });
-
-        if (!response.ok) {
-            showError(t('common.error'), t('projects.email.browse_error'));
-
-            return;
-        }
-
-        const payload = (await response.json()) as {
-            data: BrowseMessage[];
-            meta?: { folder?: string };
-        };
-        browseMessages.value = payload.data;
-        browseFolder.value = payload.meta?.folder ?? 'INBOX';
-    } catch {
-        showError(t('common.error'), t('projects.email.browse_error'));
-    } finally {
-        browseLoading.value = false;
-    }
-};
-
-const linkMessage = (message: BrowseMessage): void => {
-    router.post(
-        storeEmailLink(props.projectId).url,
-        {
-            folder: browseFolder.value,
-            imap_uid: message.uid,
-            uidvalidity: message.uidvalidity,
-            subject: message.subject,
-            from_name: message.from_name,
-            from_address: message.from_address,
-            sent_at: message.sent_at,
-        },
-        {
-            preserveScroll: true,
-            onSuccess: () => {
-                showBrowseDialog.value = false;
-                showMessage(t('common.success'), t('projects.email.linked'));
-                fetchLinks();
-            },
-            onError: (errors) => {
-                showError(t('common.error'), Object.values(errors).flat().join('\n'));
-            },
-        },
-    );
 };
 
 const toggleBody = async (link: EmailLink): Promise<void> => {
@@ -303,10 +209,12 @@ onMounted(() => {
                                     type="button"
                                     size="sm"
                                     variant="outline"
-                                    @click="openBrowse"
+                                    as-child
                                 >
-                                    <MailPlus class="mr-2 h-4 w-4" />
-                                    {{ t('projects.email.link_message') }}
+                                    <Link :href="linkProjectEmail(projectId)">
+                                        <MailPlus class="mr-2 h-4 w-4" />
+                                        {{ t('projects.email.link_message') }}
+                                    </Link>
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent side="top">
@@ -434,60 +342,6 @@ onMounted(() => {
                 </div>
             </div>
         </template>
-
-        <Dialog v-model:open="showBrowseDialog">
-            <DialogContent class="max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle>{{ t('projects.email.browse_title') }}</DialogTitle>
-                </DialogHeader>
-
-                <Input
-                    v-model="browseSearch"
-                    type="search"
-                    :placeholder="t('projects.email.browse_search')"
-                />
-
-                <div
-                    v-if="browseLoading"
-                    class="py-8 text-center text-sm text-muted-foreground"
-                >
-                    <Loader2 class="mx-auto mb-2 size-5 animate-spin" />
-                    {{ t('common.table.loading') }}
-                </div>
-
-                <div
-                    v-else-if="filteredBrowseMessages.length === 0"
-                    class="py-8 text-center text-sm text-muted-foreground"
-                >
-                    {{ t('projects.email.browse_empty') }}
-                </div>
-
-                <div v-else class="space-y-2">
-                    <div
-                        v-for="message in filteredBrowseMessages"
-                        :key="message.uid"
-                        class="flex items-start justify-between gap-3 rounded-md border p-3"
-                    >
-                        <div class="min-w-0">
-                            <p class="truncate font-medium">{{ message.subject }}</p>
-                            <p class="truncate text-xs text-muted-foreground">
-                                {{ fromLabel(message) }}
-                            </p>
-                            <p class="text-xs text-muted-foreground">
-                                {{ formatDateTime(message.sent_at) }}
-                            </p>
-                        </div>
-                        <Button
-                            type="button"
-                            size="sm"
-                            @click="linkMessage(message)"
-                        >
-                            {{ t('projects.email.link') }}
-                        </Button>
-                    </div>
-                </div>
-            </DialogContent>
-        </Dialog>
 
         <AppAlertDialog
             v-model:open="showDeleteDialog"
