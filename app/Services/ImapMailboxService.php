@@ -160,6 +160,96 @@ class ImapMailboxService
 
     /**
      * @return list<array{
+     *     id: string,
+     *     grouping: 'imap_thread'|'subject',
+     *     message_count: int,
+     *     subject: string,
+     *     latest_sent_at: string|null,
+     *     messages: list<array{
+     *         uid: int,
+     *         uidvalidity: int,
+     *         subject: string,
+     *         from_name: string|null,
+     *         from_address: string|null,
+     *         sent_at: string|null
+     *     }>
+     * }>
+     *
+     * @throws ImapConnectionException
+     */
+    public function browseMessageThreads(
+        UserImapAccount $account,
+        ?string $folder = null,
+        int $limit = 100,
+        string $search = '',
+    ): array {
+        $folder = $folder ?: $account->default_folder;
+        $limit = min(max($limit, 1), 100);
+
+        return $this->withConnection($account, $folder, function ($connection, string $mailbox) use ($limit, $search): array {
+            $uidvalidity = $this->readFolderUidValidity($connection, $mailbox);
+            $uids = $this->resolveMessageUids($connection, $limit, $search);
+
+            if ($uids === []) {
+                return [];
+            }
+
+            $messagesByUid = $this->fetchMessagesByUid($connection, $uids, $uidvalidity);
+            $imapGroups = $this->groupUidsByImapThread($connection, array_keys($messagesByUid));
+            $groupedUids = [];
+
+            foreach ($imapGroups as $groupUids) {
+                foreach ($groupUids as $uid) {
+                    $groupedUids[$uid] = true;
+                }
+            }
+
+            $threads = [];
+
+            foreach ($imapGroups as $rootUid => $groupUids) {
+                $threadMessages = $this->messagesForUids($messagesByUid, $groupUids);
+
+                if ($threadMessages === []) {
+                    continue;
+                }
+
+                $threads[] = $this->formatThread(
+                    id: 'imap-'.$rootUid,
+                    grouping: 'imap_thread',
+                    messages: $threadMessages,
+                );
+            }
+
+            $remainingUids = array_values(array_filter(
+                array_keys($messagesByUid),
+                fn (int $uid): bool => ! isset($groupedUids[$uid]),
+            ));
+
+            foreach ($this->groupUidsByNormalizedSubject($remainingUids, $messagesByUid) as $subjectKey => $groupUids) {
+                $threadMessages = $this->messagesForUids($messagesByUid, $groupUids);
+
+                if ($threadMessages === []) {
+                    continue;
+                }
+
+                $threads[] = $this->formatThread(
+                    id: 'subject-'.$subjectKey,
+                    grouping: 'subject',
+                    messages: $threadMessages,
+                );
+            }
+
+            usort(
+                $threads,
+                fn (array $left, array $right): int => strtotime($right['latest_sent_at'] ?? '') <=> strtotime($left['latest_sent_at'] ?? ''),
+            );
+
+            return $threads;
+        });
+    }
+
+    /**
+     * @return list<array{
      *     uid: int,
      *     uidvalidity: int,
      *     subject: string,
@@ -471,5 +561,237 @@ class ImapMailboxService
         }
 
         return Translations::get('settings.email.errors.connection_failed');
+    }
+
+    /**
+     * @param  list<int>  $uids
+     * @return array<int, array{
+     *     uid: int,
+     *     uidvalidity: int,
+     *     subject: string,
+     *     from_name: string|null,
+     *     from_address: string|null,
+     *     sent_at: string|null
+     * }>
+     */
+    private function fetchMessagesByUid(Connection $connection, array $uids, int $uidvalidity): array
+    {
+        $overviews = imap_fetch_overview($connection, implode(',', $uids), FT_UID) ?: [];
+        $messagesByUid = [];
+
+        foreach ($overviews as $overview) {
+            $message = $this->mapOverview($overview, $uidvalidity);
+
+            if ($message['uid'] > 0) {
+                $messagesByUid[$message['uid']] = $message;
+            }
+        }
+
+        return $messagesByUid;
+    }
+
+    /**
+     * @param  list<int>  $uids
+     * @return array<int, list<int>>
+     */
+    private function groupUidsByImapThread(Connection $connection, array $uids): array
+    {
+        if ($uids === []) {
+            return [];
+        }
+
+        $threadData = @imap_thread($connection, SE_UID);
+
+        if ($threadData === false || ! is_string($threadData) || trim($threadData) === '') {
+            return [];
+        }
+
+        $parentOf = $this->parseImapThreadParents($threadData);
+        $groups = [];
+
+        foreach ($uids as $uid) {
+            if (! array_key_exists($uid, $parentOf)) {
+                continue;
+            }
+
+            $rootUid = $this->resolveThreadRootUid($uid, $parentOf);
+            $groups[$rootUid] ??= [];
+            $groups[$rootUid][] = $uid;
+        }
+
+        foreach ($groups as $rootUid => $groupUids) {
+            $groups[$rootUid] = array_values(array_unique($groupUids));
+        }
+
+        return array_filter(
+            $groups,
+            fn (array $groupUids): bool => $groupUids !== [],
+        );
+    }
+
+    /**
+     * @return array<int, int|null>
+     */
+    private function parseImapThreadParents(string $threadData): array
+    {
+        $parentOf = [];
+
+        foreach (preg_split('/\R/', trim($threadData)) ?: [] as $line) {
+            $line = trim($line);
+
+            if ($line === '') {
+                continue;
+            }
+
+            $parts = preg_split('/\s+/', $line) ?: [];
+            $uid = (int) ($parts[0] ?? 0);
+
+            if ($uid <= 0) {
+                continue;
+            }
+
+            $parentOf[$uid] = isset($parts[1]) ? (int) $parts[1] : null;
+        }
+
+        return $parentOf;
+    }
+
+    /**
+     * @param  array<int, int|null>  $parentOf
+     */
+    private function resolveThreadRootUid(int $uid, array $parentOf): int
+    {
+        $visited = [];
+
+        while (array_key_exists($uid, $parentOf) && $parentOf[$uid] !== null) {
+            if (isset($visited[$uid])) {
+                break;
+            }
+
+            $visited[$uid] = true;
+            $uid = $parentOf[$uid];
+        }
+
+        return $uid;
+    }
+
+    /**
+     * @param  list<int>  $uids
+     * @param  array<int, array{
+     *     uid: int,
+     *     uidvalidity: int,
+     *     subject: string,
+     *     from_name: string|null,
+     *     from_address: string|null,
+     *     sent_at: string|null
+     * }>  $messagesByUid
+     * @return array<string, list<int>>
+     */
+    private function groupUidsByNormalizedSubject(array $uids, array $messagesByUid): array
+    {
+        $groups = [];
+
+        foreach ($uids as $uid) {
+            if (! array_key_exists($uid, $messagesByUid)) {
+                continue;
+            }
+
+            $normalized = $this->normalizeSubject($messagesByUid[$uid]['subject']);
+            $key = $normalized !== '' ? md5($normalized) : 'uid-'.$uid;
+            $groups[$key] ??= [];
+            $groups[$key][] = $uid;
+        }
+
+        return $groups;
+    }
+
+    private function normalizeSubject(string $subject): string
+    {
+        $normalized = preg_replace(
+            '/^(?:(?:re|fwd?|fw|aw|sv|antw|ответ|относно)\s*:\s*)+/iu',
+            '',
+            trim($subject),
+        );
+
+        $normalized = preg_replace('/\s+/u', ' ', $normalized ?? '');
+
+        return mb_strtolower(trim($normalized ?? ''));
+    }
+
+    /**
+     * @param  array<int, array{
+     *     uid: int,
+     *     uidvalidity: int,
+     *     subject: string,
+     *     from_name: string|null,
+     *     from_address: string|null,
+     *     sent_at: string|null
+     * }>  $messagesByUid
+     * @param  list<int>  $uids
+     * @return list<array{
+     *     uid: int,
+     *     uidvalidity: int,
+     *     subject: string,
+     *     from_name: string|null,
+     *     from_address: string|null,
+     *     sent_at: string|null
+     * }>
+     */
+    private function messagesForUids(array $messagesByUid, array $uids): array
+    {
+        $messages = [];
+
+        foreach ($uids as $uid) {
+            if (array_key_exists($uid, $messagesByUid)) {
+                $messages[] = $messagesByUid[$uid];
+            }
+        }
+
+        usort(
+            $messages,
+            fn (array $left, array $right): int => strtotime($left['sent_at'] ?? '') <=> strtotime($right['sent_at'] ?? ''),
+        );
+
+        return $messages;
+    }
+
+    /**
+     * @param  list<array{
+     *     uid: int,
+     *     uidvalidity: int,
+     *     subject: string,
+     *     from_name: string|null,
+     *     from_address: string|null,
+     *     sent_at: string|null
+     * }>  $messages
+     * @return array{
+     *     id: string,
+     *     grouping: 'imap_thread'|'subject',
+     *     message_count: int,
+     *     subject: string,
+     *     latest_sent_at: string|null,
+     *     messages: list<array{
+     *         uid: int,
+     *         uidvalidity: int,
+     *         subject: string,
+     *         from_name: string|null,
+     *         from_address: string|null,
+     *         sent_at: string|null
+     *     }>
+     * }
+     */
+    private function formatThread(string $id, string $grouping, array $messages): array
+    {
+        $root = $messages[0];
+        $latest = $messages[array_key_last($messages)];
+
+        return [
+            'id' => $id,
+            'grouping' => $grouping,
+            'message_count' => count($messages),
+            'subject' => $root['subject'] !== '' ? $root['subject'] : ($latest['subject'] !== '' ? $latest['subject'] : ''),
+            'latest_sent_at' => $latest['sent_at'],
+            'messages' => $messages,
+        ];
     }
 }

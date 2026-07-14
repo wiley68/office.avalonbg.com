@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ArrowLeft, Loader2, Search } from 'lucide-vue-next';
+import { ArrowLeft, ChevronRight, Loader2, Search } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 import ImapFolderTree, { type ImapFolderNode } from '@/components/projects/ImapFolderTree.vue';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,15 @@ type BrowseMessage = {
     sent_at: string | null;
 };
 
+type EmailThread = {
+    id: string;
+    grouping: 'imap_thread' | 'subject';
+    message_count: number;
+    subject: string;
+    latest_sent_at: string | null;
+    messages: BrowseMessage[];
+};
+
 type Props = {
     project: {
         id: number;
@@ -38,12 +47,13 @@ const { showError, showMessage } = useAppToast();
 
 const folders = ref<ImapFolderNode[]>([]);
 const foldersLoading = ref(true);
-const messages = ref<BrowseMessage[]>([]);
-const messagesLoading = ref(false);
+const threads = ref<EmailThread[]>([]);
+const threadsLoading = ref(false);
 const selectedFolder = ref<string | null>(props.defaultFolder);
 const searchInput = ref('');
 const searchQuery = ref('');
 const selectedUids = ref<Set<number>>(new Set());
+const expandedThreadIds = ref<Set<string>>(new Set());
 const submitting = ref(false);
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
@@ -53,29 +63,18 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     { title: t('projects.email.link_page_title'), href: '#' },
 ]);
 
-const filteredMessages = computed(() => {
-    const query = searchQuery.value.trim().toLowerCase();
-
-    if (query === '') {
-        return messages.value;
-    }
-
-    return messages.value.filter(
-        (message) =>
-            message.subject.toLowerCase().includes(query)
-            || (message.from_name ?? '').toLowerCase().includes(query)
-            || (message.from_address ?? '').toLowerCase().includes(query),
-    );
-});
+const allVisibleMessages = computed(() =>
+    threads.value.flatMap((thread) => thread.messages),
+);
 
 const selectedCount = computed(() => selectedUids.value.size);
 
 const allVisibleSelected = computed(() => {
-    if (filteredMessages.value.length === 0) {
+    if (allVisibleMessages.value.length === 0) {
         return false;
     }
 
-    return filteredMessages.value.every((message) => selectedUids.value.has(message.uid));
+    return allVisibleMessages.value.every((message) => selectedUids.value.has(message.uid));
 });
 
 const formatDateTime = (value: string | null): string => {
@@ -93,6 +92,15 @@ const fromLabel = (message: BrowseMessage): string => {
 
     return message.from_address ?? message.from_name ?? '—';
 };
+
+const isThreadExpanded = (threadId: string): boolean => expandedThreadIds.value.has(threadId);
+
+const isThreadFullySelected = (thread: EmailThread): boolean =>
+    thread.messages.every((message) => selectedUids.value.has(message.uid));
+
+const isThreadPartiallySelected = (thread: EmailThread): boolean =>
+    thread.messages.some((message) => selectedUids.value.has(message.uid))
+    && ! isThreadFullySelected(thread);
 
 const fetchFolders = async (): Promise<void> => {
     foldersLoading.value = true;
@@ -129,13 +137,14 @@ const fetchFolders = async (): Promise<void> => {
     }
 };
 
-const fetchMessages = async (): Promise<void> => {
+const fetchThreads = async (): Promise<void> => {
     if (selectedFolder.value === null) {
         return;
     }
 
-    messagesLoading.value = true;
+    threadsLoading.value = true;
     selectedUids.value = new Set();
+    expandedThreadIds.value = new Set();
 
     try {
         const params = new URLSearchParams({
@@ -149,7 +158,7 @@ const fetchMessages = async (): Promise<void> => {
             params.set('search', trimmedSearch);
         }
 
-        const response = await fetch(`/internal-api/imap/messages?${params.toString()}`, {
+        const response = await fetch(`/internal-api/imap/threads?${params.toString()}`, {
             headers: {
                 Accept: 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
@@ -163,17 +172,29 @@ const fetchMessages = async (): Promise<void> => {
             return;
         }
 
-        const payload = (await response.json()) as { data: BrowseMessage[] };
-        messages.value = payload.data;
+        const payload = (await response.json()) as { data: EmailThread[] };
+        threads.value = payload.data;
     } catch {
         showError(t('common.error'), t('projects.email.browse_error'));
     } finally {
-        messagesLoading.value = false;
+        threadsLoading.value = false;
     }
 };
 
 const selectFolder = (folder: string): void => {
     selectedFolder.value = folder;
+};
+
+const toggleThreadExpand = (threadId: string): void => {
+    const next = new Set(expandedThreadIds.value);
+
+    if (next.has(threadId)) {
+        next.delete(threadId);
+    } else {
+        next.add(threadId);
+    }
+
+    expandedThreadIds.value = next;
 };
 
 const toggleMessage = (uid: number, checked: boolean): void => {
@@ -188,10 +209,24 @@ const toggleMessage = (uid: number, checked: boolean): void => {
     selectedUids.value = next;
 };
 
+const toggleThread = (thread: EmailThread, checked: boolean): void => {
+    const next = new Set(selectedUids.value);
+
+    for (const message of thread.messages) {
+        if (checked) {
+            next.add(message.uid);
+        } else {
+            next.delete(message.uid);
+        }
+    }
+
+    selectedUids.value = next;
+};
+
 const toggleSelectAllVisible = (checked: boolean): void => {
     const next = new Set(selectedUids.value);
 
-    for (const message of filteredMessages.value) {
+    for (const message of allVisibleMessages.value) {
         if (checked) {
             next.add(message.uid);
         } else {
@@ -207,7 +242,9 @@ const submitSelection = (): void => {
         return;
     }
 
-    const selectedMessages = messages.value.filter((message) => selectedUids.value.has(message.uid));
+    const selectedMessages = allVisibleMessages.value.filter((message) =>
+        selectedUids.value.has(message.uid),
+    );
 
     submitting.value = true;
 
@@ -241,7 +278,7 @@ const submitSelection = (): void => {
 const backToProject = show(props.project.id, { query: { tab: 'email' } });
 
 watch(selectedFolder, () => {
-    fetchMessages();
+    fetchThreads();
 });
 
 watch(searchInput, () => {
@@ -255,7 +292,7 @@ let searchDebounceTimer = 0;
 
 watch(searchQuery, () => {
     if (selectedFolder.value !== null) {
-        fetchMessages();
+        fetchThreads();
     }
 });
 
@@ -263,7 +300,7 @@ onMounted(async () => {
     await fetchFolders();
 
     if (selectedFolder.value !== null) {
-        await fetchMessages();
+        await fetchThreads();
     }
 });
 </script>
@@ -272,7 +309,7 @@ onMounted(async () => {
     <AppLayout :breadcrumbs="breadcrumbs">
         <Head :title="t('projects.email.link_page_title')" />
 
-        <div class="flex h-[calc(100vh-6rem)] flex-col gap-4 mx-2">
+        <div class="mx-2 flex h-[calc(100vh-6rem)] flex-col gap-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
                     <Button variant="outline" size="sm" as-child>
@@ -341,7 +378,7 @@ onMounted(async () => {
                     </div>
 
                     <div
-                        v-if="messagesLoading"
+                        v-if="threadsLoading"
                         class="flex flex-1 items-center justify-center text-sm text-muted-foreground"
                     >
                         <Loader2 class="mr-2 size-5 animate-spin" />
@@ -349,7 +386,7 @@ onMounted(async () => {
                     </div>
 
                     <div
-                        v-else-if="filteredMessages.length === 0"
+                        v-else-if="threads.length === 0"
                         class="flex flex-1 items-center justify-center p-6 text-sm text-muted-foreground"
                     >
                         {{ t('projects.email.browse_empty') }}
@@ -370,29 +407,79 @@ onMounted(async () => {
                         </div>
 
                         <div class="divide-y">
-                            <label
-                                v-for="message in filteredMessages"
-                                :key="message.uid"
-                                class="flex cursor-pointer items-start gap-3 px-4 py-3 hover:bg-muted/30"
+                            <div
+                                v-for="thread in threads"
+                                :key="thread.id"
                             >
-                                <Checkbox
-                                    class="mt-1"
-                                    :model-value="selectedUids.has(message.uid)"
-                                    @update:model-value="(value) => toggleMessage(message.uid, value === true)"
-                                    @click.stop
-                                />
-                                <div class="min-w-0 flex-1">
-                                    <p class="truncate font-medium">
-                                        {{ message.subject || t('projects.email.no_subject') }}
-                                    </p>
-                                    <p class="truncate text-xs text-muted-foreground">
-                                        {{ fromLabel(message) }}
-                                    </p>
-                                    <p class="text-xs text-muted-foreground">
-                                        {{ formatDateTime(message.sent_at) }}
-                                    </p>
+                                <div class="flex items-start gap-2 px-4 py-3 hover:bg-muted/20">
+                                    <Checkbox
+                                        class="mt-1"
+                                        :model-value="isThreadFullySelected(thread) ? true : isThreadPartiallySelected(thread) ? 'indeterminate' : false"
+                                        @update:model-value="(value) => toggleThread(thread, value === true)"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        class="mt-0.5 size-8 shrink-0"
+                                        :aria-expanded="isThreadExpanded(thread.id)"
+                                        @click="toggleThreadExpand(thread.id)"
+                                    >
+                                        <ChevronRight
+                                            class="size-4 transition-transform"
+                                            :class="{ 'rotate-90': isThreadExpanded(thread.id) }"
+                                        />
+                                    </Button>
+                                    <button
+                                        type="button"
+                                        class="min-w-0 flex-1 text-left"
+                                        @click="toggleThreadExpand(thread.id)"
+                                    >
+                                        <p class="truncate font-medium">
+                                            {{ thread.subject || t('projects.email.no_subject') }}
+                                        </p>
+                                        <p class="text-xs text-muted-foreground">
+                                            {{ t('projects.email.thread_messages', { count: String(thread.message_count) }) }}
+                                            · {{ formatDateTime(thread.latest_sent_at) }}
+                                        </p>
+                                        <p
+                                            v-if="thread.messages[0]"
+                                            class="mt-1 truncate text-xs text-muted-foreground"
+                                        >
+                                            {{ fromLabel(thread.messages[0]) }}
+                                        </p>
+                                    </button>
                                 </div>
-                            </label>
+
+                                <div
+                                    v-if="isThreadExpanded(thread.id)"
+                                    class="border-t bg-muted/10"
+                                >
+                                    <label
+                                        v-for="message in thread.messages"
+                                        :key="message.uid"
+                                        class="flex cursor-pointer items-start gap-3 border-b border-border/50 py-2 pr-4 pl-14 last:border-b-0 hover:bg-muted/20"
+                                    >
+                                        <Checkbox
+                                            class="mt-1"
+                                            :model-value="selectedUids.has(message.uid)"
+                                            @update:model-value="(value) => toggleMessage(message.uid, value === true)"
+                                            @click.stop
+                                        />
+                                        <div class="min-w-0 flex-1">
+                                            <p class="truncate text-sm font-medium">
+                                                {{ message.subject || t('projects.email.no_subject') }}
+                                            </p>
+                                            <p class="truncate text-xs text-muted-foreground">
+                                                {{ fromLabel(message) }}
+                                            </p>
+                                            <p class="text-xs text-muted-foreground">
+                                                {{ formatDateTime(message.sent_at) }}
+                                            </p>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>

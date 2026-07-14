@@ -58,6 +58,51 @@ class ImapBrowseApiController extends Controller
         ]);
     }
 
+    public function threads(Request $request, ImapMailboxService $imapMailboxService): JsonResponse
+    {
+        Gate::authorize('viewAny', Project::class);
+
+        /** @var User $user */
+        $user = Auth::user();
+
+        $account = $user->imapAccount;
+
+        if ($account === null) {
+            return response()->json([
+                'data' => [],
+                'meta' => [
+                    'configured' => false,
+                ],
+            ]);
+        }
+
+        $validated = $request->validate([
+            'folder' => ['nullable', 'string', 'max:255'],
+            'limit' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'search' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $folder = $validated['folder'] ?? $account->default_folder;
+        $limit = $validated['limit'] ?? 100;
+        $search = isset($validated['search']) ? trim($validated['search']) : '';
+
+        try {
+            $threads = $imapMailboxService->browseMessageThreads($account, $folder, $limit, $search);
+        } catch (\Throwable $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], 422);
+        }
+
+        return response()->json([
+            'data' => $threads,
+            'meta' => [
+                'configured' => true,
+                'folder' => $folder,
+            ],
+        ]);
+    }
+
     public function folders(Request $request, ImapMailboxService $imapMailboxService): JsonResponse
     {
         Gate::authorize('viewAny', Project::class);

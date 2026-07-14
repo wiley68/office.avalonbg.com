@@ -560,6 +560,7 @@
             "folders_error": "Failed to load IMAP folders.",
             "link_selected": "Link selected (:count)",
             "select_all_visible": "Select all visible",
+            "thread_messages": ":count messages",
             "linked_batch": "Selected messages were linked to the project.",
             "refresh": "Refresh",
             "empty": "No messages linked to this project.",

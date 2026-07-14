@@ -167,6 +167,57 @@ test('office user can browse imap messages', function () {
         ->assertJsonPath('meta.folder', 'INBOX');
 });
 
+test('office user can browse imap threads', function () {
+    [$user, $account] = createOfficeUserWithImap();
+
+    /** @var MockInterface&ImapMailboxService $imapMailboxService */
+    $imapMailboxService = mock(ImapMailboxService::class);
+
+    $imapMailboxService
+        ->shouldReceive('browseMessageThreads')
+        ->once()
+        ->with(
+            Mockery::on(fn ($arg) => $arg->is($account)),
+            'INBOX.Archives.Current',
+            100,
+            '',
+        )
+        ->andReturn([
+            [
+                'id' => 'imap-10',
+                'grouping' => 'imap_thread',
+                'message_count' => 2,
+                'subject' => 'Project kickoff',
+                'latest_sent_at' => '2026-07-11T12:00:00Z',
+                'messages' => [
+                    [
+                        'uid' => 10,
+                        'uidvalidity' => 999,
+                        'subject' => 'Project kickoff',
+                        'from_name' => 'Alice',
+                        'from_address' => 'alice@example.com',
+                        'sent_at' => '2026-07-10T10:00:00Z',
+                    ],
+                    [
+                        'uid' => 11,
+                        'uidvalidity' => 999,
+                        'subject' => 'Re: Project kickoff',
+                        'from_name' => 'Bob',
+                        'from_address' => 'bob@example.com',
+                        'sent_at' => '2026-07-11T12:00:00Z',
+                    ],
+                ],
+            ],
+        ]);
+
+    actingAs($user)
+        ->getJson(route('internal.imap.threads.index', ['folder' => 'INBOX.Archives.Current']))
+        ->assertOk()
+        ->assertJsonPath('data.0.id', 'imap-10')
+        ->assertJsonPath('data.0.message_count', 2)
+        ->assertJsonPath('data.0.messages.1.subject', 'Re: Project kickoff');
+});
+
 test('office user can fetch linked email body', function () {
     [$user, $account] = createOfficeUserWithImap();
 
