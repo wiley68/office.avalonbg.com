@@ -91,11 +91,11 @@ const revisionsTabUrl = computed(() =>
                     </Link>
                 </CardTitle>
 
-                <div class="min-w-0 w-full overflow-hidden">
+                <div class="h-5 min-w-0 w-full overflow-hidden">
                     <Tooltip v-if="hasDescription">
                         <TooltipTrigger as-child>
                             <CardDescription
-                                class="line-clamp-2 cursor-default wrap-break-word text-sm leading-5"
+                                class="block cursor-default truncate text-sm leading-5"
                             >
                                 {{ description }}
                             </CardDescription>
@@ -106,7 +106,7 @@ const revisionsTabUrl = computed(() =>
                     </Tooltip>
                     <CardDescription
                         v-else
-                        class="line-clamp-2 wrap-break-word text-sm leading-5"
+                        class="block truncate text-sm leading-5"
                     >
                         {{ description }}
                     </CardDescription>
