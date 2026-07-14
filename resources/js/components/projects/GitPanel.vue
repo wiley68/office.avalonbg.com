@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3';
-import { ExternalLink, GitBranch, RefreshCw, Trash2 } from 'lucide-vue-next';
+import { ExternalLink, GitBranch, RefreshCw, Save, Trash2 } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useAppToast } from '@/composables/useAppToast';
 import { useTranslations } from '@/composables/useTranslations';
 import { destroy as destroyGitRepository, upsert as upsertGitRepository } from '@/routes/projects/git';
@@ -261,8 +267,8 @@ onMounted(() => {
                 </Button>
             </div>
 
-            <div class="grid gap-4 md:grid-cols-2">
-                <div class="grid gap-2 md:col-span-2">
+            <div class="grid gap-4 md:grid-cols-4 md:items-end">
+                <div class="grid gap-2">
                     <Label for="git-repository">{{ t('projects.git.fields.repository') }}</Label>
                     <Input
                         id="git-repository"
@@ -296,36 +302,89 @@ onMounted(() => {
                     />
                     <InputError :message="form.errors.access_token" />
                 </div>
-            </div>
 
-            <div class="flex flex-wrap gap-2">
-                <Button type="submit" :disabled="form.processing">
-                    {{ isConfigured ? t('common.save') : t('projects.git.connect') }}
-                </Button>
-                <Button
-                    v-if="isConfigured"
-                    type="button"
-                    variant="outline"
-                    :disabled="loading"
-                    @click="fetchOverview()"
-                >
-                    <RefreshCw class="mr-2 h-4 w-4" :class="{ 'animate-spin': loading }" />
-                    {{ t('projects.git.refresh') }}
-                </Button>
-                <Button
-                    v-if="gitRepository"
-                    variant="outline"
-                    as-child
-                >
-                    <a
-                        :href="gitRepository.repository_url"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        <ExternalLink class="mr-2 h-4 w-4" />
-                        {{ t('projects.git.open_on_github') }}
-                    </a>
-                </Button>
+                <TooltipProvider :delay-duration="200">
+                    <div class="flex flex-wrap items-center justify-end gap-1">
+                        <Tooltip>
+                            <TooltipTrigger as-child>
+                                <Button
+                                    type="submit"
+                                    size="sm"
+                                    :disabled="form.processing"
+                                    :aria-label="
+                                        isConfigured
+                                            ? t('common.save')
+                                            : t('projects.git.connect')
+                                    "
+                                >
+                                    <Save
+                                        v-if="isConfigured"
+                                        class="mr-2 h-4 w-4"
+                                    />
+                                    <GitBranch
+                                        v-else
+                                        class="mr-2 h-4 w-4"
+                                    />
+                                    {{
+                                        isConfigured
+                                            ? t('common.save')
+                                            : t('projects.git.connect')
+                                    }}
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                                {{
+                                    isConfigured
+                                        ? t('common.save')
+                                        : t('projects.git.connect')
+                                }}
+                            </TooltipContent>
+                        </Tooltip>
+                        <Tooltip v-if="isConfigured">
+                            <TooltipTrigger as-child>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    :disabled="loading"
+                                    :aria-label="t('projects.git.refresh')"
+                                    @click="fetchOverview()"
+                                >
+                                    <RefreshCw
+                                        class="mr-2 h-4 w-4"
+                                        :class="{ 'animate-spin': loading }"
+                                    />
+                                    {{ t('projects.git.refresh') }}
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                                {{ t('projects.git.refresh') }}
+                            </TooltipContent>
+                        </Tooltip>
+                        <Tooltip v-if="gitRepository">
+                            <TooltipTrigger as-child>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    as-child
+                                >
+                                    <a
+                                        :href="gitRepository.repository_url"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        :aria-label="t('projects.git.open_on_github')"
+                                    >
+                                        <ExternalLink class="mr-2 h-4 w-4" />
+                                        {{ t('projects.tabs.git') }}
+                                    </a>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                                {{ t('projects.git.open_on_github') }}
+                            </TooltipContent>
+                        </Tooltip>
+                    </div>
+                </TooltipProvider>
             </div>
         </form>
 
