@@ -132,7 +132,7 @@ it('excludes system mailbox folders from browsable folder paths', function () {
 
 it('extracts attachment filenames from imap message structure', function () {
     $service = app(ImapMailboxService::class);
-    $method = new ReflectionMethod(ImapMailboxService::class, 'extractAttachmentNames');
+    $method = new ReflectionMethod(ImapMailboxService::class, 'collectMessageAttachments');
     $method->setAccessible(true);
 
     $attachment = (object) [
@@ -158,5 +158,7 @@ it('extracts attachment filenames from imap message structure', function () {
         ],
     ];
 
-    expect($method->invoke($service, $multipart))->toBe(['offer.pdf']);
+    expect($method->invoke($service, $multipart))->toBe([
+        ['part' => '2', 'filename' => 'offer.pdf'],
+    ]);
 });

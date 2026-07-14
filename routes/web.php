@@ -187,6 +187,13 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
             Route::get('projects/{project}/email/{emailLink}/body', [ProjectEmailApiController::class, 'body'])
                 ->name('projects.email.body');
 
+            Route::get('projects/{project}/email/{emailLink}/attachments/{part}', [ProjectEmailApiController::class, 'downloadAttachment'])
+                ->name('projects.email.attachments.download')
+                ->where('part', '[0-9]+(?:\.[0-9]+)*');
+
+            Route::get('projects/{project}/email/{emailLink}/attachments', [ProjectEmailApiController::class, 'attachments'])
+                ->name('projects.email.attachments.index');
+
             Route::get('documents', [DocumentApiController::class, 'index'])
                 ->name('documents.index');
 

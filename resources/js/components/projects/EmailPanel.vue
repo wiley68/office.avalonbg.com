@@ -36,6 +36,11 @@ type EmailThread = {
     messages: EmailLink[];
 };
 
+type EmailAttachment = {
+    part: string;
+    filename: string;
+};
+
 type Props = {
     projectId: number;
     hasImapConfigured: boolean;
@@ -53,6 +58,7 @@ const expandedThreadIds = ref<Set<string>>(new Set());
 const expandedLinkId = ref<number | null>(null);
 const bodyLoadingId = ref<number | null>(null);
 const bodies = ref<Record<number, { text: string | null; html: string | null }>>({});
+const attachmentsByLinkId = ref<Record<number, EmailAttachment[]>>({});
 const linkToDelete = ref<number | null>(null);
 const showDeleteDialog = ref(false);
 
@@ -85,9 +91,54 @@ const toggleThreadExpand = (threadId: string): void => {
         next.delete(threadId);
     } else {
         next.add(threadId);
+
+        const thread = threads.value.find((item) => item.id === threadId);
+
+        if (thread !== undefined) {
+            void fetchThreadAttachments(thread);
+        }
     }
 
     expandedThreadIds.value = next;
+};
+
+const attachmentDownloadUrl = (linkId: number, part: string): string =>
+    `/internal-api/projects/${props.projectId}/email/${linkId}/attachments/${encodeURIComponent(part)}`;
+
+const fetchLinkAttachments = async (link: EmailLink): Promise<void> => {
+    if (link.status === 'missing_on_server' || attachmentsByLinkId.value[link.id] !== undefined) {
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `/internal-api/projects/${props.projectId}/email/${link.id}/attachments`,
+            {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            },
+        );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const payload = (await response.json()) as { data: EmailAttachment[] };
+
+        attachmentsByLinkId.value = {
+            ...attachmentsByLinkId.value,
+            [link.id]: payload.data,
+        };
+    } catch {
+        // Attachment names are optional metadata.
+    }
+};
+
+const fetchThreadAttachments = async (thread: EmailThread): Promise<void> => {
+    await Promise.all(thread.messages.map((link) => fetchLinkAttachments(link)));
 };
 
 const fetchThreads = async (): Promise<void> => {
@@ -122,6 +173,7 @@ const fetchThreads = async (): Promise<void> => {
         };
 
         threads.value = payload.data.threads;
+        attachmentsByLinkId.value = {};
     } catch {
         loadError.value = t('projects.email.load_error');
         showError(t('common.error'), t('projects.email.load_error'));
@@ -350,33 +402,50 @@ onMounted(() => {
                             }"
                         >
                             <div class="flex items-start gap-3 py-2 pr-4 pl-14">
-                                <button
-                                    type="button"
-                                    class="min-w-0 flex-1 text-left"
-                                    :class="{
-                                        'cursor-pointer hover:opacity-80': link.status === 'active',
-                                        'cursor-not-allowed': link.status === 'missing_on_server',
-                                    }"
-                                    @click="toggleBody(link)"
-                                >
-                                    <p
-                                        class="truncate text-sm font-medium"
+                                <div class="min-w-0 flex-1">
+                                    <button
+                                        type="button"
+                                        class="w-full text-left"
                                         :class="{
-                                            'line-through': link.status === 'missing_on_server',
+                                            'cursor-pointer hover:opacity-80': link.status === 'active',
+                                            'cursor-not-allowed': link.status === 'missing_on_server',
                                         }"
+                                        @click="toggleBody(link)"
                                     >
-                                        {{ link.subject || t('projects.email.no_subject') }}
-                                    </p>
-                                    <p class="truncate text-xs text-muted-foreground">
-                                        {{ fromLabel(link) }}
-                                    </p>
-                                    <p class="text-xs text-muted-foreground">
-                                        {{ formatDateTime(link.sent_at) }}
-                                        <span v-if="link.status === 'missing_on_server'">
-                                            · {{ t('projects.email.missing_on_server') }}
-                                        </span>
-                                    </p>
-                                </button>
+                                        <p
+                                            class="truncate text-sm font-medium"
+                                            :class="{
+                                                'line-through': link.status === 'missing_on_server',
+                                            }"
+                                        >
+                                            {{ link.subject || t('projects.email.no_subject') }}
+                                        </p>
+                                        <p class="truncate text-xs text-muted-foreground">
+                                            {{ fromLabel(link) }}
+                                        </p>
+                                        <p class="text-xs text-muted-foreground">
+                                            {{ formatDateTime(link.sent_at) }}
+                                            <span v-if="link.status === 'missing_on_server'">
+                                                · {{ t('projects.email.missing_on_server') }}
+                                            </span>
+                                        </p>
+                                    </button>
+                                    <div
+                                        v-if="attachmentsByLinkId[link.id]?.length"
+                                        class="mt-1 flex flex-wrap gap-2"
+                                    >
+                                        <a
+                                            v-for="attachment in attachmentsByLinkId[link.id]"
+                                            :key="`${link.id}-${attachment.part}`"
+                                            :href="attachmentDownloadUrl(link.id, attachment.part)"
+                                            class="inline-flex max-w-full items-center rounded-md border border-border bg-background px-2 py-0.5 text-xs text-blue-600 hover:bg-muted hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                                            download
+                                            @click.stop
+                                        >
+                                            <span class="truncate">{{ attachment.filename }}</span>
+                                        </a>
+                                    </div>
+                                </div>
                                 <Button
                                     type="button"
                                     size="icon"

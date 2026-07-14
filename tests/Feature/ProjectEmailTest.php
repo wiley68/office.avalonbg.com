@@ -364,6 +364,66 @@ test('office user can fetch linked email body', function () {
         ->assertJsonPath('data.text', 'Plain text body');
 });
 
+test('office user can list linked email attachments', function () {
+    [$user, $account] = createOfficeUserWithImap();
+
+    $project = Project::factory()->for($user)->create();
+
+    $link = ProjectEmailLink::factory()->for($project)->for($user)->create([
+        'status' => ProjectEmailLinkStatus::Active,
+    ]);
+
+    mock(ImapMailboxService::class)
+        ->shouldReceive('fetchMessageAttachments')
+        ->once()
+        ->with(
+            Mockery::on(fn ($arg) => $arg->is($account)),
+            $link->folder,
+            $link->imap_uid,
+        )
+        ->andReturn([
+            ['part' => '2', 'filename' => 'specification.pdf'],
+            ['part' => '3', 'filename' => 'diagram.png'],
+        ]);
+
+    actingAs($user)
+        ->getJson(route('internal.projects.email.attachments.index', [$project, $link]))
+        ->assertOk()
+        ->assertJsonPath('data.0.filename', 'specification.pdf')
+        ->assertJsonPath('data.1.part', '3');
+});
+
+test('office user can download linked email attachment', function () {
+    [$user, $account] = createOfficeUserWithImap();
+
+    $project = Project::factory()->for($user)->create();
+
+    $link = ProjectEmailLink::factory()->for($project)->for($user)->create([
+        'status' => ProjectEmailLinkStatus::Active,
+    ]);
+
+    mock(ImapMailboxService::class)
+        ->shouldReceive('fetchAttachmentPart')
+        ->once()
+        ->with(
+            Mockery::on(fn ($arg) => $arg->is($account)),
+            $link->folder,
+            $link->imap_uid,
+            '2',
+        )
+        ->andReturn([
+            'filename' => 'specification.pdf',
+            'content' => '%PDF-1.4',
+            'mime_type' => 'application/pdf',
+        ]);
+
+    actingAs($user)
+        ->get(route('internal.projects.email.attachments.download', [$project, $link, '2']))
+        ->assertOk()
+        ->assertHeader('content-disposition', 'attachment; filename="specification.pdf"')
+        ->assertSee('%PDF-1.4');
+});
+
 test('office user can remove email link from own project', function () {
     [$user] = createOfficeUserWithImap();
 

@@ -600,7 +600,7 @@ onMounted(async () => {
                                         :key="message.uid"
                                         class="border-b border-border/50 last:border-b-0"
                                     >
-                                        <div class="flex items-start gap-3 py-2 pr-4 pl-14 hover:bg-muted/20">
+                                        <div class="flex cursor-pointer items-start gap-3 py-2 pr-4 pl-14 hover:bg-muted/20">
                                             <Checkbox
                                                 class="mt-1"
                                                 :model-value="selectedUids.has(message.uid)"
@@ -610,14 +610,14 @@ onMounted(async () => {
                                             <div class="min-w-0 flex-1">
                                                 <button
                                                     type="button"
-                                                    class="block w-full truncate text-left text-sm font-medium hover:opacity-80"
+                                                    class="block w-full cursor-pointer truncate text-left text-sm font-medium hover:opacity-80"
                                                     @click.stop="toggleMessage(message.uid, !selectedUids.has(message.uid))"
                                                 >
                                                     {{ message.subject || t('projects.email.no_subject') }}
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    class="block w-full text-left hover:opacity-80"
+                                                    class="block w-full cursor-pointer text-left hover:opacity-80"
                                                     @click="toggleBody(message)"
                                                 >
                                                     <p class="truncate text-xs text-muted-foreground">
@@ -628,7 +628,7 @@ onMounted(async () => {
                                                     </p>
                                                     <p
                                                         v-if="attachmentLabel(message.uid)"
-                                                        class="truncate text-xs text-secondary-foreground"
+                                                        class="truncate text-xs text-blue-600 dark:text-blue-400"
                                                     >
                                                         {{ attachmentLabel(message.uid) }}
                                                     </p>

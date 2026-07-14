@@ -445,10 +445,71 @@ class ImapMailboxService
                     continue;
                 }
 
-                $attachmentNamesByUid[$uid] = $this->extractAttachmentNames($structure);
+                $attachmentNamesByUid[$uid] = array_column(
+                    $this->collectMessageAttachments($structure),
+                    'filename',
+                );
             }
 
             return $attachmentNamesByUid;
+        });
+    }
+
+    /**
+     * @return list<array{part: string, filename: string}>
+     *
+     * @throws ImapConnectionException
+     */
+    public function fetchMessageAttachments(
+        UserImapAccount $account,
+        string $folder,
+        int $uid,
+    ): array {
+        return $this->withConnection($account, $folder, function ($connection) use ($uid): array {
+            $structure = imap_fetchstructure($connection, $uid, FT_UID);
+
+            if ($structure === false) {
+                return [];
+            }
+
+            return $this->collectMessageAttachments($structure);
+        });
+    }
+
+    /**
+     * @return array{filename: string, content: string, mime_type: string}
+     *
+     * @throws ImapConnectionException
+     */
+    public function fetchAttachmentPart(
+        UserImapAccount $account,
+        string $folder,
+        int $uid,
+        string $part,
+    ): array {
+        return $this->withConnection($account, $folder, function ($connection) use ($uid, $part): array {
+            $structure = imap_fetchstructure($connection, $uid, FT_UID);
+
+            abort_if($structure === false, 404);
+
+            $attachments = $this->collectMessageAttachments($structure);
+            $attachment = collect($attachments)->firstWhere('part', $part);
+
+            abort_if($attachment === null, 404);
+
+            $partStructure = $this->resolvePartStructure($structure, $part);
+
+            abort_if($partStructure === null, 404);
+
+            $content = $this->fetchPartBody($connection, $uid, $part, $partStructure);
+
+            abort_if($content === null, 404);
+
+            return [
+                'filename' => $attachment['filename'],
+                'content' => $content,
+                'mime_type' => $this->partMimeType($partStructure),
+            ];
         });
     }
 
@@ -604,22 +665,25 @@ class ImapMailboxService
     }
 
     /**
-     * @return list<string>
+     * @return list<array{part: string, filename: string}>
      */
-    private function extractAttachmentNames(object $structure, string $partNumber = ''): array
+    private function collectMessageAttachments(object $structure, string $partNumber = ''): array
     {
         if (isset($structure->parts) && is_array($structure->parts)) {
-            $names = [];
+            $attachments = [];
 
             foreach ($structure->parts as $index => $part) {
                 $nextPartNumber = $partNumber === ''
                     ? (string) ($index + 1)
                     : $partNumber.'.'.($index + 1);
 
-                $names = array_merge($names, $this->extractAttachmentNames($part, $nextPartNumber));
+                $attachments = array_merge(
+                    $attachments,
+                    $this->collectMessageAttachments($part, $nextPartNumber),
+                );
             }
 
-            return array_values(array_unique($names));
+            return $attachments;
         }
 
         $filename = $this->extractPartFilename($structure);
@@ -628,7 +692,64 @@ class ImapMailboxService
             return [];
         }
 
-        return [$filename];
+        return [[
+            'part' => $partNumber === '' ? '1' : $partNumber,
+            'filename' => $filename,
+        ]];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function extractAttachmentNames(object $structure, string $partNumber = ''): array
+    {
+        return array_column($this->collectMessageAttachments($structure, $partNumber), 'filename');
+    }
+
+    private function resolvePartStructure(object $structure, string $partNumber): ?object
+    {
+        if (! str_contains($partNumber, '.')) {
+            if (isset($structure->parts) && is_array($structure->parts)) {
+                $index = (int) $partNumber - 1;
+
+                return $structure->parts[$index] ?? null;
+            }
+
+            return $structure;
+        }
+
+        $current = $structure;
+
+        foreach (explode('.', $partNumber) as $segment) {
+            $index = (int) $segment - 1;
+
+            if (! isset($current->parts) || ! is_array($current->parts) || ! isset($current->parts[$index])) {
+                return null;
+            }
+
+            $current = $current->parts[$index];
+        }
+
+        return $current;
+    }
+
+    private function partMimeType(object $structure): string
+    {
+        $type = match ($structure->type ?? TYPEOTHER) {
+            TYPETEXT => 'text',
+            TYPEMULTIPART => 'multipart',
+            TYPEMESSAGE => 'message',
+            TYPEAPPLICATION => 'application',
+            TYPEAUDIO => 'audio',
+            TYPEIMAGE => 'image',
+            TYPEVIDEO => 'video',
+            TYPEMODEL => 'model',
+            default => 'application',
+        };
+
+        $subtype = strtolower((string) ($structure->subtype ?? 'octet-stream'));
+
+        return $type.'/'.$subtype;
     }
 
     private function extractPartFilename(object $structure): ?string
