@@ -172,6 +172,12 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
             Route::get('imap/threads', [ImapBrowseApiController::class, 'threads'])
                 ->name('imap.threads.index');
 
+            Route::get('imap/attachments', [ImapBrowseApiController::class, 'attachments'])
+                ->name('imap.attachments.index');
+
+            Route::get('imap/body', [ImapBrowseApiController::class, 'body'])
+                ->name('imap.body.index');
+
             Route::get('imap/messages', [ImapBrowseApiController::class, 'index'])
                 ->name('imap.messages.index');
 

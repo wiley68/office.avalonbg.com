@@ -115,3 +115,48 @@ it('merges separate threads that share the same conversation key', function () {
         ->and($threads[0]['messages'][0]['uid'])->toBe(1201)
         ->and($threads[0]['messages'][1]['uid'])->toBe(1202);
 });
+
+it('excludes system mailbox folders from browsable folder paths', function () {
+    $service = app(ImapMailboxService::class);
+    $method = new ReflectionMethod(ImapMailboxService::class, 'isExcludedBrowsableFolderPath');
+    $method->setAccessible(true);
+
+    expect($method->invoke($service, 'INBOX.Archives.Current', '.'))->toBeFalse()
+        ->and($method->invoke($service, 'INBOX', '.'))->toBeFalse()
+        ->and($method->invoke($service, 'INBOX.Sent', '.'))->toBeTrue()
+        ->and($method->invoke($service, 'Drafts', '.'))->toBeTrue()
+        ->and($method->invoke($service, 'Junk', '.'))->toBeTrue()
+        ->and($method->invoke($service, 'Trash', '.'))->toBeTrue()
+        ->and($method->invoke($service, 'spam', '.'))->toBeTrue();
+});
+
+it('extracts attachment filenames from imap message structure', function () {
+    $service = app(ImapMailboxService::class);
+    $method = new ReflectionMethod(ImapMailboxService::class, 'extractAttachmentNames');
+    $method->setAccessible(true);
+
+    $attachment = (object) [
+        'type' => TYPETEXT,
+        'subtype' => 'PDF',
+        'disposition' => 'attachment',
+        'dparameters' => [
+            (object) [
+                'attribute' => 'filename',
+                'value' => 'offer.pdf',
+            ],
+        ],
+    ];
+
+    $multipart = (object) [
+        'type' => TYPEMULTIPART,
+        'parts' => [
+            (object) [
+                'type' => TYPETEXT,
+                'subtype' => 'PLAIN',
+            ],
+            $attachment,
+        ],
+    ];
+
+    expect($method->invoke($service, $multipart))->toBe(['offer.pdf']);
+});

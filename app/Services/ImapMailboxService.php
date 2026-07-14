@@ -10,6 +10,17 @@ use IMAP\Connection;
 
 class ImapMailboxService
 {
+    /**
+     * @var list<string>
+     */
+    private const EXCLUDED_BROWSABLE_FOLDER_NAMES = [
+        'drafts',
+        'junk',
+        'sent',
+        'spam',
+        'trash',
+    ];
+
     public function __construct(
         private readonly EmailConversation $emailConversation,
     ) {}
@@ -78,6 +89,10 @@ class ImapMailboxService
             }
 
             $paths = array_values(array_unique($paths));
+            $paths = array_values(array_filter(
+                $paths,
+                fn (string $path): bool => ! $this->isExcludedBrowsableFolderPath($path, $delimiter),
+            ));
             sort($paths);
 
             return $this->buildFolderTree($paths, $delimiter);
@@ -161,6 +176,21 @@ class ImapMailboxService
             fn (array $root): array => $attachChildren($root),
             $roots,
         );
+    }
+
+    private function isExcludedBrowsableFolderPath(string $path, string $delimiter): bool
+    {
+        foreach (explode($delimiter, $path) as $segment) {
+            if ($segment === '') {
+                continue;
+            }
+
+            if (in_array(mb_strtolower($segment), self::EXCLUDED_BROWSABLE_FOLDER_NAMES, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -384,6 +414,45 @@ class ImapMailboxService
     }
 
     /**
+     * @param  list<int>  $uids
+     * @return array<int, list<string>>
+     *
+     * @throws ImapConnectionException
+     */
+    public function fetchAttachmentNamesForUids(
+        UserImapAccount $account,
+        string $folder,
+        array $uids,
+    ): array {
+        $uids = array_values(array_unique(array_filter(
+            $uids,
+            fn (int $uid): bool => $uid > 0,
+        )));
+
+        if ($uids === []) {
+            return [];
+        }
+
+        return $this->withConnection($account, $folder, function ($connection) use ($uids): array {
+            $attachmentNamesByUid = [];
+
+            foreach ($uids as $uid) {
+                $structure = imap_fetchstructure($connection, $uid, FT_UID);
+
+                if ($structure === false) {
+                    $attachmentNamesByUid[$uid] = [];
+
+                    continue;
+                }
+
+                $attachmentNamesByUid[$uid] = $this->extractAttachmentNames($structure);
+            }
+
+            return $attachmentNamesByUid;
+        });
+    }
+
+    /**
      * @param  callable(Connection, string): mixed  $callback
      *
      * @throws ImapConnectionException
@@ -532,6 +601,76 @@ class ImapMailboxService
         }
 
         return ['text' => $text, 'html' => $html];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function extractAttachmentNames(object $structure, string $partNumber = ''): array
+    {
+        if (isset($structure->parts) && is_array($structure->parts)) {
+            $names = [];
+
+            foreach ($structure->parts as $index => $part) {
+                $nextPartNumber = $partNumber === ''
+                    ? (string) ($index + 1)
+                    : $partNumber.'.'.($index + 1);
+
+                $names = array_merge($names, $this->extractAttachmentNames($part, $nextPartNumber));
+            }
+
+            return array_values(array_unique($names));
+        }
+
+        $filename = $this->extractPartFilename($structure);
+
+        if ($filename === null || ! $this->isAttachmentPart($structure)) {
+            return [];
+        }
+
+        return [$filename];
+    }
+
+    private function extractPartFilename(object $structure): ?string
+    {
+        foreach (['dparameters', 'parameters'] as $property) {
+            if (! isset($structure->$property) || ! is_array($structure->$property)) {
+                continue;
+            }
+
+            foreach ($structure->$property as $parameter) {
+                $attribute = strtolower((string) ($parameter->attribute ?? ''));
+
+                if (! in_array($attribute, ['filename', 'name'], true)) {
+                    continue;
+                }
+
+                if (! isset($parameter->value) || ! is_string($parameter->value)) {
+                    continue;
+                }
+
+                $decoded = $this->decodeHeader($parameter->value);
+
+                if ($decoded !== '') {
+                    return $decoded;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function isAttachmentPart(object $structure): bool
+    {
+        if (isset($structure->disposition)) {
+            return strtoupper((string) $structure->disposition) === 'ATTACHMENT';
+        }
+
+        if ($structure->type === TYPETEXT && isset($structure->subtype)) {
+            return ! in_array(strtoupper((string) $structure->subtype), ['PLAIN', 'HTML'], true);
+        }
+
+        return true;
     }
 
     private function fetchPartBody(

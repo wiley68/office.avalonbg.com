@@ -54,7 +54,13 @@ const searchInput = ref('');
 const searchQuery = ref('');
 const selectedUids = ref<Set<number>>(new Set());
 const expandedThreadIds = ref<Set<string>>(new Set());
+const attachmentNamesByUid = ref<Record<number, string[]>>({});
+const expandedBodyUid = ref<number | null>(null);
+const bodies = ref<Record<number, { text: string | null; html: string | null }>>({});
+const bodyLoadingUid = ref<number | null>(null);
 const submitting = ref(false);
+
+const BODY_EXCERPT_LENGTH = 280;
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     { title: t('common.dashboard'), href: dashboard() },
@@ -91,6 +97,37 @@ const fromLabel = (message: BrowseMessage): string => {
     }
 
     return message.from_address ?? message.from_name ?? '—';
+};
+
+const attachmentLabel = (uid: number): string | null => {
+    const names = attachmentNamesByUid.value[uid];
+
+    if (names === undefined || names.length === 0) {
+        return null;
+    }
+
+    return names.join(', ');
+};
+
+const bodyExcerpt = (uid: number): string | null => {
+    const body = bodies.value[uid];
+
+    if (body === undefined) {
+        return null;
+    }
+
+    const raw = body.text ?? body.html?.replace(/<[^>]+>/g, ' ') ?? '';
+    const normalized = raw.replace(/\s+/g, ' ').trim();
+
+    if (normalized === '') {
+        return null;
+    }
+
+    if (normalized.length <= BODY_EXCERPT_LENGTH) {
+        return normalized;
+    }
+
+    return `${normalized.slice(0, BODY_EXCERPT_LENGTH).trimEnd()}…`;
 };
 
 const isThreadExpanded = (threadId: string): boolean => expandedThreadIds.value.has(threadId);
@@ -145,6 +182,9 @@ const fetchThreads = async (): Promise<void> => {
     threadsLoading.value = true;
     selectedUids.value = new Set();
     expandedThreadIds.value = new Set();
+    attachmentNamesByUid.value = {};
+    expandedBodyUid.value = null;
+    bodies.value = {};
 
     try {
         const params = new URLSearchParams({
@@ -181,6 +221,50 @@ const fetchThreads = async (): Promise<void> => {
     }
 };
 
+const fetchThreadAttachments = async (thread: EmailThread): Promise<void> => {
+    if (selectedFolder.value === null) {
+        return;
+    }
+
+    const uidsToFetch = thread.messages
+        .map((message) => message.uid)
+        .filter((uid) => attachmentNamesByUid.value[uid] === undefined);
+
+    if (uidsToFetch.length === 0) {
+        return;
+    }
+
+    try {
+        const params = new URLSearchParams({
+            folder: selectedFolder.value,
+            uids: uidsToFetch.join(','),
+        });
+
+        const response = await fetch(`/internal-api/imap/attachments?${params.toString()}`, {
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+        });
+
+        if (!response.ok) {
+            return;
+        }
+
+        const payload = (await response.json()) as { data: Record<string, string[]> };
+        const next = { ...attachmentNamesByUid.value };
+
+        for (const uid of uidsToFetch) {
+            next[uid] = payload.data[String(uid)] ?? [];
+        }
+
+        attachmentNamesByUid.value = next;
+    } catch {
+        // Attachment names are optional metadata.
+    }
+};
+
 const selectFolder = (folder: string): void => {
     selectedFolder.value = folder;
 };
@@ -192,9 +276,65 @@ const toggleThreadExpand = (threadId: string): void => {
         next.delete(threadId);
     } else {
         next.add(threadId);
+
+        const thread = threads.value.find((item) => item.id === threadId);
+
+        if (thread !== undefined) {
+            void fetchThreadAttachments(thread);
+        }
     }
 
     expandedThreadIds.value = next;
+};
+
+const toggleBody = async (message: BrowseMessage): Promise<void> => {
+    if (expandedBodyUid.value === message.uid) {
+        expandedBodyUid.value = null;
+
+        return;
+    }
+
+    expandedBodyUid.value = message.uid;
+
+    if (bodies.value[message.uid] !== undefined || selectedFolder.value === null) {
+        return;
+    }
+
+    bodyLoadingUid.value = message.uid;
+
+    try {
+        const params = new URLSearchParams({
+            folder: selectedFolder.value,
+            uid: String(message.uid),
+        });
+
+        const response = await fetch(`/internal-api/imap/body?${params.toString()}`, {
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+        });
+
+        if (!response.ok) {
+            showError(t('common.error'), t('projects.email.body_error'));
+
+            return;
+        }
+
+        const payload = (await response.json()) as {
+            data: { text: string | null; html: string | null };
+        };
+
+        bodies.value = {
+            ...bodies.value,
+            [message.uid]: payload.data,
+        };
+    } catch {
+        showError(t('common.error'), t('projects.email.body_error'));
+    } finally {
+        bodyLoadingUid.value = null;
+    }
 };
 
 const toggleMessage = (uid: number, checked: boolean): void => {
@@ -455,29 +595,72 @@ onMounted(async () => {
                                     v-if="isThreadExpanded(thread.id)"
                                     class="border-t bg-muted/10"
                                 >
-                                    <label
+                                    <div
                                         v-for="message in thread.messages"
                                         :key="message.uid"
-                                        class="flex cursor-pointer items-start gap-3 border-b border-border/50 py-2 pr-4 pl-14 last:border-b-0 hover:bg-muted/20"
+                                        class="border-b border-border/50 last:border-b-0"
                                     >
-                                        <Checkbox
-                                            class="mt-1"
-                                            :model-value="selectedUids.has(message.uid)"
-                                            @update:model-value="(value) => toggleMessage(message.uid, value === true)"
-                                            @click.stop
-                                        />
-                                        <div class="min-w-0 flex-1">
-                                            <p class="truncate text-sm font-medium">
-                                                {{ message.subject || t('projects.email.no_subject') }}
+                                        <div class="flex items-start gap-3 py-2 pr-4 pl-14 hover:bg-muted/20">
+                                            <Checkbox
+                                                class="mt-1"
+                                                :model-value="selectedUids.has(message.uid)"
+                                                @update:model-value="(value) => toggleMessage(message.uid, value === true)"
+                                                @click.stop
+                                            />
+                                            <div class="min-w-0 flex-1">
+                                                <button
+                                                    type="button"
+                                                    class="block w-full truncate text-left text-sm font-medium hover:opacity-80"
+                                                    @click.stop="toggleMessage(message.uid, !selectedUids.has(message.uid))"
+                                                >
+                                                    {{ message.subject || t('projects.email.no_subject') }}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    class="block w-full text-left hover:opacity-80"
+                                                    @click="toggleBody(message)"
+                                                >
+                                                    <p class="truncate text-xs text-muted-foreground">
+                                                        {{ fromLabel(message) }}
+                                                    </p>
+                                                    <p class="text-xs text-muted-foreground">
+                                                        {{ formatDateTime(message.sent_at) }}
+                                                    </p>
+                                                    <p
+                                                        v-if="attachmentLabel(message.uid)"
+                                                        class="truncate text-xs text-secondary-foreground"
+                                                    >
+                                                        {{ attachmentLabel(message.uid) }}
+                                                    </p>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div
+                                            v-if="expandedBodyUid === message.uid"
+                                            class="border-t bg-muted/20 px-4 py-3 pl-14 text-sm"
+                                        >
+                                            <div
+                                                v-if="bodyLoadingUid === message.uid"
+                                                class="flex items-center gap-2 text-xs text-muted-foreground"
+                                            >
+                                                <Loader2 class="size-4 animate-spin" />
+                                                {{ t('projects.email.loading_body') }}
+                                            </div>
+                                            <p
+                                                v-else-if="bodyExcerpt(message.uid)"
+                                                class="line-clamp-4 text-xs text-muted-foreground whitespace-pre-wrap"
+                                            >
+                                                {{ bodyExcerpt(message.uid) }}
                                             </p>
-                                            <p class="truncate text-xs text-muted-foreground">
-                                                {{ fromLabel(message) }}
-                                            </p>
-                                            <p class="text-xs text-muted-foreground">
-                                                {{ formatDateTime(message.sent_at) }}
+                                            <p
+                                                v-else
+                                                class="text-xs text-muted-foreground"
+                                            >
+                                                {{ t('projects.email.no_body') }}
                                             </p>
                                         </div>
-                                    </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
