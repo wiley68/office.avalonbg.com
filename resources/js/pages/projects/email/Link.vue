@@ -11,7 +11,6 @@ import { useTranslations } from '@/composables/useTranslations';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import { index, show } from '@/routes/projects';
-import { link as linkProjectEmail } from '@/routes/projects/email';
 import batch from '@/routes/projects/email/batch';
 import type { BreadcrumbItem } from '@/types';
 
