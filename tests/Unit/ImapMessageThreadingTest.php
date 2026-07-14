@@ -1,28 +1,79 @@
 <?php
 
 use App\Services\ImapMailboxService;
+use App\Support\EmailConversation;
 
 it('normalizes reply and forward subject prefixes', function () {
-    $service = app(ImapMailboxService::class);
-    $method = new ReflectionMethod(ImapMailboxService::class, 'normalizeSubject');
-    $method->setAccessible(true);
+    $conversation = app(EmailConversation::class);
 
-    expect($method->invoke($service, 'Re: Project update'))->toBe('project update')
-        ->and($method->invoke($service, 'Fwd: Re: Offer'))->toBe('offer')
-        ->and($method->invoke($service, 'AW: Antwort'))->toBe('antwort')
-        ->and($method->invoke($service, 'Re[2]: DEM-18992 Обновяване'))->toBe('dem-18992 обновяване')
-        ->and($method->invoke($service, 'RE[4]: BR Avalon'))->toBe('br avalon')
-        ->and($method->invoke($service, 'Re[6]: Re: #295179 RFO - Control panel'))->toBe('#295179 rfo - control panel');
+    expect($conversation->normalizeSubject('Re: Project update'))->toBe('project update')
+        ->and($conversation->normalizeSubject('Fwd: Re: Offer'))->toBe('offer')
+        ->and($conversation->normalizeSubject('AW: Antwort'))->toBe('antwort')
+        ->and($conversation->normalizeSubject('Re[2]: DEM-18992 Обновяване'))->toBe('dem-18992 обновяване')
+        ->and($conversation->normalizeSubject('RE[4]: BR Avalon'))->toBe('br avalon')
+        ->and($conversation->normalizeSubject('Re[6]: Re: #295179 RFO - Control panel'))->toBe('#295179 rfo - control panel');
 });
 
 it('builds conversation keys from ticket references and normalized subjects', function () {
+    $conversation = app(EmailConversation::class);
+
+    expect($conversation->conversationKey('Re[3]: DEM-18992 Обновяване на модули'))->toBe('ticket:dem-18992')
+        ->and($conversation->conversationKey('#295179 RFO - Control panel'))->toBe('ticket:#295179')
+        ->and($conversation->conversationKey('Re: BR Avalon'))->toBe($conversation->conversationKey('BR Avalon'));
+});
+
+it('groups linked messages into conversation threads', function () {
+    $conversation = app(EmailConversation::class);
+
+    $threads = $conversation->groupIntoThreads([
+        [
+            'id' => 1,
+            'subject' => 'BR Avalon',
+            'sent_at' => '2026-07-10T10:00:00Z',
+        ],
+        [
+            'id' => 2,
+            'subject' => 'Re: BR Avalon',
+            'sent_at' => '2026-07-11T12:00:00Z',
+        ],
+    ], fn (array $link): string => (string) $link['subject']);
+
+    expect($threads)->toHaveCount(1)
+        ->and($threads[0]['message_count'])->toBe(2)
+        ->and($threads[0]['messages'][0]['id'])->toBe(1)
+        ->and($threads[0]['messages'][1]['id'])->toBe(2);
+});
+
+it('parses imap thread parent map from thread data', function () {
     $service = app(ImapMailboxService::class);
-    $method = new ReflectionMethod(ImapMailboxService::class, 'conversationKey');
+    $method = new ReflectionMethod(ImapMailboxService::class, 'parseImapThreadParents');
     $method->setAccessible(true);
 
-    expect($method->invoke($service, 'Re[3]: DEM-18992 Обновяване на модули'))->toBe('ticket:dem-18992')
-        ->and($method->invoke($service, '#295179 RFO - Control panel'))->toBe('ticket:#295179')
-        ->and($method->invoke($service, 'Re: BR Avalon'))->toBe($method->invoke($service, 'BR Avalon'));
+    $parents = $method->invoke($service, "10\n20\t10\n30\t10\n40\t20");
+
+    expect($parents)->toBe([
+        10 => null,
+        20 => 10,
+        30 => 10,
+        40 => 20,
+    ]);
+});
+
+it('resolves thread root uid from parent chain', function () {
+    $service = app(ImapMailboxService::class);
+    $resolve = new ReflectionMethod(ImapMailboxService::class, 'resolveThreadRootUid');
+    $resolve->setAccessible(true);
+
+    $parents = [
+        10 => null,
+        20 => 10,
+        30 => 10,
+        40 => 20,
+    ];
+
+    expect($resolve->invoke($service, 40, $parents))->toBe(10)
+        ->and($resolve->invoke($service, 30, $parents))->toBe(10)
+        ->and($resolve->invoke($service, 10, $parents))->toBe(10);
 });
 
 it('merges separate threads that share the same conversation key', function () {
@@ -63,36 +114,4 @@ it('merges separate threads that share the same conversation key', function () {
         ->and($threads[0]['message_count'])->toBe(2)
         ->and($threads[0]['messages'][0]['uid'])->toBe(1201)
         ->and($threads[0]['messages'][1]['uid'])->toBe(1202);
-});
-
-it('parses imap thread parent map from thread data', function () {
-    $service = app(ImapMailboxService::class);
-    $method = new ReflectionMethod(ImapMailboxService::class, 'parseImapThreadParents');
-    $method->setAccessible(true);
-
-    $parents = $method->invoke($service, "10\n20\t10\n30\t10\n40\t20");
-
-    expect($parents)->toBe([
-        10 => null,
-        20 => 10,
-        30 => 10,
-        40 => 20,
-    ]);
-});
-
-it('resolves thread root uid from parent chain', function () {
-    $service = app(ImapMailboxService::class);
-    $resolve = new ReflectionMethod(ImapMailboxService::class, 'resolveThreadRootUid');
-    $resolve->setAccessible(true);
-
-    $parents = [
-        10 => null,
-        20 => 10,
-        30 => 10,
-        40 => 20,
-    ];
-
-    expect($resolve->invoke($service, 40, $parents))->toBe(10)
-        ->and($resolve->invoke($service, 30, $parents))->toBe(10)
-        ->and($resolve->invoke($service, 10, $parents))->toBe(10);
 });

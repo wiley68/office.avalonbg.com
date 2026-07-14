@@ -26,13 +26,13 @@ class ProjectEmailApiController extends Controller
             return response()->json([
                 'data' => [
                     'configured' => false,
-                    'links' => [],
+                    'threads' => [],
                 ],
             ]);
         }
 
         try {
-            $links = $projectEmailService->refreshLinks($project, $user);
+            $threads = $projectEmailService->refreshLinkThreads($project, $user);
         } catch (\Throwable $exception) {
             return response()->json([
                 'message' => $exception->getMessage(),
@@ -42,7 +42,7 @@ class ProjectEmailApiController extends Controller
         return response()->json([
             'data' => [
                 'configured' => true,
-                'links' => $links,
+                'threads' => $threads,
             ],
         ]);
     }

@@ -4,11 +4,16 @@ namespace App\Services;
 
 use App\Exceptions\ImapConnectionException;
 use App\Models\UserImapAccount;
+use App\Support\EmailConversation;
 use App\Support\Translations;
 use IMAP\Connection;
 
 class ImapMailboxService
 {
+    public function __construct(
+        private readonly EmailConversation $emailConversation,
+    ) {}
+
     /**
      * @throws ImapConnectionException
      */
@@ -698,46 +703,13 @@ class ImapMailboxService
                 continue;
             }
 
-            $normalized = $this->normalizeSubject($messagesByUid[$uid]['subject']);
+            $normalized = $this->emailConversation->normalizeSubject($messagesByUid[$uid]['subject']);
             $key = $normalized !== '' ? md5($normalized) : 'uid-'.$uid;
             $groups[$key] ??= [];
             $groups[$key][] = $uid;
         }
 
         return $groups;
-    }
-
-    private function normalizeSubject(string $subject): string
-    {
-        $normalized = trim($subject);
-
-        do {
-            $previous = $normalized;
-            $normalized = preg_replace(
-                '/^(?:(?:re|fwd?|fw|aw|sv|antw|ответ|относно)(?:\[\d+\])?\s*:\s*)+/iu',
-                '',
-                $normalized,
-            ) ?? $normalized;
-        } while ($normalized !== $previous && $normalized !== '');
-
-        $normalized = preg_replace('/\s+/u', ' ', $normalized ?? '');
-
-        return mb_strtolower(trim($normalized ?? ''));
-    }
-
-    private function conversationKey(string $subject): string
-    {
-        if (preg_match('/#(\d+)/u', $subject, $matches) === 1) {
-            return 'ticket:#'.$matches[1];
-        }
-
-        if (preg_match('/\b(dem-\d+)\b/iu', $subject, $matches) === 1) {
-            return 'ticket:'.mb_strtolower($matches[1]);
-        }
-
-        $normalized = $this->normalizeSubject($subject);
-
-        return $normalized !== '' ? 'subject:'.md5($normalized) : 'subject:empty';
     }
 
     /**
@@ -764,7 +736,7 @@ class ImapMailboxService
         $buckets = [];
 
         foreach ($threads as $thread) {
-            $key = $this->conversationKey($thread['subject']);
+            $key = $this->emailConversation->conversationKey($thread['subject']);
             $buckets[$key] ??= [
                 'messages' => [],
                 'source_ids' => [],

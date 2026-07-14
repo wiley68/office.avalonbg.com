@@ -7,17 +7,32 @@ use App\Models\Project;
 use App\Models\ProjectEmailLink;
 use App\Models\User;
 use App\Models\UserImapAccount;
+use App\Support\EmailConversation;
 use App\Support\Translations;
 
 class ProjectEmailService
 {
     public function __construct(
         private readonly ImapMailboxService $imapMailboxService,
+        private readonly EmailConversation $emailConversation,
     ) {}
 
     public function accountForUser(User $user): ?UserImapAccount
     {
         return $user->imapAccount;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function refreshLinkThreads(Project $project, User $user): array
+    {
+        $links = $this->refreshLinks($project, $user);
+
+        return $this->emailConversation->groupIntoThreads(
+            $links,
+            fn (array $link): string => (string) ($link['subject'] ?? ''),
+        );
     }
 
     /**

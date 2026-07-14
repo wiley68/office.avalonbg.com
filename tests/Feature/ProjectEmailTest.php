@@ -101,8 +101,69 @@ test('office user can refresh linked emails for own project', function () {
         ->getJson(route('internal.projects.email.index', $project))
         ->assertOk()
         ->assertJsonPath('data.configured', true)
-        ->assertJsonPath('data.links.0.subject', 'Updated subject')
-        ->assertJsonPath('data.links.0.status', 'active');
+        ->assertJsonPath('data.threads.0.subject', 'Updated subject')
+        ->assertJsonPath('data.threads.0.messages.0.status', 'active');
+});
+
+test('linked project emails are grouped into conversation threads', function () {
+    [$user, $account] = createOfficeUserWithImap();
+
+    $project = Project::factory()->for($user)->create();
+
+    $older = ProjectEmailLink::factory()->for($project)->for($user)->create([
+        'folder' => 'INBOX.Archives.Current',
+        'imap_uid' => 1201,
+        'uidvalidity' => 555,
+        'subject' => 'BR Avalon',
+        'sent_at' => '2026-07-10T10:00:00Z',
+    ]);
+
+    $newer = ProjectEmailLink::factory()->for($project)->for($user)->create([
+        'folder' => 'INBOX.Archives.Current',
+        'imap_uid' => 1202,
+        'uidvalidity' => 555,
+        'subject' => 'Re: BR Avalon',
+        'sent_at' => '2026-07-11T12:00:00Z',
+    ]);
+
+    /** @var MockInterface&ImapMailboxService $imapMailboxService */
+    $imapMailboxService = mock(ImapMailboxService::class);
+
+    $imapMailboxService
+        ->shouldReceive('folderUidValidity')
+        ->once()
+        ->andReturn(555);
+
+    $imapMailboxService
+        ->shouldReceive('fetchMessageSummary')
+        ->twice()
+        ->andReturnUsing(function ($account, string $folder, int $uid) use ($older, $newer) {
+            return match ($uid) {
+                $older->imap_uid => [
+                    'uidvalidity' => 555,
+                    'subject' => 'BR Avalon',
+                    'from_name' => 'Alice',
+                    'from_address' => 'alice@example.com',
+                    'sent_at' => '2026-07-10T10:00:00Z',
+                ],
+                $newer->imap_uid => [
+                    'uidvalidity' => 555,
+                    'subject' => 'Re: BR Avalon',
+                    'from_name' => 'Bob',
+                    'from_address' => 'bob@example.com',
+                    'sent_at' => '2026-07-11T12:00:00Z',
+                ],
+                default => null,
+            };
+        });
+
+    actingAs($user)
+        ->getJson(route('internal.projects.email.index', $project))
+        ->assertOk()
+        ->assertJsonPath('data.threads', fn ($threads) => count($threads) === 1)
+        ->assertJsonPath('data.threads.0.message_count', 2)
+        ->assertJsonPath('data.threads.0.messages.0.id', $older->id)
+        ->assertJsonPath('data.threads.0.messages.1.id', $newer->id);
 });
 
 test('refresh marks link as missing when message is not on server', function () {
@@ -132,7 +193,7 @@ test('refresh marks link as missing when message is not on server', function () 
     actingAs($user)
         ->getJson(route('internal.projects.email.index', $project))
         ->assertOk()
-        ->assertJsonPath('data.links.0.status', 'missing_on_server');
+        ->assertJsonPath('data.threads.0.messages.0.status', 'missing_on_server');
 
     expect($link->fresh()->status)->toBe(ProjectEmailLinkStatus::MissingOnServer);
 });

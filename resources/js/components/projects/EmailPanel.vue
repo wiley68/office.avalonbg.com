@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
-import { Loader2, MailPlus, RefreshCw, Trash2 } from 'lucide-vue-next';
-import { onMounted, ref } from 'vue';
+import { ChevronRight, Loader2, MailPlus, RefreshCw, Trash2 } from 'lucide-vue-next';
+import { computed, onMounted, ref } from 'vue';
 import AppAlertDialog from '@/components/AppAlertDialog.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,6 +28,14 @@ type EmailLink = {
     last_verified_at: string | null;
 };
 
+type EmailThread = {
+    id: string;
+    message_count: number;
+    subject: string;
+    latest_sent_at: string | null;
+    messages: EmailLink[];
+};
+
 type Props = {
     projectId: number;
     hasImapConfigured: boolean;
@@ -38,14 +46,19 @@ const props = defineProps<Props>();
 const { t } = useTranslations();
 const { showError } = useAppToast();
 
-const links = ref<EmailLink[]>([]);
+const threads = ref<EmailThread[]>([]);
 const loading = ref(false);
 const loadError = ref<string | null>(null);
+const expandedThreadIds = ref<Set<string>>(new Set());
 const expandedLinkId = ref<number | null>(null);
 const bodyLoadingId = ref<number | null>(null);
 const bodies = ref<Record<number, { text: string | null; html: string | null }>>({});
 const linkToDelete = ref<number | null>(null);
 const showDeleteDialog = ref(false);
+
+const totalMessageCount = computed(() =>
+    threads.value.reduce((count, thread) => count + thread.message_count, 0),
+);
 
 const formatDateTime = (value: string | null): string => {
     if (!value) {
@@ -63,7 +76,21 @@ const fromLabel = (link: EmailLink): string => {
     return link.from_address ?? link.from_name ?? '—';
 };
 
-const fetchLinks = async (): Promise<void> => {
+const isThreadExpanded = (threadId: string): boolean => expandedThreadIds.value.has(threadId);
+
+const toggleThreadExpand = (threadId: string): void => {
+    const next = new Set(expandedThreadIds.value);
+
+    if (next.has(threadId)) {
+        next.delete(threadId);
+    } else {
+        next.add(threadId);
+    }
+
+    expandedThreadIds.value = next;
+};
+
+const fetchThreads = async (): Promise<void> => {
     if (!props.hasImapConfigured) {
         return;
     }
@@ -91,10 +118,10 @@ const fetchLinks = async (): Promise<void> => {
         }
 
         const payload = (await response.json()) as {
-            data: { configured: boolean; links: EmailLink[] };
+            data: { configured: boolean; threads: EmailThread[] };
         };
 
-        links.value = payload.data.links;
+        threads.value = payload.data.threads;
     } catch {
         loadError.value = t('projects.email.load_error');
         showError(t('common.error'), t('projects.email.load_error'));
@@ -168,13 +195,13 @@ const confirmDelete = (): void => {
 
     router.delete(destroyEmailLink({ project: props.projectId, emailLink: linkId }).url, {
         preserveScroll: true,
-        onSuccess: () => fetchLinks(),
+        onSuccess: () => fetchThreads(),
     });
 };
 
 onMounted(() => {
     if (props.hasImapConfigured) {
-        fetchLinks();
+        fetchThreads();
     }
 });
 </script>
@@ -228,7 +255,7 @@ onMounted(() => {
                                     size="sm"
                                     variant="outline"
                                     :disabled="loading"
-                                    @click="fetchLinks"
+                                    @click="fetchThreads"
                                 >
                                     <RefreshCw
                                         class="mr-2 h-4 w-4"
@@ -246,7 +273,7 @@ onMounted(() => {
             </div>
 
             <div
-                v-if="loading && links.length === 0"
+                v-if="loading && totalMessageCount === 0"
                 class="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground"
             >
                 <Loader2 class="mx-auto mb-2 size-5 animate-spin" />
@@ -254,90 +281,141 @@ onMounted(() => {
             </div>
 
             <div
-                v-else-if="loadError && links.length === 0"
+                v-else-if="loadError && totalMessageCount === 0"
                 class="rounded-md border border-dashed p-6 text-center text-sm text-destructive"
             >
                 {{ loadError }}
             </div>
 
             <div
-                v-else-if="links.length === 0"
+                v-else-if="totalMessageCount === 0"
                 class="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground"
             >
                 {{ t('projects.email.empty') }}
             </div>
 
-            <div v-else class="space-y-2">
+            <div
+                v-else
+                class="divide-y rounded-md border"
+            >
                 <div
-                    v-for="link in links"
-                    :key="link.id"
-                    class="rounded-md border"
-                    :class="{
-                        'opacity-70': link.status === 'missing_on_server',
-                    }"
+                    v-for="thread in threads"
+                    :key="thread.id"
                 >
-                    <div class="flex items-start gap-3 p-3">
+                    <div class="flex items-start gap-2 px-4 py-3 hover:bg-muted/20">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            class="mt-0.5 size-8 shrink-0"
+                            :aria-expanded="isThreadExpanded(thread.id)"
+                            @click="toggleThreadExpand(thread.id)"
+                        >
+                            <ChevronRight
+                                class="size-4 transition-transform"
+                                :class="{ 'rotate-90': isThreadExpanded(thread.id) }"
+                            />
+                        </Button>
                         <button
                             type="button"
                             class="min-w-0 flex-1 text-left"
-                            :class="{
-                                'cursor-pointer hover:opacity-80': link.status === 'active',
-                                'cursor-not-allowed': link.status === 'missing_on_server',
-                            }"
-                            @click="toggleBody(link)"
+                            @click="toggleThreadExpand(thread.id)"
                         >
+                            <p class="truncate font-medium">
+                                {{ thread.subject || t('projects.email.no_subject') }}
+                            </p>
+                            <p class="text-xs text-muted-foreground">
+                                {{ t('projects.email.thread_messages', { count: String(thread.message_count) }) }}
+                                · {{ formatDateTime(thread.latest_sent_at) }}
+                            </p>
                             <p
-                                class="font-medium"
-                                :class="{
-                                    'line-through': link.status === 'missing_on_server',
-                                }"
+                                v-if="thread.messages[0]"
+                                class="mt-1 truncate text-xs text-muted-foreground"
                             >
-                                {{ link.subject || t('projects.email.no_subject') }}
-                            </p>
-                            <p class="text-xs text-muted-foreground">
-                                {{ fromLabel(link) }}
-                            </p>
-                            <p class="text-xs text-muted-foreground">
-                                {{ formatDateTime(link.sent_at) }}
-                                <span v-if="link.status === 'missing_on_server'">
-                                    · {{ t('projects.email.missing_on_server') }}
-                                </span>
+                                {{ fromLabel(thread.messages[0]) }}
                             </p>
                         </button>
-                        <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            class="shrink-0 text-destructive hover:text-destructive"
-                            :aria-label="t('projects.email.unlink')"
-                            @click="requestDelete(link.id)"
-                        >
-                            <Trash2 class="h-4 w-4" />
-                        </Button>
                     </div>
 
                     <div
-                        v-if="expandedLinkId === link.id"
-                        class="border-t bg-muted/20 p-3 text-sm"
+                        v-if="isThreadExpanded(thread.id)"
+                        class="border-t bg-muted/10"
                     >
                         <div
-                            v-if="bodyLoadingId === link.id"
-                            class="flex items-center gap-2 text-muted-foreground"
+                            v-for="link in thread.messages"
+                            :key="link.id"
+                            class="border-b border-border/50 last:border-b-0"
+                            :class="{
+                                'opacity-70': link.status === 'missing_on_server',
+                            }"
                         >
-                            <Loader2 class="size-4 animate-spin" />
-                            {{ t('projects.email.loading_body') }}
+                            <div class="flex items-start gap-3 py-2 pr-4 pl-14">
+                                <button
+                                    type="button"
+                                    class="min-w-0 flex-1 text-left"
+                                    :class="{
+                                        'cursor-pointer hover:opacity-80': link.status === 'active',
+                                        'cursor-not-allowed': link.status === 'missing_on_server',
+                                    }"
+                                    @click="toggleBody(link)"
+                                >
+                                    <p
+                                        class="truncate text-sm font-medium"
+                                        :class="{
+                                            'line-through': link.status === 'missing_on_server',
+                                        }"
+                                    >
+                                        {{ link.subject || t('projects.email.no_subject') }}
+                                    </p>
+                                    <p class="truncate text-xs text-muted-foreground">
+                                        {{ fromLabel(link) }}
+                                    </p>
+                                    <p class="text-xs text-muted-foreground">
+                                        {{ formatDateTime(link.sent_at) }}
+                                        <span v-if="link.status === 'missing_on_server'">
+                                            · {{ t('projects.email.missing_on_server') }}
+                                        </span>
+                                    </p>
+                                </button>
+                                <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="ghost"
+                                    class="shrink-0 text-destructive hover:text-destructive"
+                                    :aria-label="t('projects.email.unlink')"
+                                    @click="requestDelete(link.id)"
+                                >
+                                    <Trash2 class="h-4 w-4" />
+                                </Button>
+                            </div>
+
+                            <div
+                                v-if="expandedLinkId === link.id"
+                                class="border-t bg-muted/20 px-4 py-3 pl-14 text-sm"
+                            >
+                                <div
+                                    v-if="bodyLoadingId === link.id"
+                                    class="flex items-center gap-2 text-muted-foreground"
+                                >
+                                    <Loader2 class="size-4 animate-spin" />
+                                    {{ t('projects.email.loading_body') }}
+                                </div>
+                                <pre
+                                    v-if="bodies[link.id]?.text"
+                                    class="whitespace-pre-wrap wrap-break-word font-sans text-sm"
+                                >{{ bodies[link.id]?.text }}</pre>
+                                <pre
+                                    v-else-if="bodies[link.id]?.html"
+                                    class="whitespace-pre-wrap wrap-break-word font-sans text-sm"
+                                >{{ bodies[link.id]?.html?.replace(/<[^>]+>/g, ' ') }}</pre>
+                                <p
+                                    v-else-if="bodyLoadingId !== link.id"
+                                    class="text-muted-foreground"
+                                >
+                                    {{ t('projects.email.no_body') }}
+                                </p>
+                            </div>
                         </div>
-                        <pre
-                            v-if="bodies[link.id]?.text"
-                            class="whitespace-pre-wrap wrap-break-word font-sans text-sm"
-                        >{{ bodies[link.id]?.text }}</pre>
-                        <pre
-                            v-else-if="bodies[link.id]?.html"
-                            class="whitespace-pre-wrap wrap-break-word font-sans text-sm"
-                        >{{ bodies[link.id]?.html?.replace(/<[^>]+>/g, ' ') }}</pre>
-                        <p v-else class="text-muted-foreground">
-                            {{ t('projects.email.no_body') }}
-                        </p>
                     </div>
                 </div>
             </div>
