@@ -95,6 +95,8 @@ const projectForEdit = computed<ProjectListItem>(() => ({
     created_at: props.project.created_at ?? '',
     documents_count: props.project.documents.length,
     tasks_count: 0,
+    email_links_count: 0,
+    has_git_repository: props.project.git_repository !== null,
     tasks_timeline: [],
     latest_revision: props.project.revisions[0]
         ? {

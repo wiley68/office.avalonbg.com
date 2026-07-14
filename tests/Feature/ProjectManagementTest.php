@@ -4,6 +4,8 @@ use App\Enums\ProjectStatus;
 use App\Enums\TaskStatus;
 use App\Models\Document;
 use App\Models\Project;
+use App\Models\ProjectEmailLink;
+use App\Models\ProjectGitRepository;
 use App\Models\ProjectRevision;
 use App\Models\Task;
 use App\Models\User;
@@ -134,6 +136,22 @@ test('projects api includes project document count excluding task attachments', 
         ->getJson(route('internal.projects.index'))
         ->assertOk()
         ->assertJsonPath('data.0.documents_count', 1);
+});
+
+test('projects api includes git and email link indicators', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $project = Project::factory()->for($user)->create();
+
+    ProjectGitRepository::factory()->for($project)->create();
+    ProjectEmailLink::factory()->for($project)->for($user)->count(2)->create();
+
+    actingAs($user)
+        ->getJson(route('internal.projects.index'))
+        ->assertOk()
+        ->assertJsonPath('data.0.has_git_repository', true)
+        ->assertJsonPath('data.0.email_links_count', 2);
 });
 
 test('projects api includes latest revision label', function () {

@@ -36,7 +36,8 @@ class ProjectApiController extends Controller
 
         $query = Project::query()
             ->where('user_id', $user->id)
-            ->withCount(['documents', 'tasks'])
+            ->withCount(['documents', 'tasks', 'emailLinks'])
+            ->withExists('gitRepository')
             ->with([
                 'tasks' => fn ($query) => $query
                     ->select('id', 'project_id', 'parent_id', 'name', 'status', 'sort_order')
@@ -66,10 +67,11 @@ class ProjectApiController extends Controller
         return response()->json(
             $projects->through(function (Project $project) use ($taskTreeService) {
                 $data = $project->toArray();
-                unset($data['tasks']);
+                unset($data['tasks'], $data['git_repository_exists']);
 
                 return [
                     ...$data,
+                    'has_git_repository' => (bool) $project->git_repository_exists,
                     'tasks_timeline' => $taskTreeService->flatTimelineForProject($project),
                 ];
             }),

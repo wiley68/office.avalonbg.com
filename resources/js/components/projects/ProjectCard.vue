@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { ListTodo, Paperclip, Pencil, Trash2 } from 'lucide-vue-next';
+import { GitBranch, ListTodo, Mail, Paperclip, Pencil, Trash2 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import ProjectTaskTimeline from '@/components/projects/ProjectTaskTimeline.vue';
@@ -49,6 +49,10 @@ const hasDocuments = computed(() => props.project.documents_count > 0);
 
 const hasTasks = computed(() => props.project.tasks_count > 0);
 
+const hasGitRepository = computed(() => props.project.has_git_repository);
+
+const hasEmailLinks = computed(() => props.project.email_links_count > 0);
+
 const tasksTimeline = computed(
     () => props.project.tasks_timeline ?? [],
 );
@@ -61,18 +65,24 @@ const tasksTabUrl = computed(() =>
     show(props.project.id, { query: { tab: 'tasks' } }).url,
 );
 
+const gitTabUrl = computed(() =>
+    show(props.project.id, { query: { tab: 'git' } }).url,
+);
+
+const emailTabUrl = computed(() =>
+    show(props.project.id, { query: { tab: 'email' } }).url,
+);
+
 const revisionsTabUrl = computed(() =>
     show(props.project.id, { query: { tab: 'revisions' } }).url,
 );
 </script>
 
 <template>
-    <Card class="gap-4 py-4">
+    <Card class="gap-4 overflow-hidden py-4">
         <TooltipProvider :delay-duration="200">
-            <CardHeader
-                class="grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto_1.25rem] gap-x-4 gap-y-2 border-b pb-4 [.border-b]:pb-4"
-            >
-                <CardTitle class="min-h-6 min-w-0 text-base leading-snug">
+            <CardHeader class="min-w-0 gap-2 border-b pb-4 [.border-b]:pb-4">
+                <CardTitle class="min-w-0 text-base leading-snug">
                     <Link
                         :href="show(project.id)"
                         class="line-clamp-2 block font-semibold text-foreground underline-offset-4 hover:underline"
@@ -81,7 +91,28 @@ const revisionsTabUrl = computed(() =>
                     </Link>
                 </CardTitle>
 
-                <div class="flex min-h-6 shrink-0 items-center justify-end gap-1">
+                <div class="min-w-0 w-full overflow-hidden">
+                    <Tooltip v-if="hasDescription">
+                        <TooltipTrigger as-child>
+                            <CardDescription
+                                class="line-clamp-2 cursor-default wrap-break-word text-sm leading-5"
+                            >
+                                {{ description }}
+                            </CardDescription>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" class="max-w-sm text-pretty">
+                            {{ description }}
+                        </TooltipContent>
+                    </Tooltip>
+                    <CardDescription
+                        v-else
+                        class="line-clamp-2 wrap-break-word text-sm leading-5"
+                    >
+                        {{ description }}
+                    </CardDescription>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-1">
                     <span
                         :class="[
                             'inline-flex rounded px-2 py-0.5 text-xs font-medium',
@@ -90,62 +121,6 @@ const revisionsTabUrl = computed(() =>
                     >
                         {{ t(`projects.status.${project.status}`) }}
                     </span>
-                    <Tooltip>
-                        <TooltipTrigger as-child>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                class="size-8 shrink-0"
-                                :aria-label="t('common.edit')"
-                                @click="emit('edit', project)"
-                            >
-                                <Pencil class="size-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">
-                            {{ t('common.edit') }}
-                        </TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                        <TooltipTrigger as-child>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                class="size-8 shrink-0 text-destructive hover:text-destructive"
-                                :aria-label="t('common.delete')"
-                                @click="emit('delete', project.id)"
-                            >
-                                <Trash2 class="size-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">
-                            {{ t('common.delete') }}
-                        </TooltipContent>
-                    </Tooltip>
-                </div>
-
-                <Tooltip v-if="hasDescription">
-                    <TooltipTrigger as-child>
-                        <CardDescription
-                            class="min-w-0 cursor-default truncate text-sm leading-5"
-                        >
-                            {{ description }}
-                        </CardDescription>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" class="max-w-sm text-pretty">
-                        {{ description }}
-                    </TooltipContent>
-                </Tooltip>
-                <CardDescription
-                    v-else
-                    class="min-w-0 truncate text-sm leading-5"
-                >
-                    {{ description }}
-                </CardDescription>
-
-                <div
-                    class="flex h-full shrink-0 flex-wrap items-center justify-end gap-1"
-                >
                     <Tooltip>
                         <TooltipTrigger as-child>
                             <Button
@@ -206,6 +181,100 @@ const revisionsTabUrl = computed(() =>
                                     ? t('projects.documents.open_tab')
                                     : t('projects.documents.none_attached')
                             }}
+                        </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger as-child>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                class="size-8 shrink-0"
+                                :class="
+                                    hasGitRepository
+                                        ? 'text-primary hover:text-primary'
+                                        : 'text-muted-foreground/50 hover:text-muted-foreground/65'
+                                "
+                                :aria-label="
+                                    hasGitRepository
+                                        ? t('projects.git.open_tab')
+                                        : t('projects.git.none')
+                                "
+                                as-child
+                            >
+                                <Link :href="gitTabUrl">
+                                    <GitBranch class="size-4" />
+                                </Link>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                            {{
+                                hasGitRepository
+                                    ? t('projects.git.open_tab')
+                                    : t('projects.git.none')
+                            }}
+                        </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger as-child>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                class="size-8 shrink-0"
+                                :class="
+                                    hasEmailLinks
+                                        ? 'text-primary hover:text-primary'
+                                        : 'text-muted-foreground/50 hover:text-muted-foreground/65'
+                                "
+                                :aria-label="
+                                    hasEmailLinks
+                                        ? t('projects.email.open_tab')
+                                        : t('projects.email.none_linked')
+                                "
+                                as-child
+                            >
+                                <Link :href="emailTabUrl">
+                                    <Mail class="size-4" />
+                                </Link>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                            {{
+                                hasEmailLinks
+                                    ? t('projects.email.open_tab')
+                                    : t('projects.email.none_linked')
+                            }}
+                        </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger as-child>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                class="size-8 shrink-0"
+                                :aria-label="t('common.edit')"
+                                @click="emit('edit', project)"
+                            >
+                                <Pencil class="size-4" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                            {{ t('common.edit') }}
+                        </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger as-child>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                class="size-8 shrink-0 text-destructive hover:text-destructive"
+                                :aria-label="t('common.delete')"
+                                @click="emit('delete', project.id)"
+                            >
+                                <Trash2 class="size-4" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                            {{ t('common.delete') }}
                         </TooltipContent>
                     </Tooltip>
                 </div>
