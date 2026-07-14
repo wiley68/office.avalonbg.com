@@ -272,7 +272,7 @@ onMounted(async () => {
     <AppLayout :breadcrumbs="breadcrumbs">
         <Head :title="t('projects.email.link_page_title')" />
 
-        <div class="flex h-[calc(100vh-8rem)] flex-col gap-4">
+        <div class="flex h-[calc(100vh-6rem)] flex-col gap-4 mx-2">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
                     <Button variant="outline" size="sm" as-child>
