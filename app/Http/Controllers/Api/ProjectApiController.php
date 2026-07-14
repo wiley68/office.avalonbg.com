@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\ProjectTodoStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\User;
@@ -36,7 +37,15 @@ class ProjectApiController extends Controller
 
         $query = Project::query()
             ->where('user_id', $user->id)
-            ->withCount(['documents', 'tasks', 'emailLinks'])
+            ->withCount([
+                'documents',
+                'tasks',
+                'emailLinks',
+                'todos as active_todos_count' => fn ($query) => $query->where(
+                    'status',
+                    ProjectTodoStatus::Active,
+                ),
+            ])
             ->withExists('gitRepository')
             ->with([
                 'tasks' => fn ($query) => $query

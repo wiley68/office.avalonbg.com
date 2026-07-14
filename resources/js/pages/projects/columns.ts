@@ -19,6 +19,7 @@ export interface ProjectListItem {
     documents_count: number;
     tasks_count: number;
     email_links_count: number;
+    active_todos_count: number;
     has_git_repository: boolean;
     tasks_timeline: ProjectTaskTimelineItem[];
     latest_revision: {

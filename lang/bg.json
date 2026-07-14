@@ -410,6 +410,7 @@
             "overview": "Преглед",
             "revisions": "Ревизии",
             "tasks": "Задачи",
+            "todos": "To-do",
             "documents": "Документи",
             "git": "Git",
             "email": "E-Mail"
@@ -456,6 +457,23 @@
             },
             "errors": {
                 "invalid_reorder": "Невалидна подредба на ревизиите."
+            }
+        },
+        "todos": {
+            "title": "To-do",
+            "hint": "Кратки бележки и напомняния, свързани с проекта.",
+            "add": "Добави to-do",
+            "empty": "Все още няма to-do елементи.",
+            "create_title": "Ново to-do",
+            "edit_title": "Редакция на to-do",
+            "saved": "To-do е записано.",
+            "delete_confirm": "Сигурни ли сте, че искате да изтриете този to-do елемент?",
+            "open_tab": "Отвори to-do",
+            "none_active": "Няма активни to-do елементи",
+            "created_at": "Създадено",
+            "fields": {
+                "body": "Текст",
+                "body_placeholder": "Кратък текст — до две-три изречения."
             }
         },
         "tasks": {

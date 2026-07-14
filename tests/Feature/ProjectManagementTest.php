@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Models\ProjectEmailLink;
 use App\Models\ProjectGitRepository;
 use App\Models\ProjectRevision;
+use App\Models\ProjectTodo;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -152,6 +153,21 @@ test('projects api includes git and email link indicators', function () {
         ->assertOk()
         ->assertJsonPath('data.0.has_git_repository', true)
         ->assertJsonPath('data.0.email_links_count', 2);
+});
+
+test('projects api includes active todos count', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $project = Project::factory()->for($user)->create();
+
+    ProjectTodo::factory()->for($project)->count(2)->create();
+    ProjectTodo::factory()->for($project)->completed()->create();
+
+    actingAs($user)
+        ->getJson(route('internal.projects.index', ['search' => (string) $project->id]))
+        ->assertOk()
+        ->assertJsonPath('data.0.active_todos_count', 2);
 });
 
 test('projects api includes latest revision label', function () {

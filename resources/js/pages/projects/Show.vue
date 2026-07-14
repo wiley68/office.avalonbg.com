@@ -11,6 +11,8 @@ import type { ProjectGitRepositoryConfig } from '@/components/projects/GitPanel.
 import ProjectFormModal from '@/components/projects/ProjectFormModal.vue';
 import RevisionList from '@/components/projects/RevisionList.vue';
 import TaskTree from '@/components/projects/TaskTree.vue';
+import TodoPanel from '@/components/projects/TodoPanel.vue';
+import type { ProjectTodoItem } from '@/components/projects/TodoPanel.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -48,6 +50,7 @@ type Props = {
         revisions: ProjectRevision[];
         documents: ProjectDocument[];
         git_repository: ProjectGitRepositoryConfig | null;
+        todos: ProjectTodoItem[];
     };
     hasImapConfigured: boolean;
 };
@@ -56,7 +59,7 @@ const props = defineProps<Props>();
 
 const { t } = useTranslations();
 
-const projectTabs = ['overview', 'revisions', 'tasks', 'documents', 'git', 'email'] as const;
+const projectTabs = ['overview', 'revisions', 'tasks', 'todos', 'documents', 'git', 'email'] as const;
 type ProjectTab = (typeof projectTabs)[number];
 
 function resolveTabFromUrl(): ProjectTab {
@@ -96,6 +99,7 @@ const projectForEdit = computed<ProjectListItem>(() => ({
     documents_count: props.project.documents.length,
     tasks_count: 0,
     email_links_count: 0,
+    active_todos_count: 0,
     has_git_repository: props.project.git_repository !== null,
     tasks_timeline: [],
     latest_revision: props.project.revisions[0]
@@ -195,6 +199,9 @@ const handleDocumentUploaded = (documentId: number): void => {
                     <TabsTrigger value="tasks">
                         {{ t('projects.tabs.tasks') }}
                     </TabsTrigger>
+                    <TabsTrigger value="todos">
+                        {{ t('projects.tabs.todos') }}
+                    </TabsTrigger>
                     <TabsTrigger value="documents">
                         {{ t('projects.tabs.documents') }}
                     </TabsTrigger>
@@ -228,6 +235,15 @@ const handleDocumentUploaded = (documentId: number): void => {
                         <TaskTree
                             :project-id="project.id"
                             :revisions="project.revisions"
+                        />
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="todos" class="mt-4">
+                    <div class="rounded-xl border p-4 shadow-sm">
+                        <TodoPanel
+                            :project-id="project.id"
+                            :todos="project.todos"
                         />
                     </div>
                 </TabsContent>

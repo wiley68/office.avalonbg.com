@@ -85,6 +85,14 @@ class Project extends Model
     }
 
     /**
+     * @return HasMany<ProjectTodo, $this>
+     */
+    public function todos(): HasMany
+    {
+        return $this->hasMany(ProjectTodo::class);
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

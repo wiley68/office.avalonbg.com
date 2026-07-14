@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { GitBranch, ListTodo, Mail, Paperclip, Pencil, Trash2 } from 'lucide-vue-next';
+import { GitBranch, ListChecks, ListTodo, Mail, Paperclip, Pencil, Trash2 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import ProjectTaskTimeline from '@/components/projects/ProjectTaskTimeline.vue';
@@ -53,6 +53,8 @@ const hasGitRepository = computed(() => props.project.has_git_repository);
 
 const hasEmailLinks = computed(() => props.project.email_links_count > 0);
 
+const hasActiveTodos = computed(() => props.project.active_todos_count > 0);
+
 const tasksTimeline = computed(
     () => props.project.tasks_timeline ?? [],
 );
@@ -71,6 +73,10 @@ const gitTabUrl = computed(() =>
 
 const emailTabUrl = computed(() =>
     show(props.project.id, { query: { tab: 'email' } }).url,
+);
+
+const todosTabUrl = computed(() =>
+    show(props.project.id, { query: { tab: 'todos' } }).url,
 );
 
 const revisionsTabUrl = computed(() =>
@@ -242,6 +248,37 @@ const revisionsTabUrl = computed(() =>
                                 hasEmailLinks
                                     ? t('projects.email.open_tab')
                                     : t('projects.email.none_linked')
+                            }}
+                        </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger as-child>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                class="size-8 shrink-0"
+                                :class="
+                                    hasActiveTodos
+                                        ? 'text-primary hover:text-primary'
+                                        : 'text-muted-foreground/50 hover:text-muted-foreground/65'
+                                "
+                                :aria-label="
+                                    hasActiveTodos
+                                        ? t('projects.todos.open_tab')
+                                        : t('projects.todos.none_active')
+                                "
+                                as-child
+                            >
+                                <Link :href="todosTabUrl">
+                                    <ListChecks class="size-4" />
+                                </Link>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                            {{
+                                hasActiveTodos
+                                    ? t('projects.todos.open_tab')
+                                    : t('projects.todos.none_active')
                             }}
                         </TooltipContent>
                     </Tooltip>

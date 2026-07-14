@@ -410,6 +410,7 @@
             "overview": "Overview",
             "revisions": "Revisions",
             "tasks": "Tasks",
+            "todos": "To-do",
             "documents": "Documents",
             "git": "Git",
             "email": "E-Mail"
@@ -456,6 +457,23 @@
             },
             "errors": {
                 "invalid_reorder": "Invalid revision order."
+            }
+        },
+        "todos": {
+            "title": "To-do",
+            "hint": "Short notes and reminders linked to the project.",
+            "add": "Add to-do",
+            "empty": "No to-do items yet.",
+            "create_title": "New to-do",
+            "edit_title": "Edit to-do",
+            "saved": "To-do saved.",
+            "delete_confirm": "Are you sure you want to delete this to-do item?",
+            "open_tab": "Open to-do",
+            "none_active": "No active to-do items",
+            "created_at": "Created",
+            "fields": {
+                "body": "Text",
+                "body_placeholder": "Short text — up to two or three sentences."
             }
         },
         "tasks": {

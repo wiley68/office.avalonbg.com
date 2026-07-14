@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ProjectTodoStatus;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
 use App\Models\Project;
@@ -29,6 +30,9 @@ class ProjectController extends Controller
             'revisions' => fn ($query) => $query->orderByDesc('sort_order'),
             'documents:id,original_name,description,mime_type',
             'gitRepository:id,project_id,owner,repo,default_branch,access_token',
+            'todos' => fn ($query) => $query
+                ->orderByRaw("CASE WHEN status = '".ProjectTodoStatus::Active->value."' THEN 0 ELSE 1 END")
+                ->orderByDesc('created_at'),
         ]);
 
         /** @var User $user */
@@ -63,6 +67,13 @@ class ProjectController extends Controller
                     'repository_url' => $project->gitRepository->repositoryUrl(),
                     'has_access_token' => filled($project->gitRepository->access_token),
                 ] : null,
+                'todos' => $project->todos->map(fn ($todo) => [
+                    'id' => $todo->id,
+                    'body' => $todo->body,
+                    'status' => $todo->status->value,
+                    'created_at' => $todo->created_at?->toIso8601String(),
+                    'completed_at' => $todo->completed_at?->toIso8601String(),
+                ])->values(),
             ],
         ]);
     }

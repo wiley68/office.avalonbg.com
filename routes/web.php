@@ -27,6 +27,7 @@ use App\Http\Controllers\ProjectDocumentController;
 use App\Http\Controllers\ProjectEmailLinkController;
 use App\Http\Controllers\ProjectGitRepositoryController;
 use App\Http\Controllers\ProjectRevisionController;
+use App\Http\Controllers\ProjectTodoController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskDocumentController;
 use App\Http\Controllers\UserController;
@@ -36,6 +37,7 @@ use App\Models\Document;
 use App\Models\Project;
 use App\Models\ProjectEmailLink;
 use App\Models\ProjectRevision;
+use App\Models\ProjectTodo;
 use App\Models\Task;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -221,6 +223,16 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
             ->findOrFail($value);
     });
 
+    Route::bind('todo', function (string $value): ProjectTodo {
+        $project = request()->route('project');
+
+        abort_unless($project instanceof Project, 404);
+
+        return ProjectTodo::query()
+            ->where('project_id', $project->id)
+            ->findOrFail($value);
+    });
+
     Route::bind('revision', function (string $value): ProjectRevision {
         $project = request()->route('project');
 
@@ -262,6 +274,15 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
         ->name('projects.revisions.update');
     Route::delete('projects/{project}/revisions/{revision}', [ProjectRevisionController::class, 'destroy'])
         ->name('projects.revisions.destroy');
+
+    Route::post('projects/{project}/todos', [ProjectTodoController::class, 'store'])
+        ->name('projects.todos.store');
+    Route::put('projects/{project}/todos/{todo}', [ProjectTodoController::class, 'update'])
+        ->name('projects.todos.update');
+    Route::patch('projects/{project}/todos/{todo}/toggle', [ProjectTodoController::class, 'toggle'])
+        ->name('projects.todos.toggle');
+    Route::delete('projects/{project}/todos/{todo}', [ProjectTodoController::class, 'destroy'])
+        ->name('projects.todos.destroy');
 
     Route::post('projects/{project}/tasks', [TaskController::class, 'store'])
         ->name('projects.tasks.store');
