@@ -19,7 +19,6 @@ import {
     SidebarMenuSubButton,
     SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { useAgentsNavSection } from '@/composables/useAgentsNavSection';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { useUsersNavSection } from '@/composables/useUsersNavSection';
 import type { NavItem } from '@/types';
@@ -29,25 +28,23 @@ defineProps<{
 }>();
 
 const { isCurrentUrl } = useCurrentUrl();
-const { agentsNavOpen } = useAgentsNavSection();
 const { usersNavOpen } = useUsersNavSection();
 
-const toggleSectionOpen: Record<'agents' | 'users', Ref<boolean>> = {
-    agents: agentsNavOpen,
+const toggleSectionOpen: Record<'users', Ref<boolean>> = {
     users: usersNavOpen,
 };
 
 function isToggleCollapsible(
     variant: NavItem['collapsibleVariant'],
-): variant is 'agents' | 'users' {
-    return variant === 'agents' || variant === 'users';
+): variant is 'users' {
+    return variant === 'users';
 }
 
-function isToggleOpen(variant: 'agents' | 'users'): boolean {
+function isToggleOpen(variant: 'users'): boolean {
     return toggleSectionOpen[variant].value;
 }
 
-function setToggleOpen(variant: 'agents' | 'users', open: boolean): void {
+function setToggleOpen(variant: 'users', open: boolean): void {
     toggleSectionOpen[variant].value = open;
 }
 

@@ -1,9 +1,6 @@
 <?php
 
 use App\Http\Controllers\AccessController;
-use App\Http\Controllers\Admin\AgentFeedbackStatisticsController;
-use App\Http\Controllers\Admin\DataExportController;
-use App\Http\Controllers\AgentConversationMessagesController;
 use App\Http\Controllers\Api\AccessApiController;
 use App\Http\Controllers\Api\AccessDataTransformController;
 use App\Http\Controllers\Api\AuditLogApiController;
@@ -15,13 +12,10 @@ use App\Http\Controllers\Api\ProjectGitApiController;
 use App\Http\Controllers\Api\TaskApiController;
 use App\Http\Controllers\Api\UserApiController;
 use App\Http\Controllers\AuditLogController;
-use App\Http\Controllers\DashboardAgentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\DocumentDownloadController;
 use App\Http\Controllers\LocaleController;
-use App\Http\Controllers\NotesAgentController;
-use App\Http\Controllers\NotesExportDownloadController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectDocumentController;
 use App\Http\Controllers\ProjectEmailLinkController;
@@ -51,45 +45,6 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled']
 
     Route::post('/dashboard/clear-cache', [DashboardController::class, 'clearCache'])
         ->name('dashboard.clear-cache');
-});
-
-Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled', 'profiler.agent.block'])->group(function () {
-    Route::inertia('dashboard/composer', 'office/Composer')->name('dashboard.composer');
-
-    Route::post('dashboard/agent', [DashboardAgentController::class, 'store'])
-        ->middleware('agent.context:orchestrator')
-        ->name('dashboard.agent');
-    Route::get('dashboard/agent/conversations', [AgentConversationMessagesController::class, 'index'])
-        ->name('dashboard.agent.conversations');
-    Route::delete('dashboard/agent/conversations', [AgentConversationMessagesController::class, 'destroyAll'])
-        ->name('dashboard.agent.conversations.destroy');
-    Route::get('dashboard/agent/conversations/{conversation}/messages', [AgentConversationMessagesController::class, 'show'])
-        ->name('dashboard.agent.conversation.messages');
-    Route::post('dashboard/agent/messages/{message}/feedback', [AgentConversationMessagesController::class, 'feedback'])
-        ->name('dashboard.agent.message.feedback');
-    Route::post('dashboard/agent/messages/{message}/email', [AgentConversationMessagesController::class, 'email'])
-        ->name('dashboard.agent.message.email');
-    Route::get('dashboard/agent/messages/{message}/pdf', [AgentConversationMessagesController::class, 'pdf'])
-        ->name('dashboard.agent.message.pdf');
-
-    Route::inertia('dashboard/notes', 'office/NotesAgent')->name('dashboard.notes');
-    Route::get('dashboard/notes/export/{token}', NotesExportDownloadController::class)
-        ->name('dashboard.notes.export.download');
-    Route::post('dashboard/notes/agent', [NotesAgentController::class, 'store'])
-        ->middleware('agent.context:notes')
-        ->name('dashboard.notes.agent');
-    Route::get('dashboard/notes/agent/conversations', [AgentConversationMessagesController::class, 'index'])
-        ->name('dashboard.notes.agent.conversations');
-    Route::delete('dashboard/notes/agent/conversations', [AgentConversationMessagesController::class, 'destroyAll'])
-        ->name('dashboard.notes.agent.conversations.destroy');
-    Route::get('dashboard/notes/agent/conversations/{conversation}/messages', [AgentConversationMessagesController::class, 'show'])
-        ->name('dashboard.notes.agent.conversation.messages');
-    Route::post('dashboard/notes/agent/messages/{message}/feedback', [AgentConversationMessagesController::class, 'feedback'])
-        ->name('dashboard.notes.agent.message.feedback');
-    Route::post('dashboard/notes/agent/messages/{message}/email', [AgentConversationMessagesController::class, 'email'])
-        ->name('dashboard.notes.agent.message.email');
-    Route::get('dashboard/notes/agent/messages/{message}/pdf', [AgentConversationMessagesController::class, 'pdf'])
-        ->name('dashboard.notes.agent.message.pdf');
 });
 
 Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled', 'role:profiler|admin'])->group(function () {
@@ -335,15 +290,6 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
         ->name('tasks.documents.store');
     Route::delete('tasks/{task}/documents/{document}', [TaskDocumentController::class, 'destroy'])
         ->name('tasks.documents.destroy');
-});
-
-Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled', 'role:user|admin'])->group(function () {
-    Route::get('dashboard/admin/statistics', AgentFeedbackStatisticsController::class)
-        ->name('dashboard.admin.statistics');
-    Route::get('dashboard/admin/export/notes', [DataExportController::class, 'notes'])
-        ->name('dashboard.admin.export.notes');
-    Route::get('dashboard/admin/export', [DataExportController::class, 'index'])
-        ->name('dashboard.admin.export');
 });
 
 require __DIR__.'/settings.php';

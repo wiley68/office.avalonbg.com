@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
 import {
-    BarChart3,
     BookOpen,
     Menu,
     Search,
-    Table,
     Users,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
@@ -44,7 +42,6 @@ import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { getInitials } from '@/composables/useInitials';
 import { toUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
-import dashboardRoutes from '@/routes/dashboard';
 import { index as usersIndex } from '@/routes/users';
 import type { BreadcrumbItem, NavItem } from '@/types';
 
@@ -93,19 +90,6 @@ const mainNavItems = computed<NavItem[]>(() => {
             icon: Users,
         });
     }
-
-    items.push(
-        {
-            title: 'Статистика',
-            href: dashboardRoutes.admin.statistics.url(),
-            icon: BarChart3,
-        },
-        {
-            title: 'Експорт',
-            href: dashboardRoutes.admin.export.url(),
-            icon: Table,
-        },
-    );
 
     return items;
 });

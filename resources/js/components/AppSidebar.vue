@@ -2,8 +2,6 @@
 import { usePage } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import {
-    BarChart3,
-    Bot,
     FolderKanban,
     HardDriveDownload,
     History,
@@ -11,8 +9,6 @@ import {
     LayoutGrid,
     Mail,
     ScrollText,
-    StickyNote,
-    Table,
     User,
     Users,
     FileText,
@@ -35,7 +31,6 @@ import { useTranslations } from '@/composables/useTranslations';
 import { dashboard } from '@/routes';
 import { index as accessesIndex } from '@/routes/accesses';
 import { index as auditLogsIndex } from '@/routes/audit-logs';
-import dashboardRoutes from '@/routes/dashboard';
 import { index as documentsIndex } from '@/routes/documents';
 import { index as projectsIndex } from '@/routes/projects';
 import { index as usersIndex } from '@/routes/users';
@@ -67,30 +62,6 @@ const usersNavItem = (user: NonNullable<typeof page.props.auth.user>): NavItem |
         ],
     };
 };
-
-const agentsNavItem = (): NavItem => ({
-    title: t('nav.agents'),
-    href: '',
-    icon: Users,
-    collapsibleVariant: 'agents',
-    children: [
-        {
-            title: t('nav.notes'),
-            href: dashboardRoutes.notes.url(),
-            icon: StickyNote,
-        },
-        {
-            title: t('nav.statistics'),
-            href: dashboardRoutes.admin.statistics.url(),
-            icon: BarChart3,
-        },
-        {
-            title: t('nav.export'),
-            href: dashboardRoutes.admin.export.url(),
-            icon: Table,
-        },
-    ],
-});
 
 const mainNavItems = computed<NavItem[]>(() => {
     const user = page.props.auth.user;
@@ -131,12 +102,6 @@ const mainNavItems = computed<NavItem[]>(() => {
                 href: dashboard(),
                 icon: LayoutGrid,
             },
-            {
-                title: t('nav.composer'),
-                href: dashboardRoutes.composer.url(),
-                icon: Bot,
-            },
-            agentsNavItem(),
             ...(usersItem ? [usersItem] : []),
         ];
 

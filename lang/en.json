@@ -3,7 +3,7 @@
         "dashboard": "Dashboard",
         "sign_in": "Sign in",
         "title": "Sign in for registered users",
-        "description": ":name is an office platform with AI agents for daily work — notes, assistance and communication. Access is limited to registered users. For access or questions, contact us at"
+        "description": ":name is an office platform for managing projects, tasks, documents and correspondence. Access is limited to registered users. For access or questions, contact us at"
     },
     "appearance": {
         "label": "Appearance",
@@ -49,11 +49,6 @@
         "users": "Users",
         "logs": "Logs",
         "audit": "Audit",
-        "composer": "Composer",
-        "agents": "Agents",
-        "notes": "Notes",
-        "statistics": "Statistics",
-        "export": "Export",
         "accesses": "Accesses",
         "projects": "Projects",
         "documents": "Documents"

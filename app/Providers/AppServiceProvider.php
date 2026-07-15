@@ -2,13 +2,15 @@
 
 namespace App\Providers;
 
-use App\Ai\Storage\ContextualDatabaseConversationStore;
+use App\Http\Middleware\ForceHttps;
 use App\Models\Access;
 use App\Models\User;
 use App\Support\AuditLogger;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -16,13 +18,9 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
-use Laravel\Ai\Contracts\ConversationStore;
 use Laravel\Fortify\Events\TwoFactorAuthenticationFailed;
 use Laravel\Fortify\Events\ValidTwoFactorAuthenticationCodeProvided;
 use Laravel\Fortify\Fortify;
-use Illuminate\Contracts\Http\Kernel;
-use Illuminate\Foundation\Http\Kernel as HttpKernel;
-use App\Http\Middleware\ForceHttps;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -31,7 +29,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(ConversationStore::class, ContextualDatabaseConversationStore::class);
+        //
     }
 
     /**

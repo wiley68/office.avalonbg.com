@@ -18,5 +18,5 @@ export type NavItem = {
         icon?: LucideIcon;
     }>;
     /** Специален toggle с chevron-up/down вместо стандартната стрелка */
-    collapsibleVariant?: 'default' | 'agents' | 'users';
+    collapsibleVariant?: 'default' | 'users';
 };

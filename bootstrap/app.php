@@ -1,7 +1,5 @@
 <?php
 
-use App\Http\Middleware\BlockProfilerFromAgentModules;
-use App\Http\Middleware\EnsureAgentConversationContext;
 use App\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use App\Http\Middleware\EnsurePasswordIsChanged;
 use App\Http\Middleware\EnsureTwoFactorIsEnabled;
@@ -52,8 +50,6 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
-            'agent.context' => EnsureAgentConversationContext::class,
-            'profiler.agent.block' => BlockProfilerFromAgentModules::class,
             'password.changed' => EnsurePasswordIsChanged::class,
             'two-factor.enabled' => EnsureTwoFactorIsEnabled::class,
             'office.user' => EnsureUserIsNotAdmin::class,
