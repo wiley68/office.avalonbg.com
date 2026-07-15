@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useAppToast } from '@/composables/useAppToast';
 import { useTranslations } from '@/composables/useTranslations';
+import { openEmailAttachment } from '@/lib/openEmailAttachment';
 import { edit as editEmailSettings } from '@/routes/email';
 import { destroy as destroyEmailLink, link as linkProjectEmail } from '@/routes/projects/email';
 import { destroy as destroyEmailThread } from '@/routes/projects/email/thread';
@@ -42,6 +43,7 @@ type EmailThread = {
 type EmailAttachment = {
     part: string;
     filename: string;
+    mime_type?: string | null;
 };
 
 type Props = {
@@ -120,8 +122,9 @@ const toggleThreadExpand = (threadId: string): void => {
     expandedThreadIds.value = next;
 };
 
-const attachmentDownloadUrl = (linkId: number, part: string): string =>
-    `/internal-api/projects/${props.projectId}/email/${linkId}/attachments/${encodeURIComponent(part)}`;
+const openAttachment = (linkId: number, attachment: EmailAttachment): void => {
+    openEmailAttachment(props.projectId, linkId, attachment);
+};
 
 const fetchLinkAttachments = async (link: EmailLink): Promise<void> => {
     if (link.status === 'missing_on_server' || attachmentsByLinkId.value[link.id] !== undefined) {
@@ -492,16 +495,15 @@ onMounted(() => {
                                         v-if="attachmentsByLinkId[link.id]?.length"
                                         class="mt-1 flex flex-wrap gap-2"
                                     >
-                                        <a
+                                        <button
                                             v-for="attachment in attachmentsByLinkId[link.id]"
                                             :key="`${link.id}-${attachment.part}`"
-                                            :href="attachmentDownloadUrl(link.id, attachment.part)"
+                                            type="button"
                                             class="inline-flex max-w-full items-center rounded-md border border-border bg-background px-2 py-0.5 text-xs text-blue-600 hover:bg-muted hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                                            download
-                                            @click.stop
+                                            @click.stop="openAttachment(link.id, attachment)"
                                         >
                                             <span class="truncate">{{ attachment.filename }}</span>
-                                        </a>
+                                        </button>
                                     </div>
                                 </div>
                                 <Button

@@ -458,7 +458,7 @@ class ImapMailboxService
     }
 
     /**
-     * @return list<array{part: string, filename: string}>
+     * @return list<array{part: string, filename: string, mime_type: string}>
      *
      * @throws ImapConnectionException
      */
@@ -503,7 +503,7 @@ class ImapMailboxService
 
             abort_if($partStructure === null, 404);
 
-            $content = $this->fetchPartBody($connection, $uid, $part, $partStructure);
+            $content = $this->fetchBinaryPartBody($connection, $uid, $part, $partStructure);
 
             abort_if($content === null, 404);
 
@@ -667,7 +667,7 @@ class ImapMailboxService
     }
 
     /**
-     * @return list<array{part: string, filename: string}>
+     * @return list<array{part: string, filename: string, mime_type: string}>
      */
     private function collectMessageAttachments(object $structure, string $partNumber = ''): array
     {
@@ -697,6 +697,7 @@ class ImapMailboxService
         return [[
             'part' => $partNumber === '' ? '1' : $partNumber,
             'filename' => $filename,
+            'mime_type' => $this->partMimeType($structure),
         ]];
     }
 
@@ -802,25 +803,63 @@ class ImapMailboxService
         string $partNumber,
         object $structure,
     ): ?string {
+        $decoded = $this->fetchRawPartBody($connection, $uid, $partNumber, $structure);
+
+        if ($decoded === null) {
+            return null;
+        }
+
+        return $this->emailBodyEncoding->toUtf8(
+            $decoded,
+            $this->emailBodyEncoding->charsetFromStructure($structure),
+        );
+    }
+
+    private function fetchBinaryPartBody(
+        Connection $connection,
+        int $uid,
+        string $partNumber,
+        object $structure,
+    ): ?string {
+        return $this->fetchRawPartBody($connection, $uid, $partNumber, $structure);
+    }
+
+    private function fetchRawPartBody(
+        Connection $connection,
+        int $uid,
+        string $partNumber,
+        object $structure,
+    ): ?string {
         $body = imap_fetchbody($connection, $uid, $partNumber, FT_UID);
 
         if ($body === false) {
             return null;
         }
 
-        $decoded = $this->decodeBody($body, (int) ($structure->encoding ?? ENCBASE64));
-        $charset = $this->emailBodyEncoding->charsetFromStructure($structure);
-
-        return $this->emailBodyEncoding->toUtf8($decoded, $charset);
+        return $this->decodeBody($body, (int) ($structure->encoding ?? ENCBASE64));
     }
 
     private function decodeBody(string $body, int $encoding): string
     {
         return match ($encoding) {
-            ENCBASE64 => base64_decode($body, true) ?: $body,
+            ENCBASE64 => $this->decodeBase64Body($body),
             ENCQUOTEDPRINTABLE => quoted_printable_decode($body),
             default => $body,
         };
+    }
+
+    private function decodeBase64Body(string $body): string
+    {
+        $normalized = preg_replace('/\s+/', '', $body) ?? $body;
+        $decoded = base64_decode($normalized, true);
+
+        if ($decoded !== false) {
+            return $decoded;
+        }
+
+        $decoded = base64_decode($normalized, false);
+
+        return $decoded !== false ? $decoded : $body;
     }
 
     private function lastImapError(): string

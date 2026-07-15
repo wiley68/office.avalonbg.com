@@ -12,6 +12,7 @@ use App\Services\ImapMailboxService;
 use App\Services\ProjectEmailService;
 use App\Support\Translations;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
@@ -126,6 +127,7 @@ class ProjectEmailApiController extends Controller
                     ->map(fn (ProjectEmailAttachment $attachment): array => [
                         'part' => $attachment->imap_part,
                         'filename' => $attachment->document->original_name,
+                        'mime_type' => $attachment->document->mime_type,
                     ])
                     ->values()
                     ->all(),
@@ -163,6 +165,7 @@ class ProjectEmailApiController extends Controller
     }
 
     public function downloadAttachment(
+        Request $request,
         Project $project,
         ProjectEmailLink $emailLink,
         string $part,
@@ -183,7 +186,10 @@ class ProjectEmailApiController extends Controller
 
             abort_if($attachment === null, 404);
 
-            return $documentStorageService->download($attachment->document, forceAttachment: true);
+            return $documentStorageService->download(
+                $attachment->document,
+                $request->boolean('download'),
+            );
         }
 
         /** @var User $user */
@@ -210,7 +216,11 @@ class ProjectEmailApiController extends Controller
 
         return response($attachment['content'], 200, [
             'Content-Type' => $attachment['mime_type'],
-            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Content-Disposition' => $documentStorageService->contentDispositionHeader(
+                $attachment['mime_type'],
+                $filename,
+                $request->boolean('download'),
+            ),
         ]);
     }
 }

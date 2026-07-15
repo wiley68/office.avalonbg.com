@@ -94,6 +94,7 @@ class ProjectEmailService
                 ->map(fn ($attachment): array => [
                     'part' => $attachment->imap_part,
                     'filename' => $attachment->document->original_name,
+                    'mime_type' => $attachment->document->mime_type,
                 ])
                 ->values()
                 ->all(),

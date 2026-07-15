@@ -79,8 +79,8 @@ function mockImapArchiveResponses(
             )
             ->andReturn([
                 'filename' => $attachment['filename'],
-                'content' => '%PDF-1.4 archived',
-                'mime_type' => 'application/pdf',
+                'content' => $attachment['content'] ?? '%PDF-1.4 archived',
+                'mime_type' => $attachment['mime_type'] ?? 'application/pdf',
             ]);
     }
 
@@ -462,7 +462,7 @@ test('office user can download linked email attachment', function () {
 
     mock(ImapMailboxService::class)
         ->shouldReceive('fetchAttachmentPart')
-        ->once()
+        ->twice()
         ->with(
             Mockery::on(fn ($arg) => $arg->is($account)),
             $link->folder,
@@ -478,8 +478,21 @@ test('office user can download linked email attachment', function () {
     actingAs($user)
         ->get(route('internal.projects.email.attachments.download', [$project, $link, '2']))
         ->assertOk()
-        ->assertHeader('content-disposition', 'attachment; filename="specification.pdf"')
+        ->assertHeader('content-disposition', 'inline; filename="specification.pdf"; filename*=UTF-8\'\'specification.pdf')
         ->assertSee('%PDF-1.4');
+
+    actingAs($user)
+        ->get(route('internal.projects.email.attachments.download', [
+            'project' => $project,
+            'emailLink' => $link,
+            'part' => '2',
+            'download' => 1,
+        ]))
+        ->assertOk()
+        ->assertHeader(
+            'content-disposition',
+            'attachment; filename="specification.pdf"; filename*=UTF-8\'\'specification.pdf',
+        );
 });
 
 test('office user can remove email link from own project', function () {
@@ -703,6 +716,47 @@ test('batch link archives attachments into documents and attaches them to projec
         ->and($link->attachments->first()->document->original_name)->toBe('specification.pdf')
         ->and($project->fresh()->documents)->toHaveCount(1)
         ->and($project->documents->first()->description)->toContain('Specification');
+});
+
+test('batch link preserves binary attachment bytes when archiving documents', function () {
+    [$user, $account] = createOfficeUserWithImap();
+
+    $project = Project::factory()->for($user)->create();
+
+    $binaryContent = "%PDF-1.4\n\x00\x01\x02".random_bytes(120);
+
+    mockImapArchiveResponses(
+        $account,
+        'INBOX.Projects',
+        30,
+        ['text' => 'Binary attachment test.', 'html' => null],
+        [[
+            'part' => '2',
+            'filename' => 'report.pdf',
+            'content' => $binaryContent,
+            'mime_type' => 'application/pdf',
+        ]],
+    );
+
+    actingAs($user);
+
+    post(route('projects.email.batch.store', $project), [
+        'messages' => [
+            [
+                'folder' => 'INBOX.Projects',
+                'imap_uid' => 30,
+                'uidvalidity' => 999,
+                'subject' => 'Report',
+                'sent_at' => '2026-07-10T10:00:00Z',
+            ],
+        ],
+    ])->assertRedirect();
+
+    $document = $project->fresh()->emailLinks->first()->attachments->first()->document;
+
+    expect($document->size_bytes)->toBe(strlen($binaryContent))
+        ->and(Storage::disk('local')->get($document->storage_path))
+        ->toBe($binaryContent);
 });
 
 test('re-linking the same imap message does not duplicate archived content', function () {

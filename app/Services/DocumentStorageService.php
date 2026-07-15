@@ -184,6 +184,18 @@ class DocumentStorageService
         return in_array($mimeType, self::InlineMimeTypes, true);
     }
 
+    public function contentDispositionHeader(
+        string $mimeType,
+        string $filename,
+        bool $forceAttachment = false,
+    ): string {
+        $disposition = ! $forceAttachment && $this->displaysInlineInBrowser($mimeType)
+            ? 'inline'
+            : 'attachment';
+
+        return $this->contentDisposition($disposition, $filename);
+    }
+
     private function contentDisposition(string $disposition, string $filename): string
     {
         $fallback = preg_replace('/[^\x20-\x7E]/', '_', $filename) ?: 'document';
