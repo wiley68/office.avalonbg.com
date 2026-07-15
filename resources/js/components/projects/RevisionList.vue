@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3';
-import { GripVertical, Pencil, Plus, Trash2 } from 'lucide-vue-next';
+import { GripVertical, ListTodo, Pencil, Plus, Trash2 } from 'lucide-vue-next';
 import type { SortableEvent } from 'sortablejs';
 import { ref, watch } from 'vue';
 import draggable from 'vuedraggable';
@@ -16,6 +16,12 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useAppToast } from '@/composables/useAppToast';
 import { useTranslations } from '@/composables/useTranslations';
 import {
@@ -38,6 +44,10 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+
+const emit = defineEmits<{
+    viewTasks: [revisionId: number];
+}>();
 
 const { t } = useTranslations();
 const { showError, showMessage } = useAppToast();
@@ -248,24 +258,58 @@ const confirmDelete = (): void => {
                             </p>
                         </div>
 
-                        <div class="flex gap-1">
-                            <Button
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                @click="openEdit(revision)"
-                            >
-                                <Pencil class="h-4 w-4" />
-                            </Button>
-                            <Button
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                @click="requestDelete(revision.id)"
-                            >
-                                <Trash2 class="h-4 w-4 text-destructive" />
-                            </Button>
-                        </div>
+                        <TooltipProvider :delay-duration="200">
+                            <div class="flex gap-1">
+                                <Tooltip>
+                                    <TooltipTrigger as-child>
+                                        <Button
+                                            type="button"
+                                            size="icon"
+                                            variant="ghost"
+                                            :aria-label="t('projects.stages.view_tasks')"
+                                            @click="emit('viewTasks', revision.id)"
+                                        >
+                                            <ListTodo class="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">
+                                        {{ t('projects.stages.view_tasks') }}
+                                    </TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                    <TooltipTrigger as-child>
+                                        <Button
+                                            type="button"
+                                            size="icon"
+                                            variant="ghost"
+                                            :aria-label="t('common.edit')"
+                                            @click="openEdit(revision)"
+                                        >
+                                            <Pencil class="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">
+                                        {{ t('common.edit') }}
+                                    </TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                    <TooltipTrigger as-child>
+                                        <Button
+                                            type="button"
+                                            size="icon"
+                                            variant="ghost"
+                                            :aria-label="t('common.delete')"
+                                            @click="requestDelete(revision.id)"
+                                        >
+                                            <Trash2 class="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">
+                                        {{ t('common.delete') }}
+                                    </TooltipContent>
+                                </Tooltip>
+                            </div>
+                        </TooltipProvider>
                     </div>
                 </div>
             </template>

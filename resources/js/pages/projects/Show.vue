@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { Paperclip, Pencil, Upload } from 'lucide-vue-next';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import AttachedDocumentsList from '@/components/documents/AttachedDocumentsList.vue';
 import DocumentPickerModal from '@/components/documents/DocumentPickerModal.vue';
 import DocumentUploadModal from '@/components/documents/DocumentUploadModal.vue';
@@ -76,11 +76,53 @@ function resolveTabFromUrl(): ProjectTab {
     return 'overview';
 }
 
+function resolveStageFromUrl(): number | null {
+    const stage = new URLSearchParams(window.location.search).get('stage');
+
+    if (!stage) {
+        return null;
+    }
+
+    const id = Number(stage);
+
+    return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+function updateProjectUrl(tab: ProjectTab, stageId: number | null): void {
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+
+    if (stageId !== null && tab === 'tasks') {
+        url.searchParams.set('stage', String(stageId));
+    } else {
+        url.searchParams.delete('stage');
+    }
+
+    window.history.replaceState({}, '', url.toString());
+}
+
 const activeTab = ref<ProjectTab>('overview');
+const stageFilterId = ref<number | null>(null);
 
 onMounted(() => {
     activeTab.value = resolveTabFromUrl();
+    stageFilterId.value = resolveStageFromUrl();
 });
+
+watch(activeTab, (tab) => {
+    updateProjectUrl(tab, tab === 'tasks' ? stageFilterId.value : null);
+});
+
+const openTasksForStage = (revisionId: number): void => {
+    stageFilterId.value = revisionId;
+    activeTab.value = 'tasks';
+    updateProjectUrl('tasks', revisionId);
+};
+
+const clearStageFilter = (): void => {
+    stageFilterId.value = null;
+    updateProjectUrl('tasks', null);
+};
 
 const showEditModal = ref(false);
 const showDocumentPicker = ref(false);
@@ -230,6 +272,7 @@ const handleDocumentUploaded = (documentId: number): void => {
                         <RevisionList
                             :project-id="project.id"
                             :revisions="project.revisions"
+                            @view-tasks="openTasksForStage"
                         />
                     </div>
                 </TabsContent>
@@ -239,6 +282,8 @@ const handleDocumentUploaded = (documentId: number): void => {
                         <TaskTree
                             :project-id="project.id"
                             :revisions="project.revisions"
+                            :stage-filter-id="stageFilterId"
+                            @clear-stage-filter="clearStageFilter"
                         />
                     </div>
                 </TabsContent>

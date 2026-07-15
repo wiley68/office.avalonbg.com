@@ -455,7 +455,8 @@
             },
             "errors": {
                 "invalid_reorder": "Invalid stage order."
-            }
+            },
+            "view_tasks": "Tasks"
         },
         "todos": {
             "title": "To-do",
@@ -487,6 +488,9 @@
             "none": "No tasks in this project",
             "drag_hint": "Drag tasks to change their priority.",
             "drag_handle": "Drag to reorder",
+            "show_all": "Show all",
+            "filtered_by_stage": "Showing tasks for stage: :stage",
+            "empty_for_stage": "No tasks for this stage.",
             "actions": {
                 "complete": "Mark as completed",
                 "add_subtask": "Add subtask"

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3';
-import { Plus } from 'lucide-vue-next';
+import { List, Plus } from 'lucide-vue-next';
 import { computed, onMounted, provide, ref } from 'vue';
 import AppAlertDialog from '@/components/AppAlertDialog.vue';
 import DocumentPickerModal from '@/components/documents/DocumentPickerModal.vue';
@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/select';
 import { useAppToast } from '@/composables/useAppToast';
 import { useTranslations } from '@/composables/useTranslations';
+import { filterTaskTreeByStage } from '@/lib/filterTaskTreeByStage';
 import { reorder as reorderTasks, store as storeTask } from '@/routes/projects/tasks';
 import {
     complete as completeTask,
@@ -41,9 +42,16 @@ export type { TaskStatus, TaskTreeNode };
 type Props = {
     projectId: number;
     revisions: ProjectRevisionItem[];
+    stageFilterId?: number | null;
 };
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+    stageFilterId: null,
+});
+
+const emit = defineEmits<{
+    clearStageFilter: [];
+}>();
 
 const { t } = useTranslations();
 const { showError, showMessage } = useAppToast();
@@ -80,9 +88,26 @@ const flatTasks = computed(() => {
         }
     };
 
-    walk(tasks.value);
+    walk(displayedTasks.value);
 
     return result;
+});
+
+const activeStageLabel = computed(() => {
+    if (props.stageFilterId === null) {
+        return null;
+    }
+
+    return props.revisions.find((revision) => revision.id === props.stageFilterId)?.label
+        ?? null;
+});
+
+const displayedTasks = computed(() => {
+    if (props.stageFilterId === null) {
+        return tasks.value;
+    }
+
+    return filterTaskTreeByStage(tasks.value, props.stageFilterId);
 });
 
 const fetchTasks = async (): Promise<void> => {
@@ -123,6 +148,8 @@ const openCreate = (parentId: number | null = null): void => {
     form.reset();
     form.clearErrors();
     form.parent_id = parentId !== null ? String(parentId) : '';
+    form.project_revision_id =
+        props.stageFilterId !== null ? String(props.stageFilterId) : '';
     showForm.value = true;
 };
 
@@ -290,6 +317,14 @@ const handleDocumentUploaded = (documentId: number): void => {
     attachDocument(documentId);
 };
 
+const updateRootTasks = (value: TaskTreeNode[]): void => {
+    if (props.stageFilterId === null) {
+        tasks.value = value;
+    }
+};
+
+const isStageFilterActive = computed(() => props.stageFilterId !== null);
+
 const statusClass = (status: TaskStatus): string => {
     switch (status) {
         case 'completed':
@@ -323,14 +358,35 @@ onMounted(() => {
         <div class="flex items-center justify-between">
             <div>
                 <h3 class="text-sm font-medium">{{ t('projects.tasks.title') }}</h3>
-                <p class="text-xs text-muted-foreground">
+                <p
+                    v-if="stageFilterId !== null && activeStageLabel"
+                    class="text-xs text-muted-foreground"
+                >
+                    {{ t('projects.tasks.filtered_by_stage', { stage: activeStageLabel }) }}
+                </p>
+                <p
+                    v-else
+                    class="text-xs text-muted-foreground"
+                >
                     {{ t('projects.tasks.drag_hint') }}
                 </p>
             </div>
-            <Button type="button" size="sm" variant="outline" @click="openCreate()">
-                <Plus class="mr-2 h-4 w-4" />
-                {{ t('projects.tasks.add') }}
-            </Button>
+            <div class="flex gap-2">
+                <Button type="button" size="sm" variant="outline" @click="openCreate()">
+                    <Plus class="mr-2 h-4 w-4" />
+                    {{ t('projects.tasks.add') }}
+                </Button>
+                <Button
+                    v-if="stageFilterId !== null"
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    @click="emit('clearStageFilter')"
+                >
+                    <List class="mr-2 h-4 w-4" />
+                    {{ t('projects.tasks.show_all') }}
+                </Button>
+            </div>
         </div>
 
         <div
@@ -341,13 +397,23 @@ onMounted(() => {
         </div>
 
         <div
-            v-else-if="tasks.length === 0"
+            v-else-if="displayedTasks.length === 0"
             class="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground"
         >
-            {{ t('projects.tasks.empty') }}
+            {{
+                stageFilterId !== null
+                    ? t('projects.tasks.empty_for_stage')
+                    : t('projects.tasks.empty')
+            }}
         </div>
 
-        <TaskTreeList v-else v-model="tasks" :parent-id="null" />
+        <TaskTreeList
+            v-else
+            :model-value="isStageFilterActive ? displayedTasks : tasks"
+            :reorder-disabled="isStageFilterActive"
+            :parent-id="null"
+            @update:model-value="updateRootTasks"
+        />
 
         <Dialog :open="showForm" @update:open="showForm = $event">
             <DialogContent>

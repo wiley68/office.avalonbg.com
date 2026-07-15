@@ -36,9 +36,12 @@ type TaskTreeActions = {
 
 type Props = {
     parentId: number | null;
+    reorderDisabled?: boolean;
 };
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+    reorderDisabled: false,
+});
 
 const nodes = defineModel<TaskTreeNode[]>({ required: true });
 
@@ -69,6 +72,7 @@ const handleDragEnd = (event: SortableEvent): void => {
         v-model="nodes"
         item-key="id"
         handle=".task-drag-handle"
+        :disabled="reorderDisabled"
         :group="{ name: dragGroup, pull: false, put: false }"
         :animation="180"
         class="space-y-2"
@@ -79,6 +83,7 @@ const handleDragEnd = (event: SortableEvent): void => {
             <div class="rounded-lg border bg-background">
                 <div class="flex items-start gap-2 p-4">
                     <button
+                        v-if="!reorderDisabled"
                         type="button"
                         class="task-drag-handle mt-0.5 cursor-grab rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground active:cursor-grabbing"
                         :aria-label="t('projects.tasks.drag_handle')"
@@ -239,6 +244,7 @@ const handleDragEnd = (event: SortableEvent): void => {
                     <TaskTreeList
                         v-model="task.children"
                         :parent-id="task.id"
+                        :reorder-disabled="reorderDisabled"
                     />
                 </div>
             </div>
