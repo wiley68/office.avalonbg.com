@@ -142,15 +142,13 @@ const persistOrder = (revisionIds: number[]): void => {
         {
             preserveScroll: true,
             onSuccess: () => {
-                const count = revisionIds.length;
-
                 revisionIds.forEach((revisionId, index) => {
                     const revision = orderedRevisions.value.find(
                         (item) => item.id === revisionId,
                     );
 
                     if (revision) {
-                        revision.sort_order = count - 1 - index;
+                        revision.sort_order = index;
                     }
                 });
             },

@@ -388,6 +388,10 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     { title: props.project.name, href: show(props.project.id) },
 ]);
 
+const latestRevision = computed(
+    () => props.project.revisions[props.project.revisions.length - 1] ?? null,
+);
+
 const projectForEdit = computed<ProjectListItem>(() => ({
     id: props.project.id,
     name: props.project.name,
@@ -402,10 +406,10 @@ const projectForEdit = computed<ProjectListItem>(() => ({
     active_todos_count: 0,
     has_git_repository: props.project.git_repository !== null,
     tasks_timeline: [],
-    latest_revision: props.project.revisions[0]
+    latest_revision: latestRevision.value
         ? {
-              id: props.project.revisions[0].id,
-              label: props.project.revisions[0].label,
+              id: latestRevision.value.id,
+              label: latestRevision.value.label,
           }
         : null,
 }));

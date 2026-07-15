@@ -49,13 +49,12 @@ class ProjectRevisionController extends Controller
 
         /** @var list<int> $revisionIds */
         $revisionIds = $request->validated('revision_ids');
-        $count = count($revisionIds);
 
         foreach ($revisionIds as $index => $revisionId) {
             ProjectRevision::query()
                 ->where('project_id', $project->id)
                 ->whereKey($revisionId)
-                ->update(['sort_order' => $count - 1 - $index]);
+                ->update(['sort_order' => $index]);
         }
 
         return back();

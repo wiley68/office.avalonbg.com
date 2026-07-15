@@ -445,7 +445,7 @@
             "edit_title": "Edit stage",
             "saved": "Stage saved.",
             "delete_confirm": "Are you sure you want to delete this stage?",
-            "drag_hint": "Drag stages to change their order. The current stage appears at the top.",
+            "drag_hint": "Drag stages to change their order. The most recently added stage appears at the bottom.",
             "drag_handle": "Drag to reorder",
             "fields": {
                 "label": "Stage name",

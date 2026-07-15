@@ -339,7 +339,7 @@ test('office user can manage project revisions', function () {
     expect(ProjectRevision::query()->count())->toBe(1);
 });
 
-test('office user can reorder project revisions with newest at top', function () {
+test('office user can reorder project revisions', function () {
     $user = User::factory()->create();
     $user->assignRole('user');
 
@@ -364,9 +364,9 @@ test('office user can reorder project revisions with newest at top', function ()
         ])
         ->assertRedirect();
 
-    expect($v1->fresh()->sort_order)->toBe(2)
+    expect($v1->fresh()->sort_order)->toBe(0)
         ->and($v3->fresh()->sort_order)->toBe(1)
-        ->and($v2->fresh()->sort_order)->toBe(0);
+        ->and($v2->fresh()->sort_order)->toBe(2);
 
     actingAs($user)
         ->get(route('projects.show', $project))

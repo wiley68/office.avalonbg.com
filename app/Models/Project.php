@@ -41,7 +41,7 @@ class Project extends Model
      */
     public function revisions(): HasMany
     {
-        return $this->hasMany(ProjectRevision::class)->orderByDesc('sort_order');
+        return $this->hasMany(ProjectRevision::class)->orderBy('sort_order');
     }
 
     /**
