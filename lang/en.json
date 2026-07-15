@@ -408,7 +408,7 @@
         "no_description": "No description provided.",
         "tabs": {
             "overview": "Overview",
-            "revisions": "Revisions",
+            "stages": "Stages",
             "tasks": "Tasks",
             "todos": "To-do",
             "documents": "Documents",
@@ -427,7 +427,7 @@
             "expected_completion_at": "Expected completion date",
             "completed_at": "Completed at",
             "created_at": "Created at",
-            "latest_revision": "Current version"
+            "current_stage": "Current stage"
         },
         "columns": {
             "id": "ID",
@@ -441,22 +441,25 @@
         "errors": {
             "incomplete_tasks": "Complete all tasks before marking the project as completed."
         },
-        "revisions": {
-            "title": "Revisions / versions",
-            "add": "Add revision",
-            "empty": "No revisions yet.",
-            "create_title": "New revision",
-            "edit_title": "Edit revision",
-            "saved": "Revision saved.",
-            "delete_confirm": "Are you sure you want to delete this revision?",
-            "drag_hint": "Drag revisions to change their order. Newest versions appear at the top.",
+        "stages": {
+            "title": "Project stages",
+            "hint": "The main stages your project goes through — for example Negotiation, Development, Delivery.",
+            "add": "Add stage",
+            "empty": "No stages yet.",
+            "create_title": "New stage",
+            "edit_title": "Edit stage",
+            "saved": "Stage saved.",
+            "delete_confirm": "Are you sure you want to delete this stage?",
+            "drag_hint": "Drag stages to change their order. The current stage appears at the top.",
             "drag_handle": "Drag to reorder",
             "fields": {
-                "label": "Label",
-                "description": "Description"
+                "label": "Stage name",
+                "label_placeholder": "Negotiation",
+                "description": "Description",
+                "description_placeholder": "Brief description of the stage (optional)"
             },
             "errors": {
-                "invalid_reorder": "Invalid revision order."
+                "invalid_reorder": "Invalid stage order."
             }
         },
         "todos": {
@@ -504,8 +507,8 @@
                 "status": "Status",
                 "parent": "Parent task",
                 "no_parent": "No parent",
-                "revision": "Revision / version",
-                "no_revision": "No revision"
+                "stage": "Stage",
+                "no_stage": "No stage"
             },
             "errors": {
                 "parent_not_completed": "Complete the parent task before completing this task.",

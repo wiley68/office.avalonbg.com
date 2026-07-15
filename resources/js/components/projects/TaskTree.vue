@@ -425,14 +425,14 @@ onMounted(() => {
                     </div>
 
                     <div class="grid gap-2">
-                        <Label>{{ t('projects.tasks.fields.revision') }}</Label>
+                        <Label>{{ t('projects.tasks.fields.stage') }}</Label>
                         <Select v-model="form.project_revision_id">
                             <SelectTrigger>
-                                <SelectValue :placeholder="t('projects.tasks.fields.no_revision')" />
+                                <SelectValue :placeholder="t('projects.tasks.fields.no_stage')" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="">
-                                    {{ t('projects.tasks.fields.no_revision') }}
+                                    {{ t('projects.tasks.fields.no_stage') }}
                                 </SelectItem>
                                 <SelectItem
                                     v-for="revision in revisions"

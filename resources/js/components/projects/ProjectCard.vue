@@ -79,8 +79,8 @@ const todosTabUrl = computed(() =>
     show(props.project.id, { query: { tab: 'todos' } }).url,
 );
 
-const revisionsTabUrl = computed(() =>
-    show(props.project.id, { query: { tab: 'revisions' } }).url,
+const stagesTabUrl = computed(() =>
+    show(props.project.id, { query: { tab: 'stages' } }).url,
 );
 </script>
 
@@ -338,12 +338,12 @@ const revisionsTabUrl = computed(() =>
                 </div>
                 <div>
                     <dt class="text-muted-foreground">
-                        {{ t('projects.fields.latest_revision') }}
+                        {{ t('projects.fields.current_stage') }}
                     </dt>
                     <dd class="font-medium">
                         <Link
                             v-if="project.latest_revision"
-                            :href="revisionsTabUrl"
+                            :href="stagesTabUrl"
                             class="text-foreground underline-offset-4 hover:underline"
                         >
                             {{ project.latest_revision.label }}

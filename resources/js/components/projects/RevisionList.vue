@@ -95,7 +95,7 @@ const submit = (): void => {
     const options = {
         preserveScroll: true,
         onSuccess: () => {
-            showMessage(t('common.success'), t('projects.revisions.saved'));
+            showMessage(t('common.success'), t('projects.stages.saved'));
             closeForm();
         },
         onError: (errors: Record<string, string>) => {
@@ -192,15 +192,21 @@ const confirmDelete = (): void => {
         <div class="flex items-center justify-between">
             <div>
                 <h3 class="text-sm font-medium">
-                    {{ t('projects.revisions.title') }}
+                    {{ t('projects.stages.title') }}
                 </h3>
                 <p class="text-xs text-muted-foreground">
-                    {{ t('projects.revisions.drag_hint') }}
+                    {{ t('projects.stages.hint') }}
+                </p>
+                <p
+                    v-if="revisions.length > 0"
+                    class="text-xs text-muted-foreground"
+                >
+                    {{ t('projects.stages.drag_hint') }}
                 </p>
             </div>
             <Button type="button" size="sm" variant="outline" @click="openCreate">
                 <Plus class="mr-2 h-4 w-4" />
-                {{ t('projects.revisions.add') }}
+                {{ t('projects.stages.add') }}
             </Button>
         </div>
 
@@ -208,7 +214,7 @@ const confirmDelete = (): void => {
             v-if="revisions.length === 0"
             class="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground"
         >
-            {{ t('projects.revisions.empty') }}
+            {{ t('projects.stages.empty') }}
         </div>
 
         <draggable
@@ -227,7 +233,7 @@ const confirmDelete = (): void => {
                         <button
                             type="button"
                             class="revision-drag-handle mt-0.5 cursor-grab rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground active:cursor-grabbing"
-                            :aria-label="t('projects.revisions.drag_handle')"
+                            :aria-label="t('projects.stages.drag_handle')"
                         >
                             <GripVertical class="h-4 w-4" />
                         </button>
@@ -271,8 +277,8 @@ const confirmDelete = (): void => {
                     <DialogTitle>
                         {{
                             formMode === 'create'
-                                ? t('projects.revisions.create_title')
-                                : t('projects.revisions.edit_title')
+                                ? t('projects.stages.create_title')
+                                : t('projects.stages.edit_title')
                         }}
                     </DialogTitle>
                 </DialogHeader>
@@ -280,25 +286,27 @@ const confirmDelete = (): void => {
                 <form class="space-y-4" @submit.prevent="submit">
                     <div class="grid gap-2">
                         <Label for="revision-label">{{
-                            t('projects.revisions.fields.label')
+                            t('projects.stages.fields.label')
                         }}</Label>
                         <Input
                             id="revision-label"
                             v-model="form.label"
                             maxlength="80"
                             required
+                            :placeholder="t('projects.stages.fields.label_placeholder')"
                         />
                         <InputError :message="form.errors.label" />
                     </div>
 
                     <div class="grid gap-2">
                         <Label for="revision-description">{{
-                            t('projects.revisions.fields.description')
+                            t('projects.stages.fields.description')
                         }}</Label>
                         <textarea
                             id="revision-description"
                             v-model="form.description"
                             rows="3"
+                            :placeholder="t('projects.stages.fields.description_placeholder')"
                             class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                         />
                         <InputError :message="form.errors.description" />
@@ -319,7 +327,7 @@ const confirmDelete = (): void => {
         <AppAlertDialog
             v-model:open="showDeleteDialog"
             :title="t('users.delete_confirm_title')"
-            :description="t('projects.revisions.delete_confirm')"
+            :description="t('projects.stages.delete_confirm')"
             @confirm="confirmDelete"
             @cancel="revisionToDelete = null; showDeleteDialog = false"
         />

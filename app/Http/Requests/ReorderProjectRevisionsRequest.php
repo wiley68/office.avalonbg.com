@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Project;
 use App\Models\ProjectRevision;
+use App\Support\Translations;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -58,7 +59,7 @@ class ReorderProjectRevisionsRequest extends FormRequest
             if (count($revisionIds) !== $revisionCount) {
                 $validator->errors()->add(
                     'revision_ids',
-                    __('projects.revisions.errors.invalid_reorder'),
+                    Translations::get('projects.stages.errors.invalid_reorder'),
                 );
             }
         });

@@ -59,11 +59,15 @@ const props = defineProps<Props>();
 
 const { t } = useTranslations();
 
-const projectTabs = ['overview', 'revisions', 'tasks', 'todos', 'documents', 'git', 'email'] as const;
+const projectTabs = ['overview', 'stages', 'tasks', 'todos', 'documents', 'git', 'email'] as const;
 type ProjectTab = (typeof projectTabs)[number];
 
 function resolveTabFromUrl(): ProjectTab {
     const tab = new URLSearchParams(window.location.search).get('tab');
+
+    if (tab === 'revisions') {
+        return 'stages';
+    }
 
     if (tab && projectTabs.includes(tab as ProjectTab)) {
         return tab as ProjectTab;
@@ -193,8 +197,8 @@ const handleDocumentUploaded = (documentId: number): void => {
                     <TabsTrigger value="overview">
                         {{ t('projects.tabs.overview') }}
                     </TabsTrigger>
-                    <TabsTrigger value="revisions">
-                        {{ t('projects.tabs.revisions') }}
+                    <TabsTrigger value="stages">
+                        {{ t('projects.tabs.stages') }}
                     </TabsTrigger>
                     <TabsTrigger value="tasks">
                         {{ t('projects.tabs.tasks') }}
@@ -221,7 +225,7 @@ const handleDocumentUploaded = (documentId: number): void => {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="revisions" class="mt-4">
+                <TabsContent value="stages" class="mt-4">
                     <div class="rounded-xl border p-4 shadow-sm">
                         <RevisionList
                             :project-id="project.id"
