@@ -3,6 +3,7 @@
 use App\Models\Project;
 use App\Models\ProjectGitRepository;
 use App\Models\User;
+use App\Support\Translations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Spatie\Permission\Models\Role;
@@ -75,7 +76,9 @@ test('office user cannot connect invalid github repository', function () {
     put(route('projects.git.upsert', $project), [
         'repository' => 'https://gitlab.com/group/project',
         'default_branch' => 'main',
-    ])->assertSessionHasErrors('repository');
+    ])->assertSessionHasErrors([
+        'repository' => Translations::get('projects.git.errors.invalid_repository'),
+    ]);
 
     expect($project->fresh()->gitRepository)->toBeNull();
 });
@@ -116,6 +119,32 @@ test('office user can remove github repository from own project', function () {
     delete(route('projects.git.destroy', $project))->assertRedirect();
 
     expect($project->fresh()->gitRepository)->toBeNull();
+});
+
+test('office user sees translated error when private github repository is inaccessible', function () {
+    Http::fake([
+        'api.github.com/repos/acme/private-repo' => Http::response([], 404),
+    ]);
+
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $project = Project::factory()->for($user)->create();
+
+    ProjectGitRepository::factory()->for($project)->create([
+        'owner' => 'acme',
+        'repo' => 'private-repo',
+        'default_branch' => 'main',
+        'access_token' => null,
+    ]);
+
+    actingAs($user)
+        ->getJson(route('internal.projects.git.show', $project))
+        ->assertUnprocessable()
+        ->assertJsonPath(
+            'errors.repository.0',
+            Translations::get('projects.git.errors.repository_not_found'),
+        );
 });
 
 test('office user cannot manage git settings for another users project', function () {

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ProjectGitRepository;
+use App\Support\Translations;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
@@ -80,7 +81,7 @@ class GitHubApiService
             ],
             'commits' => [
                 'data' => array_map(
-                    fn(array $commit): array => $this->transformCommit($commit),
+                    fn (array $commit): array => $this->transformCommit($commit),
                     $commits,
                 ),
                 'meta' => [
@@ -113,12 +114,12 @@ class GitHubApiService
 
     private function repositoryUrl(string $owner, string $repo): string
     {
-        return '/repos/' . $owner . '/' . $repo;
+        return '/repos/'.$owner.'/'.$repo;
     }
 
     private function commitsUrl(ProjectGitRepository $gitRepository): string
     {
-        return '/repos/' . $gitRepository->owner . '/' . $gitRepository->repo . '/commits';
+        return '/repos/'.$gitRepository->owner.'/'.$gitRepository->repo.'/commits';
     }
 
     /**
@@ -148,9 +149,9 @@ class GitHubApiService
             $status = $exception->response?->status();
 
             $message = match ($status) {
-                404 => __('projects.git.errors.repository_not_found'),
-                403 => __('projects.git.errors.rate_limited'),
-                default => __('projects.git.errors.fetch_failed'),
+                404 => Translations::get('projects.git.errors.repository_not_found'),
+                403 => Translations::get('projects.git.errors.rate_limited'),
+                default => Translations::get('projects.git.errors.fetch_failed'),
             };
 
             throw ValidationException::withMessages([

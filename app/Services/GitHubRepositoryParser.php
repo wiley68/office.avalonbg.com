@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\Translations;
 use Illuminate\Validation\ValidationException;
 
 class GitHubRepositoryParser
@@ -17,7 +18,7 @@ class GitHubRepositoryParser
 
         if ($input === '') {
             throw ValidationException::withMessages([
-                'repository' => __('projects.git.errors.invalid_repository'),
+                'repository' => Translations::get('projects.git.errors.invalid_repository'),
             ]);
         }
 
@@ -30,13 +31,13 @@ class GitHubRepositoryParser
 
         if (! is_string($host) || ! in_array(strtolower($host), self::ALLOWED_HOSTS, true)) {
             throw ValidationException::withMessages([
-                'repository' => __('projects.git.errors.invalid_repository'),
+                'repository' => Translations::get('projects.git.errors.invalid_repository'),
             ]);
         }
 
         if (! is_string($path) || $path === '' || $path === '/') {
             throw ValidationException::withMessages([
-                'repository' => __('projects.git.errors.invalid_repository'),
+                'repository' => Translations::get('projects.git.errors.invalid_repository'),
             ]);
         }
 
@@ -44,11 +45,11 @@ class GitHubRepositoryParser
 
         if (count($segments) < 2) {
             throw ValidationException::withMessages([
-                'repository' => __('projects.git.errors.invalid_repository'),
+                'repository' => Translations::get('projects.git.errors.invalid_repository'),
             ]);
         }
 
-        return $this->parseOwnerRepo($segments[0] . '/' . $segments[1]);
+        return $this->parseOwnerRepo($segments[0].'/'.$segments[1]);
     }
 
     /**
@@ -61,7 +62,7 @@ class GitHubRepositoryParser
 
         if (! preg_match('/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/', $input)) {
             throw ValidationException::withMessages([
-                'repository' => __('projects.git.errors.invalid_repository'),
+                'repository' => Translations::get('projects.git.errors.invalid_repository'),
             ]);
         }
 
