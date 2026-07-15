@@ -107,11 +107,6 @@ const mainNavItems = computed<NavItem[]>(() => {
 
         if (user.is_office_user) {
             items.push({
-                title: t('nav.accesses'),
-                href: accessesIndex(),
-                icon: KeyRound,
-            });
-            items.push({
                 title: t('nav.projects'),
                 href: projectsIndex(),
                 icon: FolderKanban,
@@ -120,6 +115,11 @@ const mainNavItems = computed<NavItem[]>(() => {
                 title: t('nav.documents'),
                 href: documentsIndex(),
                 icon: FileText,
+            });
+            items.push({
+                title: t('nav.accesses'),
+                href: accessesIndex(),
+                icon: KeyRound,
             });
         }
 
