@@ -47,6 +47,15 @@ type ProjectRevision = {
     sort_order: number;
 };
 
+type OverviewGitCommit = {
+    sha: string;
+    short_sha: string;
+    message: string;
+    author_name: string | null;
+    committed_at: string | null;
+    html_url: string | null;
+};
+
 type Props = {
     project: {
         id: number;
@@ -128,6 +137,7 @@ onMounted(() => {
     activeTab.value = resolveTabFromUrl();
     stageFilterId.value = resolveStageFromUrl();
     fetchOverviewTasks();
+    fetchOverviewGit();
 });
 
 watch(activeTab, (tab) => {
@@ -180,6 +190,10 @@ const overviewTodos = computed(() => props.project.todos.slice(0, 5));
 
 const overviewDocuments = computed(() => props.project.documents.slice(0, 5));
 
+const overviewGitCommit = ref<OverviewGitCommit | null>(null);
+const overviewGitLoading = ref(false);
+const overviewGitError = ref<string | null>(null);
+
 const overviewSectionCounts = computed<Record<ProjectSectionTab, number>>(() => ({
     stages: props.project.revisions.length,
     tasks: props.project.tasks_count,
@@ -197,6 +211,63 @@ const taskStatusClass = (status: TaskStatus): string => {
             return 'bg-muted text-muted-foreground';
         default:
             return 'bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-100';
+    }
+};
+
+const gitCommitFirstLine = (message: string | null): string => {
+    if (!message) {
+        return '—';
+    }
+
+    return message.split('\n')[0] ?? message;
+};
+
+const fetchOverviewGit = async (): Promise<void> => {
+    if (props.project.git_repository === null) {
+        overviewGitCommit.value = null;
+        overviewGitError.value = null;
+
+        return;
+    }
+
+    overviewGitLoading.value = true;
+    overviewGitError.value = null;
+
+    try {
+        const response = await fetch(
+            `/internal-api/projects/${props.project.id}/git?page=1&per_page=1`,
+            {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            },
+        );
+
+        const payload = (await response.json()) as {
+            data: {
+                commits: {
+                    data: OverviewGitCommit[];
+                };
+            } | null;
+            message?: string;
+            errors?: Record<string, string[]>;
+        };
+
+        if (!response.ok) {
+            overviewGitError.value = payload.errors
+                ? Object.values(payload.errors).flat().join('\n')
+                : payload.message ?? t('projects.git.load_error');
+
+            return;
+        }
+
+        overviewGitCommit.value = payload.data?.commits.data[0] ?? null;
+    } catch {
+        overviewGitError.value = t('projects.git.load_error');
+    } finally {
+        overviewGitLoading.value = false;
     }
 };
 
@@ -273,6 +344,14 @@ const formatDate = (value: string | null): string => {
     }
 
     return new Date(value).toLocaleDateString();
+};
+
+const formatDateTime = (value: string | null): string => {
+    if (!value) {
+        return '—';
+    }
+
+    return new Date(value).toLocaleString();
 };
 
 const attachDocument = (documentId: number): void => {
@@ -395,14 +474,14 @@ const handleDocumentUploaded = (documentId: number): void => {
 
                                 <CardContent
                                     v-if="tab === 'stages'"
-                                    class="pt-4"
+                                    class="flex min-h-32 flex-col pt-4"
                                 >
-                                    <p
-                                        v-if="overviewStages.length === 0"
-                                        class="text-sm text-muted-foreground"
+                                    <div
+                                        v-if="overviewSectionCounts.stages === 0"
+                                        class="flex flex-1 items-center justify-center px-2 text-center text-sm text-muted-foreground"
                                     >
                                         {{ t('projects.stages.empty') }}
-                                    </p>
+                                    </div>
 
                                     <div
                                         v-else
@@ -453,14 +532,14 @@ const handleDocumentUploaded = (documentId: number): void => {
 
                                 <CardContent
                                     v-else-if="tab === 'tasks'"
-                                    class="pt-4"
+                                    class="flex min-h-32 flex-col pt-4"
                                 >
-                                    <p
-                                        v-if="overviewTasks.length === 0"
-                                        class="text-sm text-muted-foreground"
+                                    <div
+                                        v-if="overviewSectionCounts.tasks === 0"
+                                        class="flex flex-1 items-center justify-center px-2 text-center text-sm text-muted-foreground"
                                     >
                                         {{ t('projects.tasks.empty') }}
-                                    </p>
+                                    </div>
 
                                     <div
                                         v-else
@@ -515,14 +594,14 @@ const handleDocumentUploaded = (documentId: number): void => {
 
                                 <CardContent
                                     v-else-if="tab === 'todos'"
-                                    class="pt-4"
+                                    class="flex min-h-32 flex-col pt-4"
                                 >
-                                    <p
-                                        v-if="overviewTodos.length === 0"
-                                        class="text-sm text-muted-foreground"
+                                    <div
+                                        v-if="overviewSectionCounts.todos === 0"
+                                        class="flex flex-1 items-center justify-center px-2 text-center text-sm text-muted-foreground"
                                     >
                                         {{ t('projects.todos.empty') }}
-                                    </p>
+                                    </div>
 
                                     <div
                                         v-else
@@ -553,14 +632,14 @@ const handleDocumentUploaded = (documentId: number): void => {
 
                                 <CardContent
                                     v-else-if="tab === 'documents'"
-                                    class="pt-4"
+                                    class="flex min-h-32 flex-col pt-4"
                                 >
-                                    <p
-                                        v-if="overviewDocuments.length === 0"
-                                        class="text-sm text-muted-foreground"
+                                    <div
+                                        v-if="overviewSectionCounts.documents === 0"
+                                        class="flex flex-1 items-center justify-center px-2 text-center text-sm text-muted-foreground"
                                     >
                                         {{ t('projects.documents.none_attached') }}
-                                    </p>
+                                    </div>
 
                                     <div
                                         v-else
@@ -587,6 +666,72 @@ const handleDocumentUploaded = (documentId: number): void => {
                                                     {{ document.description }}
                                                 </p>
                                             </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+
+                                <CardContent
+                                    v-else-if="tab === 'git'"
+                                    class="flex min-h-32 flex-col pt-4"
+                                >
+                                    <div
+                                        v-if="overviewSectionCounts.git === 0"
+                                        class="flex flex-1 items-center justify-center px-2 text-center text-sm text-muted-foreground"
+                                    >
+                                        {{ t('projects.git.none') }}
+                                    </div>
+
+                                    <div
+                                        v-else-if="overviewGitLoading"
+                                        class="flex flex-1 items-center justify-center px-2 text-center text-sm text-muted-foreground"
+                                    >
+                                        {{ t('common.table.loading') }}
+                                    </div>
+
+                                    <div
+                                        v-else-if="overviewGitError"
+                                        class="flex flex-1 items-center justify-center px-2 text-center text-sm text-destructive"
+                                    >
+                                        {{ overviewGitError }}
+                                    </div>
+
+                                    <div
+                                        v-else-if="!overviewGitCommit"
+                                        class="flex flex-1 items-center justify-center px-2 text-center text-sm text-muted-foreground"
+                                    >
+                                        {{ t('projects.git.commits_empty') }}
+                                    </div>
+
+                                    <div
+                                        v-else
+                                        class="flex min-h-0 flex-1 flex-col overflow-hidden"
+                                    >
+                                        <div class="space-y-1 overflow-hidden">
+                                            <div class="flex min-w-0 items-center gap-2">
+                                                <a
+                                                    v-if="overviewGitCommit.html_url"
+                                                    :href="overviewGitCommit.html_url"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    class="shrink-0 font-mono text-xs text-primary underline-offset-4 hover:underline"
+                                                >
+                                                    {{ overviewGitCommit.short_sha }}
+                                                </a>
+                                                <span
+                                                    v-else
+                                                    class="shrink-0 font-mono text-xs text-muted-foreground"
+                                                >
+                                                    {{ overviewGitCommit.short_sha }}
+                                                </span>
+                                                <span class="truncate text-xs text-muted-foreground">
+                                                    {{ overviewGitCommit.author_name ?? '—' }}
+                                                    ·
+                                                    {{ formatDateTime(overviewGitCommit.committed_at) }}
+                                                </span>
+                                            </div>
+                                            <p class="line-clamp-4 text-sm leading-snug">
+                                                {{ gitCommitFirstLine(overviewGitCommit.message) }}
+                                            </p>
                                         </div>
                                     </div>
                                 </CardContent>
