@@ -328,6 +328,8 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
         ->name('projects.email.store');
     Route::delete('projects/{project}/email/{emailLink}', [ProjectEmailLinkController::class, 'destroy'])
         ->name('projects.email.destroy');
+    Route::delete('projects/{project}/email-thread', [ProjectEmailLinkController::class, 'destroyThread'])
+        ->name('projects.email.thread.destroy');
 
     Route::post('tasks/{task}/documents/{document}', [TaskDocumentController::class, 'store'])
         ->name('tasks.documents.store');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ProjectEmailLinkStatus;
+use App\Http\Requests\DestroyProjectEmailThreadRequest;
 use App\Http\Requests\StoreBatchProjectEmailLinksRequest;
 use App\Http\Requests\StoreProjectEmailLinkRequest;
 use App\Models\Project;
@@ -108,6 +109,19 @@ class ProjectEmailLinkController extends Controller
         abort_unless($emailLink->project_id === $project->id, 404);
 
         $emailLink->delete();
+
+        return back();
+    }
+
+    public function destroyThread(
+        DestroyProjectEmailThreadRequest $request,
+        Project $project,
+    ): RedirectResponse {
+        $this->authorize('update', $project);
+
+        $project->emailLinks()
+            ->whereIn('id', $request->validated('link_ids'))
+            ->delete();
 
         return back();
     }

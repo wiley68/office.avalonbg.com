@@ -14,6 +14,7 @@ import { useAppToast } from '@/composables/useAppToast';
 import { useTranslations } from '@/composables/useTranslations';
 import { edit as editEmailSettings } from '@/routes/email';
 import { destroy as destroyEmailLink, link as linkProjectEmail } from '@/routes/projects/email';
+import { destroy as destroyEmailThread } from '@/routes/projects/email/thread';
 
 type EmailLink = {
     id: number;
@@ -60,7 +61,18 @@ const bodyLoadingId = ref<number | null>(null);
 const bodies = ref<Record<number, { text: string | null; html: string | null }>>({});
 const attachmentsByLinkId = ref<Record<number, EmailAttachment[]>>({});
 const linkToDelete = ref<number | null>(null);
+const threadLinkIdsToDelete = ref<number[] | null>(null);
 const showDeleteDialog = ref(false);
+
+const deleteDialogDescription = computed(() => {
+    if (threadLinkIdsToDelete.value !== null) {
+        return t('projects.email.unlink_thread_confirm', {
+            count: String(threadLinkIdsToDelete.value.length),
+        });
+    }
+
+    return t('projects.email.unlink_confirm');
+});
 
 const totalMessageCount = computed(() =>
     threads.value.reduce((count, thread) => count + thread.message_count, 0),
@@ -232,11 +244,32 @@ const toggleBody = async (link: EmailLink): Promise<void> => {
 };
 
 const requestDelete = (linkId: number): void => {
+    threadLinkIdsToDelete.value = null;
     linkToDelete.value = linkId;
     showDeleteDialog.value = true;
 };
 
+const requestThreadDelete = (thread: EmailThread): void => {
+    linkToDelete.value = null;
+    threadLinkIdsToDelete.value = thread.messages.map((link) => link.id);
+    showDeleteDialog.value = true;
+};
+
 const confirmDelete = (): void => {
+    if (threadLinkIdsToDelete.value !== null) {
+        const linkIds = threadLinkIdsToDelete.value;
+        threadLinkIdsToDelete.value = null;
+        showDeleteDialog.value = false;
+
+        router.delete(destroyEmailThread(props.projectId).url, {
+            data: { link_ids: linkIds },
+            preserveScroll: true,
+            onSuccess: () => fetchThreads(),
+        });
+
+        return;
+    }
+
     if (linkToDelete.value === null) {
         return;
     }
@@ -387,6 +420,16 @@ onMounted(() => {
                                 {{ fromLabel(thread.messages[0]) }}
                             </p>
                         </button>
+                        <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            class="mt-0.5 shrink-0 text-destructive hover:text-destructive"
+                            :aria-label="t('projects.email.unlink_thread')"
+                            @click.stop="requestThreadDelete(thread)"
+                        >
+                            <Trash2 class="h-4 w-4" />
+                        </Button>
                     </div>
 
                     <div
@@ -493,9 +536,9 @@ onMounted(() => {
         <AppAlertDialog
             v-model:open="showDeleteDialog"
             :title="t('users.delete_confirm_title')"
-            :description="t('projects.email.unlink_confirm')"
+            :description="deleteDialogDescription"
             @confirm="confirmDelete"
-            @cancel="linkToDelete = null; showDeleteDialog = false"
+            @cancel="linkToDelete = null; threadLinkIdsToDelete = null; showDeleteDialog = false"
         />
     </div>
 </template>

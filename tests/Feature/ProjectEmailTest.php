@@ -437,6 +437,49 @@ test('office user can remove email link from own project', function () {
     expect($project->fresh()->emailLinks)->toHaveCount(0);
 });
 
+test('office user can remove entire email thread from own project', function () {
+    [$user] = createOfficeUserWithImap();
+
+    $project = Project::factory()->for($user)->create();
+
+    $older = ProjectEmailLink::factory()->for($project)->for($user)->create([
+        'subject' => 'BR Avalon',
+        'sent_at' => '2026-07-10T10:00:00Z',
+    ]);
+
+    $newer = ProjectEmailLink::factory()->for($project)->for($user)->create([
+        'subject' => 'Re: BR Avalon',
+        'sent_at' => '2026-07-11T12:00:00Z',
+    ]);
+
+    actingAs($user);
+
+    delete(route('projects.email.thread.destroy', $project), [
+        'link_ids' => [$older->id, $newer->id],
+    ])->assertRedirect();
+
+    expect($project->fresh()->emailLinks)->toHaveCount(0);
+});
+
+test('office user cannot remove email thread with foreign link ids', function () {
+    [$user] = createOfficeUserWithImap();
+
+    $project = Project::factory()->for($user)->create();
+    $otherProject = Project::factory()->for($user)->create();
+
+    $ownLink = ProjectEmailLink::factory()->for($project)->for($user)->create();
+    $foreignLink = ProjectEmailLink::factory()->for($otherProject)->for($user)->create();
+
+    actingAs($user);
+
+    delete(route('projects.email.thread.destroy', $project), [
+        'link_ids' => [$ownLink->id, $foreignLink->id],
+    ])->assertSessionHasErrors('link_ids');
+
+    expect($project->fresh()->emailLinks)->toHaveCount(1)
+        ->and($otherProject->fresh()->emailLinks)->toHaveCount(1);
+});
+
 test('office user cannot manage email links for another users project', function () {
     [$owner] = createOfficeUserWithImap();
 
