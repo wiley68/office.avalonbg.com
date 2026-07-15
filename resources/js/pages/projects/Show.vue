@@ -56,6 +56,19 @@ type OverviewGitCommit = {
     html_url: string | null;
 };
 
+type OverviewEmailMessage = {
+    id: number;
+    subject: string | null;
+    from_name: string | null;
+    from_address: string | null;
+    sent_at: string | null;
+};
+
+type OverviewEmailThread = {
+    id: string;
+    messages: OverviewEmailMessage[];
+};
+
 type Props = {
     project: {
         id: number;
@@ -138,6 +151,7 @@ onMounted(() => {
     stageFilterId.value = resolveStageFromUrl();
     fetchOverviewTasks();
     fetchOverviewGit();
+    fetchOverviewEmail();
 });
 
 watch(activeTab, (tab) => {
@@ -194,6 +208,10 @@ const overviewGitCommit = ref<OverviewGitCommit | null>(null);
 const overviewGitLoading = ref(false);
 const overviewGitError = ref<string | null>(null);
 
+const overviewEmailThreads = ref<OverviewEmailThread[]>([]);
+const overviewEmailLoading = ref(false);
+const overviewEmailError = ref<string | null>(null);
+
 const overviewSectionCounts = computed<Record<ProjectSectionTab, number>>(() => ({
     stages: props.project.revisions.length,
     tasks: props.project.tasks_count,
@@ -221,6 +239,27 @@ const gitCommitFirstLine = (message: string | null): string => {
 
     return message.split('\n')[0] ?? message;
 };
+
+const emailFromLabel = (message: OverviewEmailMessage): string => {
+    if (message.from_name && message.from_address) {
+        return `${message.from_name} <${message.from_address}>`;
+    }
+
+    return message.from_address ?? message.from_name ?? '—';
+};
+
+const overviewEmails = computed(() => {
+    const messages = overviewEmailThreads.value.flatMap((thread) => thread.messages);
+
+    return messages
+        .sort((left, right) => {
+            const leftTime = left.sent_at ? new Date(left.sent_at).getTime() : 0;
+            const rightTime = right.sent_at ? new Date(right.sent_at).getTime() : 0;
+
+            return rightTime - leftTime;
+        })
+        .slice(0, 5);
+});
 
 const fetchOverviewGit = async (): Promise<void> => {
     if (props.project.git_repository === null) {
@@ -268,6 +307,50 @@ const fetchOverviewGit = async (): Promise<void> => {
         overviewGitError.value = t('projects.git.load_error');
     } finally {
         overviewGitLoading.value = false;
+    }
+};
+
+const fetchOverviewEmail = async (): Promise<void> => {
+    if (overviewSectionCounts.value.email === 0) {
+        overviewEmailThreads.value = [];
+        overviewEmailError.value = null;
+
+        return;
+    }
+
+    overviewEmailLoading.value = true;
+    overviewEmailError.value = null;
+
+    try {
+        const response = await fetch(
+            `/internal-api/projects/${props.project.id}/email`,
+            {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            },
+        );
+
+        const payload = (await response.json()) as {
+            data: {
+                threads: OverviewEmailThread[];
+            };
+            message?: string;
+        };
+
+        if (!response.ok) {
+            overviewEmailError.value = payload.message ?? t('projects.email.load_error');
+
+            return;
+        }
+
+        overviewEmailThreads.value = payload.data.threads;
+    } catch {
+        overviewEmailError.value = t('projects.email.load_error');
+    } finally {
+        overviewEmailLoading.value = false;
     }
 };
 
@@ -732,6 +815,69 @@ const handleDocumentUploaded = (documentId: number): void => {
                                             <p class="line-clamp-4 text-sm leading-snug">
                                                 {{ gitCommitFirstLine(overviewGitCommit.message) }}
                                             </p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+
+                                <CardContent
+                                    v-else-if="tab === 'email'"
+                                    class="flex min-h-32 flex-col pt-4"
+                                >
+                                    <div
+                                        v-if="overviewSectionCounts.email === 0"
+                                        class="flex flex-1 items-center justify-center px-2 text-center text-sm text-muted-foreground"
+                                    >
+                                        {{ t('projects.email.empty') }}
+                                    </div>
+
+                                    <div
+                                        v-else-if="overviewEmailLoading"
+                                        class="flex flex-1 items-center justify-center px-2 text-center text-sm text-muted-foreground"
+                                    >
+                                        {{ t('common.table.loading') }}
+                                    </div>
+
+                                    <div
+                                        v-else-if="overviewEmailError"
+                                        class="flex flex-1 items-center justify-center px-2 text-center text-sm text-destructive"
+                                    >
+                                        {{ overviewEmailError }}
+                                    </div>
+
+                                    <div
+                                        v-else-if="overviewEmails.length === 0"
+                                        class="flex flex-1 items-center justify-center px-2 text-center text-sm text-muted-foreground"
+                                    >
+                                        {{ t('projects.email.empty') }}
+                                    </div>
+
+                                    <div
+                                        v-else
+                                        class="divide-y divide-border/50"
+                                    >
+                                        <div
+                                            v-for="(message, index) in overviewEmails"
+                                            :key="message.id"
+                                            class="flex min-w-0 gap-2 py-1 first:pt-0 last:pb-0"
+                                        >
+                                            <span
+                                                class="w-5 shrink-0 pt-0.5 text-xs tabular-nums text-muted-foreground"
+                                            >
+                                                {{ index + 1 }}.
+                                            </span>
+                                            <div class="min-w-0 flex-1 space-y-1">
+                                                <p class="truncate text-sm font-medium">
+                                                    {{
+                                                        message.subject
+                                                            || t('projects.email.no_subject')
+                                                    }}
+                                                </p>
+                                                <p class="truncate text-xs text-muted-foreground">
+                                                    {{ emailFromLabel(message) }}
+                                                    ·
+                                                    {{ formatDateTime(message.sent_at) }}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
                                 </CardContent>
