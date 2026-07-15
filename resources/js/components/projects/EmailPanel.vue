@@ -324,6 +324,7 @@ onMounted(() => {
         </div>
 
         <template v-else>
+            <TooltipProvider :delay-duration="200">
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
                     <h3 class="text-sm font-medium">{{ t('projects.email.title') }}</h3>
@@ -331,8 +332,7 @@ onMounted(() => {
                         {{ t('projects.email.hint') }}
                     </p>
                 </div>
-                <TooltipProvider :delay-duration="200">
-                    <div class="flex gap-1">
+                <div class="flex gap-1">
                         <Tooltip v-if="hasImapConfigured">
                             <TooltipTrigger as-child>
                                 <Button
@@ -372,7 +372,6 @@ onMounted(() => {
                             </TooltipContent>
                         </Tooltip>
                     </div>
-                </TooltipProvider>
             </div>
 
             <div
@@ -438,16 +437,23 @@ onMounted(() => {
                                 {{ fromLabel(thread.messages[0]) }}
                             </p>
                         </button>
-                        <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            class="mt-0.5 shrink-0 text-destructive hover:text-destructive"
-                            :aria-label="t('projects.email.unlink_thread')"
-                            @click.stop="requestThreadDelete(thread)"
-                        >
-                            <Trash2 class="h-4 w-4" />
-                        </Button>
+                        <Tooltip>
+                            <TooltipTrigger as-child>
+                                <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="ghost"
+                                    class="mt-0.5 shrink-0 text-destructive hover:text-destructive"
+                                    :aria-label="t('projects.email.unlink_thread')"
+                                    @click.stop="requestThreadDelete(thread)"
+                                >
+                                    <Trash2 class="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                                {{ t('projects.email.unlink_thread') }}
+                            </TooltipContent>
+                        </Tooltip>
                     </div>
 
                     <div
@@ -506,16 +512,23 @@ onMounted(() => {
                                         </button>
                                     </div>
                                 </div>
-                                <Button
-                                    type="button"
-                                    size="icon"
-                                    variant="ghost"
-                                    class="shrink-0 text-destructive hover:text-destructive"
-                                    :aria-label="t('projects.email.unlink')"
-                                    @click="requestDelete(link.id)"
-                                >
-                                    <Trash2 class="h-4 w-4" />
-                                </Button>
+                                <Tooltip>
+                                    <TooltipTrigger as-child>
+                                        <Button
+                                            type="button"
+                                            size="icon"
+                                            variant="ghost"
+                                            class="shrink-0 text-destructive hover:text-destructive"
+                                            :aria-label="t('projects.email.unlink')"
+                                            @click="requestDelete(link.id)"
+                                        >
+                                            <Trash2 class="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">
+                                        {{ t('projects.email.unlink') }}
+                                    </TooltipContent>
+                                </Tooltip>
                             </div>
 
                             <div
@@ -548,6 +561,7 @@ onMounted(() => {
                     </div>
                 </div>
             </div>
+            </TooltipProvider>
         </template>
 
         <AppAlertDialog

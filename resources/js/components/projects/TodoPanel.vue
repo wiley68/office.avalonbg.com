@@ -14,6 +14,12 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useAppToast } from '@/composables/useAppToast';
 import { useTranslations } from '@/composables/useTranslations';
 import {
@@ -158,7 +164,8 @@ const confirmDelete = (): void => {
 </script>
 
 <template>
-    <div class="space-y-4">
+    <TooltipProvider :delay-duration="200">
+        <div class="space-y-4">
         <div class="flex items-center justify-between gap-4">
             <div>
                 <h3 class="text-sm font-medium">
@@ -168,10 +175,23 @@ const confirmDelete = (): void => {
                     {{ t('projects.todos.hint') }}
                 </p>
             </div>
-            <Button type="button" size="sm" variant="outline" @click="openCreate">
-                <Plus class="mr-2 h-4 w-4" />
-                {{ t('projects.todos.add') }}
-            </Button>
+            <Tooltip>
+                <TooltipTrigger as-child>
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        :aria-label="t('projects.todos.add')"
+                        @click="openCreate"
+                    >
+                        <Plus class="mr-2 h-4 w-4" />
+                        {{ t('projects.todos.add') }}
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                    {{ t('projects.todos.add') }}
+                </TooltipContent>
+            </Tooltip>
         </div>
 
         <div
@@ -212,26 +232,40 @@ const confirmDelete = (): void => {
                     </p>
                 </div>
                 <div class="flex shrink-0 gap-1">
-                    <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        class="size-8"
-                        :aria-label="t('common.edit')"
-                        @click="openEdit(todo)"
-                    >
-                        <Pencil class="size-4" />
-                    </Button>
-                    <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        class="size-8 text-destructive hover:text-destructive"
-                        :aria-label="t('common.delete')"
-                        @click="requestDelete(todo.id)"
-                    >
-                        <Trash2 class="size-4" />
-                    </Button>
+                    <Tooltip>
+                        <TooltipTrigger as-child>
+                            <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                class="size-8"
+                                :aria-label="t('common.edit')"
+                                @click="openEdit(todo)"
+                            >
+                                <Pencil class="size-4" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                            {{ t('common.edit') }}
+                        </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger as-child>
+                            <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                class="size-8 text-destructive hover:text-destructive"
+                                :aria-label="t('common.delete')"
+                                @click="requestDelete(todo.id)"
+                            >
+                                <Trash2 class="size-4" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                            {{ t('common.delete') }}
+                        </TooltipContent>
+                    </Tooltip>
                 </div>
             </div>
         </div>
@@ -280,5 +314,6 @@ const confirmDelete = (): void => {
             @confirm="confirmDelete"
             @cancel="todoToDelete = null; showDeleteDialog = false"
         />
-    </div>
+        </div>
+    </TooltipProvider>
 </template>
