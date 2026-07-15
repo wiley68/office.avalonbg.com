@@ -51,7 +51,8 @@
         "audit": "Audit",
         "accesses": "Accesses",
         "projects": "Projects",
-        "documents": "Documents"
+        "documents": "Documents",
+        "calendar": "Calendar"
     },
     "roles": {
         "profiler": "Profiler",
@@ -656,6 +657,66 @@
             "project_email": "Project “:project” → E-Mail “:subject”",
             "project": "Project “:project” (attached document)",
             "task": "Project “:project” → task “:task”"
+        }
+    },
+    "calendar": {
+        "title": "Calendar",
+        "subtitle": "Meetings, tasks, and reminders outside projects.",
+        "add": "New event",
+        "today": "Today",
+        "week_short": "Wk",
+        "create_title": "New event",
+        "edit_title": "Edit event",
+        "saved": "Event saved.",
+        "deleted": "Event deleted.",
+        "delete_confirm": "Are you sure you want to delete this event?",
+        "no_description": "No description provided.",
+        "mark_completed": "Mark as completed",
+        "mark_active": "Mark as active",
+        "detail": {
+            "subtitle": "Details for the selected event"
+        },
+        "weekdays": {
+            "mon": "Mon",
+            "tue": "Tue",
+            "wed": "Wed",
+            "thu": "Thu",
+            "fri": "Fri",
+            "sat": "Sat",
+            "sun": "Sun"
+        },
+        "type": {
+            "action": "Action",
+            "task": "Task",
+            "meeting": "Meeting",
+            "personal": "Personal",
+            "reminder": "Reminder"
+        },
+        "priority": {
+            "critical": "Critical",
+            "important": "Important",
+            "standard": "Standard",
+            "none": "None"
+        },
+        "status": {
+            "active": "Active",
+            "completed": "Completed"
+        },
+        "fields": {
+            "title": "Title",
+            "title_placeholder": "Example: Call the client",
+            "description": "Description",
+            "description_placeholder": "Brief description of the event",
+            "starts_at": "Starts",
+            "ends_at": "Ends",
+            "period": "Period",
+            "type": "Type",
+            "priority": "Priority",
+            "status": "Status",
+            "created_at": "Created at"
+        },
+        "errors": {
+            "load_failed": "Failed to load calendar events."
         }
     }
 }

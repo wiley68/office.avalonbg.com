@@ -4,6 +4,7 @@ use App\Http\Controllers\AccessController;
 use App\Http\Controllers\Api\AccessApiController;
 use App\Http\Controllers\Api\AccessDataTransformController;
 use App\Http\Controllers\Api\AuditLogApiController;
+use App\Http\Controllers\Api\CalendarEventApiController;
 use App\Http\Controllers\Api\DocumentApiController;
 use App\Http\Controllers\Api\ImapBrowseApiController;
 use App\Http\Controllers\Api\ProjectApiController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Api\ProjectGitApiController;
 use App\Http\Controllers\Api\TaskApiController;
 use App\Http\Controllers\Api\UserApiController;
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\DocumentDownloadController;
@@ -27,6 +29,7 @@ use App\Http\Controllers\TaskDocumentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserTwoFactorController;
 use App\Models\Access;
+use App\Models\CalendarEvent;
 use App\Models\Document;
 use App\Models\Project;
 use App\Models\ProjectEmailLink;
@@ -156,6 +159,9 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
 
             Route::post('documents', [DocumentApiController::class, 'store'])
                 ->name('documents.store');
+
+            Route::get('calendar-events', [CalendarEventApiController::class, 'index'])
+                ->name('calendar-events.index');
         });
 
     Route::bind('project', function (string $value): Project {
@@ -217,6 +223,25 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
             ->where('user_id', $userId)
             ->findOrFail($value);
     });
+
+    Route::bind('calendarEvent', function (string $value): CalendarEvent {
+        $userId = Auth::id();
+
+        abort_unless($userId !== null, 404);
+
+        return CalendarEvent::query()
+            ->where('user_id', $userId)
+            ->findOrFail($value);
+    });
+
+    Route::get('calendar', [CalendarController::class, 'index'])
+        ->name('calendar.index');
+    Route::post('calendar-events', [CalendarController::class, 'store'])
+        ->name('calendar-events.store');
+    Route::put('calendar-events/{calendarEvent}', [CalendarController::class, 'update'])
+        ->name('calendar-events.update');
+    Route::delete('calendar-events/{calendarEvent}', [CalendarController::class, 'destroy'])
+        ->name('calendar-events.destroy');
 
     Route::resource('projects', ProjectController::class)
         ->except(['create', 'edit']);

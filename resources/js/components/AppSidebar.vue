@@ -2,6 +2,7 @@
 import { usePage } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import {
+    Calendar,
     FolderKanban,
     HardDriveDownload,
     History,
@@ -31,6 +32,7 @@ import { useTranslations } from '@/composables/useTranslations';
 import { dashboard } from '@/routes';
 import { index as accessesIndex } from '@/routes/accesses';
 import { index as auditLogsIndex } from '@/routes/audit-logs';
+import { index as calendarIndex } from '@/routes/calendar';
 import { index as documentsIndex } from '@/routes/documents';
 import { index as projectsIndex } from '@/routes/projects';
 import { index as usersIndex } from '@/routes/users';
@@ -115,6 +117,11 @@ const mainNavItems = computed<NavItem[]>(() => {
                 title: t('nav.documents'),
                 href: documentsIndex(),
                 icon: FileText,
+            });
+            items.push({
+                title: t('nav.calendar'),
+                href: calendarIndex(),
+                icon: Calendar,
             });
             items.push({
                 title: t('nav.accesses'),

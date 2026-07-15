@@ -51,7 +51,8 @@
         "audit": "Одит",
         "accesses": "Достъпи",
         "projects": "Проекти",
-        "documents": "Документи"
+        "documents": "Документи",
+        "calendar": "Календар"
     },
     "roles": {
         "profiler": "Профайлер",
@@ -656,6 +657,66 @@
             "project_email": "Проект „:project“ → E-Mail „:subject“",
             "project": "Проект „:project“ (прикачен документ)",
             "task": "Проект „:project“ → задача „:task“"
+        }
+    },
+    "calendar": {
+        "title": "Календар",
+        "subtitle": "Срещи, задачи и напомняния извън проектите.",
+        "add": "Ново действие",
+        "today": "Днес",
+        "week_short": "Седм.",
+        "create_title": "Ново действие",
+        "edit_title": "Редакция",
+        "saved": "Записът е запазен.",
+        "deleted": "Записът е изтрит.",
+        "delete_confirm": "Сигурни ли сте, че искате да изтриете този запис?",
+        "no_description": "Няма добавено описание.",
+        "mark_completed": "Маркирай като приключено",
+        "mark_active": "Маркирай като активно",
+        "detail": {
+            "subtitle": "Детайли за избраното действие"
+        },
+        "weekdays": {
+            "mon": "Пон",
+            "tue": "Вто",
+            "wed": "Сря",
+            "thu": "Чет",
+            "fri": "Пет",
+            "sat": "Съб",
+            "sun": "Нед"
+        },
+        "type": {
+            "action": "Действие",
+            "task": "Задача",
+            "meeting": "Среща",
+            "personal": "Лично",
+            "reminder": "Напомняне"
+        },
+        "priority": {
+            "critical": "Изключително важна",
+            "important": "Важна",
+            "standard": "Стандартна",
+            "none": "Без значение"
+        },
+        "status": {
+            "active": "Активна",
+            "completed": "Приключена"
+        },
+        "fields": {
+            "title": "Наименование",
+            "title_placeholder": "Пример: Обаждане към клиент",
+            "description": "Описание",
+            "description_placeholder": "Кратко описание на действието",
+            "starts_at": "Начало",
+            "ends_at": "Край",
+            "period": "Период",
+            "type": "Тип",
+            "priority": "Приоритет",
+            "status": "Статус",
+            "created_at": "Дата на създаване"
+        },
+        "errors": {
+            "load_failed": "Неуспешно зареждане на календарните записи."
         }
     }
 }
