@@ -32,6 +32,20 @@ class ProjectEmailLinkFactory extends Factory
             'sent_at' => now(),
             'status' => ProjectEmailLinkStatus::Active,
             'last_verified_at' => now(),
+            'body_text' => null,
+            'body_html' => null,
+            'conversation_key' => null,
+            'archived_at' => null,
         ];
+    }
+
+    public function archived(): static
+    {
+        return $this->state(fn (): array => [
+            'body_text' => 'Archived message body.',
+            'body_html' => null,
+            'conversation_key' => 'subject:'.md5('archived'),
+            'archived_at' => now(),
+        ]);
     }
 }

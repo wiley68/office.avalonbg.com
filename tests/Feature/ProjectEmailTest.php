@@ -1,12 +1,15 @@
 <?php
 
 use App\Enums\ProjectEmailLinkStatus;
+use App\Models\Document;
 use App\Models\Project;
+use App\Models\ProjectEmailAttachment;
 use App\Models\ProjectEmailLink;
 use App\Models\User;
 use App\Models\UserImapAccount;
 use App\Services\ImapMailboxService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Mockery\MockInterface;
 use Spatie\Permission\Models\Role;
 
@@ -21,6 +24,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Role::findOrCreate('user', 'web');
+    Storage::fake('local');
 });
 
 function createOfficeUserWithImap(): array
@@ -33,10 +37,62 @@ function createOfficeUserWithImap(): array
     return [$user, $account];
 }
 
+/**
+ * @param  list<array{part: string, filename: string}>  $attachments
+ */
+function mockImapArchiveResponses(
+    UserImapAccount $account,
+    string $folder,
+    int $uid,
+    array $body = ['text' => 'Archived body text.', 'html' => null],
+    array $attachments = [],
+): MockInterface {
+    /** @var MockInterface&ImapMailboxService $imapMailboxService */
+    $imapMailboxService = mock(ImapMailboxService::class);
+
+    $imapMailboxService
+        ->shouldReceive('fetchMessageBody')
+        ->with(
+            Mockery::on(fn ($arg) => $arg->is($account)),
+            $folder,
+            $uid,
+        )
+        ->andReturn($body);
+
+    $imapMailboxService
+        ->shouldReceive('fetchMessageAttachments')
+        ->with(
+            Mockery::on(fn ($arg) => $arg->is($account)),
+            $folder,
+            $uid,
+        )
+        ->andReturn($attachments);
+
+    foreach ($attachments as $attachment) {
+        $imapMailboxService
+            ->shouldReceive('fetchAttachmentPart')
+            ->with(
+                Mockery::on(fn ($arg) => $arg->is($account)),
+                $folder,
+                $uid,
+                $attachment['part'],
+            )
+            ->andReturn([
+                'filename' => $attachment['filename'],
+                'content' => '%PDF-1.4 archived',
+                'mime_type' => 'application/pdf',
+            ]);
+    }
+
+    return $imapMailboxService;
+}
+
 test('office user can link imap message to own project', function () {
-    [$user] = createOfficeUserWithImap();
+    [$user, $account] = createOfficeUserWithImap();
 
     $project = Project::factory()->for($user)->create();
+
+    mockImapArchiveResponses($account, 'INBOX', 42);
 
     actingAs($user);
 
@@ -54,7 +110,9 @@ test('office user can link imap message to own project', function () {
         ->and($project->emailLinks->first())
         ->imap_uid->toBe(42)
         ->subject->toBe('Project update')
-        ->status->toBe(ProjectEmailLinkStatus::Active);
+        ->status->toBe(ProjectEmailLinkStatus::Active)
+        ->body_text->toBe('Archived body text.')
+        ->archived_at->not->toBeNull();
 });
 
 test('office user can refresh linked emails for own project', function () {
@@ -549,9 +607,34 @@ test('office user can browse imap folders', function () {
 });
 
 test('office user can batch link messages to own project', function () {
-    [$user] = createOfficeUserWithImap();
+    [$user, $account] = createOfficeUserWithImap();
 
     $project = Project::factory()->for($user)->create();
+
+    /** @var MockInterface&ImapMailboxService $imapMailboxService */
+    $imapMailboxService = mock(ImapMailboxService::class);
+
+    foreach ([10, 11] as $uid) {
+        $imapMailboxService
+            ->shouldReceive('fetchMessageBody')
+            ->with(
+                Mockery::on(fn ($arg) => $arg->is($account)),
+                'INBOX.Projects',
+                $uid,
+            )
+            ->once()
+            ->andReturn(['text' => "Body {$uid}", 'html' => null]);
+
+        $imapMailboxService
+            ->shouldReceive('fetchMessageAttachments')
+            ->with(
+                Mockery::on(fn ($arg) => $arg->is($account)),
+                'INBOX.Projects',
+                $uid,
+            )
+            ->once()
+            ->andReturn([]);
+    }
 
     actingAs($user);
 
@@ -581,5 +664,121 @@ test('office user can batch link messages to own project', function () {
         'tab' => 'email',
     ]));
 
-    expect($project->fresh()->emailLinks)->toHaveCount(2);
+    expect($project->fresh()->emailLinks)->toHaveCount(2)
+        ->and($project->fresh()->emailLinks->every(fn ($link) => $link->archived_at !== null))->toBeTrue();
+});
+
+test('batch link archives attachments into documents and attaches them to project', function () {
+    [$user, $account] = createOfficeUserWithImap();
+
+    $project = Project::factory()->for($user)->create();
+
+    mockImapArchiveResponses(
+        $account,
+        'INBOX.Projects',
+        20,
+        ['text' => 'Please review the attached specification.', 'html' => null],
+        [['part' => '2', 'filename' => 'specification.pdf']],
+    );
+
+    actingAs($user);
+
+    post(route('projects.email.batch.store', $project), [
+        'messages' => [
+            [
+                'folder' => 'INBOX.Projects',
+                'imap_uid' => 20,
+                'uidvalidity' => 999,
+                'subject' => 'Specification',
+                'from_name' => 'Alice',
+                'from_address' => 'alice@example.com',
+                'sent_at' => '2026-07-10T10:00:00Z',
+            ],
+        ],
+    ])->assertRedirect();
+
+    $link = $project->fresh()->emailLinks->first();
+
+    expect($link->attachments)->toHaveCount(1)
+        ->and($link->attachments->first()->document->original_name)->toBe('specification.pdf')
+        ->and($project->fresh()->documents)->toHaveCount(1)
+        ->and($project->documents->first()->description)->toContain('Specification');
+});
+
+test('re-linking the same imap message does not duplicate archived content', function () {
+    [$user, $account] = createOfficeUserWithImap();
+
+    $project = Project::factory()->for($user)->create();
+
+    mockImapArchiveResponses(
+        $account,
+        'INBOX',
+        42,
+        ['text' => 'Original archived body.', 'html' => null],
+        [['part' => '2', 'filename' => 'notes.pdf']],
+    );
+
+    actingAs($user);
+
+    post(route('projects.email.store', $project), [
+        'folder' => 'INBOX',
+        'imap_uid' => 42,
+        'uidvalidity' => 123456,
+        'subject' => 'Project update',
+        'sent_at' => '2026-07-10T10:00:00Z',
+    ])->assertRedirect();
+
+    post(route('projects.email.store', $project), [
+        'folder' => 'INBOX',
+        'imap_uid' => 42,
+        'uidvalidity' => 123456,
+        'subject' => 'Project update',
+        'sent_at' => '2026-07-10T10:00:00Z',
+    ])->assertRedirect();
+
+    expect($project->fresh()->emailLinks)->toHaveCount(1)
+        ->and($project->emailLinks->first()->attachments)->toHaveCount(1)
+        ->and($project->documents)->toHaveCount(1);
+});
+
+test('archived email body and attachments are served from database without imap', function () {
+    [$user] = createOfficeUserWithImap();
+
+    $project = Project::factory()->for($user)->create();
+
+    $link = ProjectEmailLink::factory()->for($project)->for($user)->archived()->create([
+        'subject' => 'Archived subject',
+        'body_text' => 'Stored body for later reference.',
+    ]);
+
+    $document = Document::factory()->for($user)->create([
+        'original_name' => 'invoice.pdf',
+        'mime_type' => 'application/pdf',
+    ]);
+
+    $project->documents()->attach($document);
+
+    ProjectEmailAttachment::query()->create([
+        'project_email_link_id' => $link->id,
+        'imap_part' => '2',
+        'document_id' => $document->id,
+    ]);
+
+    $user->imapAccount()->delete();
+
+    actingAs($user)
+        ->getJson(route('internal.projects.email.index', $project))
+        ->assertOk()
+        ->assertJsonPath('data.configured', true)
+        ->assertJsonPath('data.threads.0.messages.0.is_archived', true);
+
+    actingAs($user)
+        ->getJson(route('internal.projects.email.body', [$project, $link]))
+        ->assertOk()
+        ->assertJsonPath('data.text', 'Stored body for later reference.');
+
+    actingAs($user)
+        ->getJson(route('internal.projects.email.attachments.index', [$project, $link]))
+        ->assertOk()
+        ->assertJsonPath('data.0.filename', 'invoice.pdf');
 });

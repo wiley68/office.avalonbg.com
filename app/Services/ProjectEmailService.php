@@ -8,7 +8,6 @@ use App\Models\ProjectEmailLink;
 use App\Models\User;
 use App\Models\UserImapAccount;
 use App\Support\EmailConversation;
-use App\Support\Translations;
 
 class ProjectEmailService
 {
@@ -40,25 +39,32 @@ class ProjectEmailService
      */
     public function refreshLinks(Project $project, User $user): array
     {
-        $account = $this->requireAccount($user);
-
+        $account = $user->imapAccount;
         $folderUidValidities = [];
 
         $links = $project->emailLinks()
-            ->where('user_id', $user->id)
+            ->with(['attachments.document'])
             ->orderByDesc('sent_at')
             ->orderByDesc('id')
             ->get();
 
-        foreach ($links as $link) {
-            $this->verifyLink($account, $link, $folderUidValidities);
+        if ($account !== null) {
+            foreach ($links as $link) {
+                if ($link->isArchived()) {
+                    continue;
+                }
+
+                $this->verifyLink($account, $link, $folderUidValidities);
+            }
+
+            $links = $project->emailLinks()
+                ->with(['attachments.document'])
+                ->orderByDesc('sent_at')
+                ->orderByDesc('id')
+                ->get();
         }
 
-        return $project->emailLinks()
-            ->where('user_id', $user->id)
-            ->orderByDesc('sent_at')
-            ->orderByDesc('id')
-            ->get()
+        return $links
             ->map(fn (ProjectEmailLink $link): array => $this->formatLink($link))
             ->values()
             ->all();
@@ -78,18 +84,27 @@ class ProjectEmailService
             'from_name' => $link->from_name,
             'from_address' => $link->from_address,
             'sent_at' => $link->sent_at?->toIso8601String(),
-            'status' => $link->status->value,
+            'status' => $link->isArchived()
+                ? ProjectEmailLinkStatus::Active->value
+                : $link->status->value,
+            'is_archived' => $link->isArchived(),
+            'conversation_key' => $link->conversation_key,
             'last_verified_at' => $link->last_verified_at?->toIso8601String(),
+            'attachments' => $link->attachments
+                ->map(fn ($attachment): array => [
+                    'part' => $attachment->imap_part,
+                    'filename' => $attachment->document->original_name,
+                ])
+                ->values()
+                ->all(),
         ];
     }
 
-    private function requireAccount(User $user): UserImapAccount
+    public function hasArchivedLinks(Project $project): bool
     {
-        $account = $user->imapAccount;
-
-        abort_if($account === null, 422, Translations::get('settings.email.errors.not_configured'));
-
-        return $account;
+        return $project->emailLinks()
+            ->whereNotNull('archived_at')
+            ->exists();
     }
 
     /**

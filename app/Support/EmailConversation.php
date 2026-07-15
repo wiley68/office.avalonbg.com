@@ -54,7 +54,9 @@ class EmailConversation
 
         foreach ($items as $item) {
             $subject = (string) $subjectResolver($item);
-            $key = $this->conversationKey($subject);
+            $key = isset($item['conversation_key']) && is_string($item['conversation_key']) && $item['conversation_key'] !== ''
+                ? $item['conversation_key']
+                : $this->conversationKey($subject);
             $buckets[$key] ??= [];
             $buckets[$key][] = $item;
         }

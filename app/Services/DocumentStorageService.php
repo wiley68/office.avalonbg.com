@@ -89,6 +89,30 @@ class DocumentStorageService
         ]);
     }
 
+    public function storeFromContents(
+        User $user,
+        string $contents,
+        string $originalName,
+        string $mimeType,
+        ?string $description = null,
+    ): Document {
+        $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+        $filename = Str::uuid().($extension !== '' ? '.'.$extension : '');
+        $directory = 'documents/'.$user->id;
+        $path = $directory.'/'.$filename;
+
+        $this->disk()->put($path, $contents);
+
+        return Document::query()->create([
+            'user_id' => $user->id,
+            'original_name' => $originalName,
+            'storage_path' => $path,
+            'mime_type' => $this->resolveMimeTypeFromName($originalName, $mimeType),
+            'size_bytes' => strlen($contents),
+            'description' => $description,
+        ]);
+    }
+
     public function delete(Document $document): void
     {
         $disk = $this->disk();
@@ -220,5 +244,16 @@ class DocumentStorageService
         $extension = strtolower($file->getClientOriginalExtension());
 
         return self::ExtensionToMime[$extension] ?? $mimeType ?? 'application/octet-stream';
+    }
+
+    public function resolveMimeTypeFromName(string $originalName, string $mimeType): string
+    {
+        if (in_array($mimeType, self::AllowedMimeTypes, true)) {
+            return $mimeType;
+        }
+
+        $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+
+        return self::ExtensionToMime[$extension] ?? $mimeType ?: 'application/octet-stream';
     }
 }

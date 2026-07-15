@@ -570,7 +570,7 @@
         },
         "email": {
             "title": "E-Mail correspondence",
-            "hint": "Link IMAP messages to the project for quick review of related correspondence.",
+            "hint": "Link IMAP messages to the project. When linked, correspondence is archived locally for reference at any time.",
             "not_configured": "Configure IMAP access in your profile to link messages.",
             "open_settings": "Open E-Mail settings",
             "link_message": "Link message",
@@ -581,7 +581,7 @@
             "link_selected": "Link selected (:count)",
             "select_all_visible": "Select all visible",
             "thread_messages": ":count messages",
-            "linked_batch": "Selected messages were linked to the project.",
+            "linked_batch": "Selected messages were linked and archived locally in the project.",
             "refresh": "Refresh",
             "empty": "No messages linked to this project.",
             "open_tab": "Open E-Mail",

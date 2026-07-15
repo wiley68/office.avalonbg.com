@@ -26,6 +26,8 @@ type EmailLink = {
     from_address: string | null;
     sent_at: string | null;
     status: 'active' | 'missing_on_server';
+    is_archived?: boolean;
+    attachments?: EmailAttachment[];
     last_verified_at: string | null;
 };
 
@@ -76,6 +78,10 @@ const deleteDialogDescription = computed(() => {
 
 const totalMessageCount = computed(() =>
     threads.value.reduce((count, thread) => count + thread.message_count, 0),
+);
+
+const showImapSetupNotice = computed(
+    () => !props.hasImapConfigured && totalMessageCount.value === 0 && !loading.value,
 );
 
 const formatDateTime = (value: string | null): string => {
@@ -153,11 +159,21 @@ const fetchThreadAttachments = async (thread: EmailThread): Promise<void> => {
     await Promise.all(thread.messages.map((link) => fetchLinkAttachments(link)));
 };
 
-const fetchThreads = async (): Promise<void> => {
-    if (!props.hasImapConfigured) {
-        return;
+const preloadArchivedAttachments = (loadedThreads: EmailThread[]): void => {
+    const next = { ...attachmentsByLinkId.value };
+
+    for (const thread of loadedThreads) {
+        for (const link of thread.messages) {
+            if (link.attachments !== undefined && link.attachments.length > 0) {
+                next[link.id] = link.attachments;
+            }
+        }
     }
 
+    attachmentsByLinkId.value = next;
+};
+
+const fetchThreads = async (): Promise<void> => {
     loading.value = true;
     loadError.value = null;
 
@@ -186,6 +202,7 @@ const fetchThreads = async (): Promise<void> => {
 
         threads.value = payload.data.threads;
         attachmentsByLinkId.value = {};
+        preloadArchivedAttachments(payload.data.threads);
     } catch {
         loadError.value = t('projects.email.load_error');
         showError(t('common.error'), t('projects.email.load_error'));
@@ -285,16 +302,14 @@ const confirmDelete = (): void => {
 };
 
 onMounted(() => {
-    if (props.hasImapConfigured) {
-        fetchThreads();
-    }
+    fetchThreads();
 });
 </script>
 
 <template>
     <div class="space-y-6">
         <div
-            v-if="!hasImapConfigured"
+            v-if="showImapSetupNotice"
             class="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground"
         >
             <p>{{ t('projects.email.not_configured') }}</p>
@@ -315,7 +330,7 @@ onMounted(() => {
                 </div>
                 <TooltipProvider :delay-duration="200">
                     <div class="flex gap-1">
-                        <Tooltip>
+                        <Tooltip v-if="hasImapConfigured">
                             <TooltipTrigger as-child>
                                 <Button
                                     type="button"

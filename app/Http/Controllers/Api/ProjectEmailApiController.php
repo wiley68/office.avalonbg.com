@@ -4,15 +4,17 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Project;
+use App\Models\ProjectEmailAttachment;
 use App\Models\ProjectEmailLink;
 use App\Models\User;
+use App\Services\DocumentStorageService;
 use App\Services\ImapMailboxService;
 use App\Services\ProjectEmailService;
 use App\Support\Translations;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Symfony\Component\HttpFoundation\Response;
 
 class ProjectEmailApiController extends Controller
 {
@@ -23,11 +25,22 @@ class ProjectEmailApiController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        if ($user->imapAccount === null) {
+        $hasArchivedLinks = $projectEmailService->hasArchivedLinks($project);
+
+        if ($user->imapAccount === null && ! $hasArchivedLinks) {
             return response()->json([
                 'data' => [
                     'configured' => false,
                     'threads' => [],
+                ],
+            ]);
+        }
+
+        if ($user->imapAccount === null) {
+            return response()->json([
+                'data' => [
+                    'configured' => true,
+                    'threads' => $projectEmailService->refreshLinkThreads($project, $user),
                 ],
             ]);
         }
@@ -56,6 +69,15 @@ class ProjectEmailApiController extends Controller
         Gate::authorize('view', $project);
 
         abort_unless($emailLink->project_id === $project->id, 404);
+
+        if ($emailLink->isArchived()) {
+            return response()->json([
+                'data' => [
+                    'text' => $emailLink->body_text,
+                    'html' => $emailLink->body_html,
+                ],
+            ]);
+        }
 
         /** @var User $user */
         $user = Auth::user();
@@ -96,6 +118,20 @@ class ProjectEmailApiController extends Controller
 
         abort_unless($emailLink->project_id === $project->id, 404);
 
+        if ($emailLink->isArchived()) {
+            $emailLink->loadMissing('attachments.document');
+
+            return response()->json([
+                'data' => $emailLink->attachments
+                    ->map(fn (ProjectEmailAttachment $attachment): array => [
+                        'part' => $attachment->imap_part,
+                        'filename' => $attachment->document->original_name,
+                    ])
+                    ->values()
+                    ->all(),
+            ]);
+        }
+
         /** @var User $user */
         $user = Auth::user();
 
@@ -131,11 +167,24 @@ class ProjectEmailApiController extends Controller
         ProjectEmailLink $emailLink,
         string $part,
         ImapMailboxService $imapMailboxService,
+        DocumentStorageService $documentStorageService,
     ): Response {
         Gate::authorize('view', $project);
 
         abort_unless($emailLink->project_id === $project->id, 404);
         abort_unless(preg_match('/^[0-9]+(?:\.[0-9]+)*$/', $part) === 1, 404);
+
+        if ($emailLink->isArchived()) {
+            $attachment = ProjectEmailAttachment::query()
+                ->where('project_email_link_id', $emailLink->id)
+                ->where('imap_part', $part)
+                ->with('document')
+                ->first();
+
+            abort_if($attachment === null, 404);
+
+            return $documentStorageService->download($attachment->document, forceAttachment: true);
+        }
 
         /** @var User $user */
         $user = Auth::user();

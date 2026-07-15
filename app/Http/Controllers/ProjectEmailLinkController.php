@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\ProjectEmailLinkStatus;
 use App\Http\Requests\DestroyProjectEmailThreadRequest;
 use App\Http\Requests\StoreBatchProjectEmailLinksRequest;
 use App\Http\Requests\StoreProjectEmailLinkRequest;
 use App\Models\Project;
 use App\Models\ProjectEmailLink;
 use App\Models\User;
+use App\Services\ProjectEmailArchiveService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -39,8 +39,11 @@ class ProjectEmailLinkController extends Controller
         ]);
     }
 
-    public function store(StoreProjectEmailLinkRequest $request, Project $project): RedirectResponse
-    {
+    public function store(
+        StoreProjectEmailLinkRequest $request,
+        Project $project,
+        ProjectEmailArchiveService $projectEmailArchiveService,
+    ): RedirectResponse {
         $this->authorize('update', $project);
 
         /** @var User $user */
@@ -48,28 +51,18 @@ class ProjectEmailLinkController extends Controller
 
         abort_if($user->imapAccount === null, 422);
 
-        $project->emailLinks()->updateOrCreate(
-            [
-                'folder' => $request->validated('folder'),
-                'imap_uid' => $request->validated('imap_uid'),
-            ],
-            [
-                'user_id' => $user->id,
-                'uidvalidity' => $request->validated('uidvalidity'),
-                'subject' => $request->validated('subject'),
-                'from_name' => $request->validated('from_name'),
-                'from_address' => $request->validated('from_address'),
-                'sent_at' => $request->validated('sent_at'),
-                'status' => ProjectEmailLinkStatus::Active,
-                'last_verified_at' => now(),
-            ],
-        );
+        $projectEmailArchiveService->archiveMessages($user, $project, [
+            $request->validated(),
+        ]);
 
         return back();
     }
 
-    public function storeBatch(StoreBatchProjectEmailLinksRequest $request, Project $project): RedirectResponse
-    {
+    public function storeBatch(
+        StoreBatchProjectEmailLinksRequest $request,
+        Project $project,
+        ProjectEmailArchiveService $projectEmailArchiveService,
+    ): RedirectResponse {
         $this->authorize('update', $project);
 
         /** @var User $user */
@@ -77,24 +70,11 @@ class ProjectEmailLinkController extends Controller
 
         abort_if($user->imapAccount === null, 422);
 
-        foreach ($request->validated('messages') as $message) {
-            $project->emailLinks()->updateOrCreate(
-                [
-                    'folder' => $message['folder'],
-                    'imap_uid' => $message['imap_uid'],
-                ],
-                [
-                    'user_id' => $user->id,
-                    'uidvalidity' => $message['uidvalidity'],
-                    'subject' => $message['subject'] ?? null,
-                    'from_name' => $message['from_name'] ?? null,
-                    'from_address' => $message['from_address'] ?? null,
-                    'sent_at' => $message['sent_at'] ?? null,
-                    'status' => ProjectEmailLinkStatus::Active,
-                    'last_verified_at' => now(),
-                ],
-            );
-        }
+        $projectEmailArchiveService->archiveMessages(
+            $user,
+            $project,
+            $request->validated('messages'),
+        );
 
         return to_route('projects.show', [
             'project' => $project,
