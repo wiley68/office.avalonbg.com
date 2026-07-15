@@ -27,7 +27,18 @@ defineProps<{
     items: NavItem[];
 }>();
 
-const { isCurrentUrl } = useCurrentUrl();
+const { isCurrentOrParentUrl } = useCurrentUrl();
+
+function isNavItemActive(item: NavItem): boolean {
+    if (item.href && isCurrentOrParentUrl(item.href)) {
+        return true;
+    }
+
+    return (
+        item.children?.some((child) => isCurrentOrParentUrl(child.href)) ??
+        false
+    );
+}
 const { usersNavOpen } = useUsersNavSection();
 
 const toggleSectionOpen: Record<'users', Ref<boolean>> = {
@@ -86,7 +97,7 @@ const organizationLabel = computed(() => {
                 >
                     <SidebarMenuButton
                         as-child
-                        :is-active="isCurrentUrl(item.href)"
+                        :is-active="isNavItemActive(item)"
                         :tooltip="item.title"
                     >
                         <Link :href="item.href">
@@ -104,7 +115,10 @@ const organizationLabel = computed(() => {
                 >
                     <SidebarMenuItem>
                         <CollapsibleTrigger as-child>
-                            <SidebarMenuButton :tooltip="item.title">
+                            <SidebarMenuButton
+                                :is-active="isNavItemActive(item)"
+                                :tooltip="item.title"
+                            >
                                 <component v-if="item.icon" :is="item.icon" />
                                 <span>{{ item.title }}</span>
                                 <NavCollapsibleChevron
@@ -120,7 +134,7 @@ const organizationLabel = computed(() => {
                                 >
                                     <SidebarMenuSubButton
                                         as-child
-                                        :is-active="isCurrentUrl(child.href)"
+                                        :is-active="isCurrentOrParentUrl(child.href)"
                                     >
                                         <Link :href="child.href">
                                             <component
@@ -138,13 +152,14 @@ const organizationLabel = computed(() => {
                 <Collapsible
                     v-else
                     as-child
-                    :default-open="
-                        item.children!.some((child) => isCurrentUrl(child.href))
-                    "
+                    :default-open="isNavItemActive(item)"
                 >
                     <SidebarMenuItem>
                         <CollapsibleTrigger as-child>
-                            <SidebarMenuButton :tooltip="item.title">
+                            <SidebarMenuButton
+                                :is-active="isNavItemActive(item)"
+                                :tooltip="item.title"
+                            >
                                 <component :is="item.icon" />
                                 <span>{{ item.title }}</span>
                                 <ChevronDown
@@ -160,7 +175,7 @@ const organizationLabel = computed(() => {
                                 >
                                     <SidebarMenuSubButton
                                         as-child
-                                        :is-active="isCurrentUrl(child.href)"
+                                        :is-active="isCurrentOrParentUrl(child.href)"
                                     >
                                         <Link :href="child.href">
                                             <component

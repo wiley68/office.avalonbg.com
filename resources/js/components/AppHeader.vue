@@ -55,7 +55,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const page = usePage();
 const auth = computed(() => page.props.auth);
-const { isCurrentUrl, whenCurrentUrl } = useCurrentUrl();
+const { isCurrentOrParentUrl, whenCurrentOrParentUrl } = useCurrentUrl();
 
 const activeItemStyles =
     'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
@@ -147,7 +147,7 @@ const rightNavItems = computed<NavItem[]>(() => [
                                         :href="item.href"
                                         class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
                                         :class="
-                                            whenCurrentUrl(
+                                            whenCurrentOrParentUrl(
                                                 item.href,
                                                 activeItemStyles,
                                             )
@@ -203,7 +203,7 @@ const rightNavItems = computed<NavItem[]>(() => [
                                 <Link
                                     :class="[
                                         navigationMenuTriggerStyle(),
-                                        whenCurrentUrl(
+                                        whenCurrentOrParentUrl(
                                             item.href,
                                             activeItemStyles,
                                         ),
@@ -219,7 +219,7 @@ const rightNavItems = computed<NavItem[]>(() => [
                                     {{ item.title }}
                                 </Link>
                                 <div
-                                    v-if="isCurrentUrl(item.href)"
+                                    v-if="isCurrentOrParentUrl(item.href)"
                                     class="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"
                                 ></div>
                             </NavigationMenuItem>

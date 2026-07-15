@@ -497,27 +497,25 @@ const handleDocumentUploaded = (documentId: number): void => {
             </div>
 
             <Tabs v-model="activeTab" class="w-full">
-                <TabsList>
-                    <TabsTrigger value="overview">
+                <TabsList class="gap-1">
+                    <TabsTrigger
+                        value="overview"
+                        class="transition-colors hover:bg-background/80 hover:text-foreground dark:hover:bg-input/40"
+                    >
                         {{ t('projects.tabs.overview') }}
                     </TabsTrigger>
-                    <TabsTrigger value="stages">
-                        {{ t('projects.tabs.stages') }}
-                    </TabsTrigger>
-                    <TabsTrigger value="tasks">
-                        {{ t('projects.tabs.tasks') }}
-                    </TabsTrigger>
-                    <TabsTrigger value="todos">
-                        {{ t('projects.tabs.todos') }}
-                    </TabsTrigger>
-                    <TabsTrigger value="documents">
-                        {{ t('projects.tabs.documents') }}
-                    </TabsTrigger>
-                    <TabsTrigger value="git">
-                        {{ t('projects.tabs.git') }}
-                    </TabsTrigger>
-                    <TabsTrigger value="email">
-                        {{ t('projects.tabs.email') }}
+                    <TabsTrigger
+                        v-for="tab in overviewSectionTabs"
+                        :key="tab"
+                        :value="tab"
+                        :class="PROJECT_TAB_THEMES[tab].tabHoverClass"
+                    >
+                        <component
+                            :is="PROJECT_TAB_THEMES[tab].icon"
+                            :class="PROJECT_TAB_THEMES[tab].iconClass"
+                            aria-hidden="true"
+                        />
+                        {{ t(`projects.tabs.${tab}`) }}
                     </TabsTrigger>
                 </TabsList>
 
