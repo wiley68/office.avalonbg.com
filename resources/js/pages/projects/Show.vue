@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { Paperclip, Pencil, Upload } from 'lucide-vue-next';
+import { ListTodo, Paperclip, Pencil, Upload } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 import AttachedDocumentsList from '@/components/documents/AttachedDocumentsList.vue';
 import DocumentPickerModal from '@/components/documents/DocumentPickerModal.vue';
@@ -15,7 +15,14 @@ import TodoPanel from '@/components/projects/TodoPanel.vue';
 import type { ProjectTodoItem } from '@/components/projects/TodoPanel.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useTranslations } from '@/composables/useTranslations';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { ProjectListItem, ProjectStatus } from '@/pages/projects/columns';
@@ -23,6 +30,7 @@ import { dashboard } from '@/routes';
 import { index, show } from '@/routes/projects';
 import { store as attachProjectDocument } from '@/routes/projects/documents';
 import type { BreadcrumbItem } from '@/types';
+import type { TaskStatus, TaskTreeNode } from '@/types/task-tree';
 
 type ProjectDocument = {
     id: number;
@@ -61,6 +69,16 @@ const { t } = useTranslations();
 
 const projectTabs = ['overview', 'stages', 'tasks', 'todos', 'documents', 'git', 'email'] as const;
 type ProjectTab = (typeof projectTabs)[number];
+type OverviewSectionTab = Exclude<ProjectTab, 'overview'>;
+
+const overviewSectionTabs: OverviewSectionTab[] = [
+    'stages',
+    'tasks',
+    'todos',
+    'documents',
+    'git',
+    'email',
+];
 
 function resolveTabFromUrl(): ProjectTab {
     const tab = new URLSearchParams(window.location.search).get('tab');
@@ -107,6 +125,7 @@ const stageFilterId = ref<number | null>(null);
 onMounted(() => {
     activeTab.value = resolveTabFromUrl();
     stageFilterId.value = resolveStageFromUrl();
+    fetchOverviewTasks();
 });
 
 watch(activeTab, (tab) => {
@@ -122,6 +141,72 @@ const openTasksForStage = (revisionId: number): void => {
 const clearStageFilter = (): void => {
     stageFilterId.value = null;
     updateProjectUrl('tasks', null);
+};
+
+const openProjectTab = (tab: OverviewSectionTab): void => {
+    if (tab !== 'tasks') {
+        stageFilterId.value = null;
+    }
+
+    activeTab.value = tab;
+};
+
+const overviewStages = computed(() => props.project.revisions.slice(0, 5));
+
+const overviewTaskTree = ref<TaskTreeNode[]>([]);
+
+const flattenTaskTree = (nodes: TaskTreeNode[]): TaskTreeNode[] => {
+    const result: TaskTreeNode[] = [];
+
+    const walk = (items: TaskTreeNode[]): void => {
+        for (const node of items) {
+            result.push(node);
+            walk(node.children);
+        }
+    };
+
+    walk(nodes);
+
+    return result;
+};
+
+const overviewTasks = computed(() =>
+    flattenTaskTree(overviewTaskTree.value).slice(0, 5),
+);
+
+const taskStatusClass = (status: TaskStatus): string => {
+    switch (status) {
+        case 'completed':
+            return 'bg-green-100 text-green-900 dark:bg-green-950 dark:text-green-100';
+        case 'deferred':
+            return 'bg-muted text-muted-foreground';
+        default:
+            return 'bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-100';
+    }
+};
+
+const fetchOverviewTasks = async (): Promise<void> => {
+    try {
+        const response = await fetch(
+            `/internal-api/projects/${props.project.id}/tasks`,
+            {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            },
+        );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const payload = (await response.json()) as { data: TaskTreeNode[] };
+        overviewTaskTree.value = payload.data;
+    } catch {
+        // Overview preview only — ignore load failures.
+    }
 };
 
 const showEditModal = ref(false);
@@ -260,11 +345,135 @@ const handleDocumentUploaded = (documentId: number): void => {
                 </TabsList>
 
                 <TabsContent value="overview" class="mt-4">
-                    <div class="rounded-xl border p-4 shadow-sm">
-                        <p class="text-sm text-muted-foreground">
-                            {{ project.description || t('projects.no_description') }}
-                        </p>
-                    </div>
+                    <TooltipProvider :delay-duration="200">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <Card
+                                v-for="tab in overviewSectionTabs"
+                                :key="tab"
+                                class="gap-0 overflow-hidden py-4"
+                            >
+                                <CardHeader class="border-b pb-4 [.border-b]:pb-4">
+                                    <CardTitle class="text-base">
+                                        <button
+                                            type="button"
+                                            class="font-semibold text-foreground underline-offset-4 hover:underline"
+                                            @click="openProjectTab(tab)"
+                                        >
+                                            {{ t(`projects.tabs.${tab}`) }}
+                                        </button>
+                                    </CardTitle>
+                                </CardHeader>
+
+                                <CardContent
+                                    v-if="tab === 'stages'"
+                                    class="pt-4"
+                                >
+                                    <p
+                                        v-if="overviewStages.length === 0"
+                                        class="text-sm text-muted-foreground"
+                                    >
+                                        {{ t('projects.stages.empty') }}
+                                    </p>
+
+                                    <div
+                                        v-else
+                                        class="divide-y divide-border/50"
+                                    >
+                                        <div
+                                            v-for="revision in overviewStages"
+                                            :key="revision.id"
+                                            class="flex items-start gap-3 py-1 first:pt-0 last:pb-0"
+                                        >
+                                            <div class="min-w-0 flex-1 space-y-1">
+                                                <p class="text-sm font-medium">
+                                                    {{ revision.label }}
+                                                </p>
+                                                <p
+                                                    v-if="revision.description"
+                                                    class="text-xs text-muted-foreground"
+                                                >
+                                                    {{ revision.description }}
+                                                </p>
+                                            </div>
+
+                                            <Tooltip>
+                                                <TooltipTrigger as-child>
+                                                    <Button
+                                                        type="button"
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        class="size-8 shrink-0"
+                                                        :aria-label="t('projects.stages.view_tasks')"
+                                                        @click="openTasksForStage(revision.id)"
+                                                    >
+                                                        <ListTodo class="size-4" />
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top">
+                                                    {{ t('projects.stages.view_tasks') }}
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </div>
+                                    </div>
+                                </CardContent>
+
+                                <CardContent
+                                    v-else-if="tab === 'tasks'"
+                                    class="pt-4"
+                                >
+                                    <p
+                                        v-if="overviewTasks.length === 0"
+                                        class="text-sm text-muted-foreground"
+                                    >
+                                        {{ t('projects.tasks.empty') }}
+                                    </p>
+
+                                    <div
+                                        v-else
+                                        class="divide-y divide-border/50"
+                                    >
+                                        <div
+                                            v-for="task in overviewTasks"
+                                            :key="task.id"
+                                            class="space-y-1 py-1 first:pt-0 last:pb-0"
+                                        >
+                                            <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                                <p
+                                                    class="text-sm font-medium"
+                                                    :class="{
+                                                        'line-through': task.status === 'completed',
+                                                    }"
+                                                >
+                                                    {{ task.name }}
+                                                </p>
+                                                <span
+                                                    class="inline-block rounded px-2 py-0.5 text-xs font-medium"
+                                                    :class="taskStatusClass(task.status)"
+                                                >
+                                                    {{ t(`projects.tasks.status.${task.status}`) }}
+                                                </span>
+                                                <span
+                                                    v-if="task.revision"
+                                                    class="text-xs text-muted-foreground"
+                                                    :class="{
+                                                        'line-through': task.status === 'completed',
+                                                    }"
+                                                >
+                                                    {{ task.revision.label }}
+                                                </span>
+                                            </div>
+                                            <p
+                                                v-if="task.description"
+                                                class="text-xs text-muted-foreground"
+                                            >
+                                                {{ task.description }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </TooltipProvider>
                 </TabsContent>
 
                 <TabsContent value="stages" class="mt-4">
