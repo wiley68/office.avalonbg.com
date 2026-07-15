@@ -2,6 +2,8 @@
 
 use App\Models\Document;
 use App\Models\Project;
+use App\Models\ProjectEmailAttachment;
+use App\Models\ProjectEmailLink;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -283,4 +285,39 @@ test('office user can upload txt file reported as octet-stream', function () {
     expect($document)
         ->original_name->toBe('notes.txt')
         ->and($document->mime_type)->toBe('text/plain');
+});
+
+test('office user cannot delete document used by archived project email attachment', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $project = Project::factory()->for($user)->create([
+        'name' => 'Website redesign',
+    ]);
+
+    $document = Document::factory()->for($user)->create([
+        'original_name' => 'specification.pdf',
+    ]);
+
+    Storage::disk('local')->put($document->storage_path, '%PDF-1.4');
+
+    $emailLink = ProjectEmailLink::factory()->for($project)->for($user)->archived()->create([
+        'subject' => 'Re: DEM-18992',
+    ]);
+
+    ProjectEmailAttachment::query()->create([
+        'project_email_link_id' => $emailLink->id,
+        'imap_part' => '2',
+        'document_id' => $document->id,
+    ]);
+
+    actingAs($user);
+
+    delete(route('documents.destroy', $document))
+        ->assertSessionHasErrors('document');
+
+    expect(Document::query()->whereKey($document->id)->exists())->toBeTrue();
+    expect(session('errors')->get('document')[0])
+        ->toContain('Website redesign')
+        ->toContain('DEM-18992');
 });

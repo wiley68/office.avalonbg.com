@@ -124,6 +124,9 @@ const confirmDelete = (): void => {
         onSuccess: async () => {
             await fetch();
         },
+        onError: (errors) => {
+            showError(t('common.error'), Object.values(errors).flat().join('\n'));
+        },
     });
 };
 

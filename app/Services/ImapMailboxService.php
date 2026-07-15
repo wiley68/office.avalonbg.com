@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Exceptions\ImapConnectionException;
 use App\Models\UserImapAccount;
+use App\Support\EmailBodyEncoding;
 use App\Support\EmailConversation;
 use App\Support\Translations;
 use IMAP\Connection;
@@ -23,6 +24,7 @@ class ImapMailboxService
 
     public function __construct(
         private readonly EmailConversation $emailConversation,
+        private readonly EmailBodyEncoding $emailBodyEncoding,
     ) {}
 
     /**
@@ -806,7 +808,10 @@ class ImapMailboxService
             return null;
         }
 
-        return $this->decodeBody($body, (int) ($structure->encoding ?? ENCBASE64));
+        $decoded = $this->decodeBody($body, (int) ($structure->encoding ?? ENCBASE64));
+        $charset = $this->emailBodyEncoding->charsetFromStructure($structure);
+
+        return $this->emailBodyEncoding->toUtf8($decoded, $charset);
     }
 
     private function decodeBody(string $body, int $encoding): string

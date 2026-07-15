@@ -8,6 +8,7 @@ use App\Models\ProjectEmailAttachment;
 use App\Models\ProjectEmailLink;
 use App\Models\User;
 use App\Models\UserImapAccount;
+use App\Support\EmailBodyEncoding;
 use App\Support\EmailConversation;
 use App\Support\Translations;
 use Illuminate\Support\Str;
@@ -18,6 +19,7 @@ class ProjectEmailArchiveService
         private readonly ImapMailboxService $imapMailboxService,
         private readonly DocumentStorageService $documentStorageService,
         private readonly EmailConversation $emailConversation,
+        private readonly EmailBodyEncoding $emailBodyEncoding,
     ) {}
 
     /**
@@ -69,8 +71,8 @@ class ProjectEmailArchiveService
             );
 
             $link->update([
-                'body_text' => $body['text'],
-                'body_html' => $body['html'],
+                'body_text' => $this->normalizeStoredBody($body['text']),
+                'body_html' => $this->normalizeStoredBody($body['html']),
                 'archived_at' => now(),
                 'status' => ProjectEmailLinkStatus::Active,
             ]);
@@ -160,5 +162,14 @@ class ProjectEmailArchiveService
         }
 
         return $subject.' — '.$excerpt;
+    }
+
+    private function normalizeStoredBody(?string $body): ?string
+    {
+        if ($body === null || $body === '') {
+            return $body;
+        }
+
+        return $this->emailBodyEncoding->toUtf8($body);
     }
 }

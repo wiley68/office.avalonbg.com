@@ -645,6 +645,15 @@
         "picker": {
             "title": "Select document",
             "select": "Attach"
+        },
+        "errors": {
+            "in_use": "This document cannot be deleted because it is used in the following places:",
+            "in_use_footer": "Remove it from these places and try again."
+        },
+        "usage": {
+            "project_email": "Project “:project” → E-Mail “:subject”",
+            "project": "Project “:project” (attached document)",
+            "task": "Project “:project” → task “:task”"
         }
     }
 }

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useAppToastStore } from '@/composables/useAppToast';
 import { cn } from '@/lib/utils';
 
-const { toasts, removeToast } = useAppToastStore();
+const { toasts, removeToast, pauseToast, resumeToast } = useAppToastStore();
 </script>
 
 <template>
@@ -20,16 +20,23 @@ const { toasts, removeToast } = useAppToastStore();
                     'pointer-events-auto rounded-lg border p-4 shadow-lg',
                     toast.type === 'success'
                         ? 'border-border bg-background text-foreground'
-                        : 'border-destructive/30 bg-destructive/10 text-destructive',
+                        : 'border-destructive bg-background text-foreground',
                 )
             "
+            @mouseenter="pauseToast(toast.id)"
+            @mouseleave="resumeToast(toast.id)"
         >
             <div class="flex items-start gap-3">
                 <div class="min-w-0 flex-1">
-                    <p class="text-sm font-medium">{{ toast.title }}</p>
+                    <p
+                        class="text-sm font-medium"
+                        :class="toast.type === 'error' ? 'text-destructive' : undefined"
+                    >
+                        {{ toast.title }}
+                    </p>
                     <p
                         v-if="toast.message"
-                        class="mt-1 text-sm text-muted-foreground"
+                        class="mt-1 text-sm text-foreground"
                     >
                         {{ toast.message }}
                     </p>

@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateDocumentRequest;
 use App\Models\Document;
 use App\Models\User;
 use App\Services\DocumentStorageService;
+use App\Services\DocumentUsageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -69,8 +70,11 @@ class DocumentController extends Controller
     public function destroy(
         Document $document,
         DocumentStorageService $documentStorageService,
+        DocumentUsageService $documentUsageService,
     ): RedirectResponse {
         $this->authorize('delete', $document);
+
+        $documentUsageService->assertDeletable($document);
 
         $documentStorageService->delete($document);
 
