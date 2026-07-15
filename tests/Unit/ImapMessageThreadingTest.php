@@ -136,7 +136,7 @@ it('extracts attachment filenames from imap message structure', function () {
     $method->setAccessible(true);
 
     $attachment = (object) [
-        'type' => TYPETEXT,
+        'type' => TYPEAPPLICATION,
         'subtype' => 'PDF',
         'disposition' => 'attachment',
         'dparameters' => [
@@ -159,6 +159,6 @@ it('extracts attachment filenames from imap message structure', function () {
     ];
 
     expect($method->invoke($service, $multipart))->toBe([
-        ['part' => '2', 'filename' => 'offer.pdf'],
+        ['part' => '2', 'filename' => 'offer.pdf', 'mime_type' => 'application/pdf'],
     ]);
 });
