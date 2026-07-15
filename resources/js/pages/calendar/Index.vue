@@ -329,7 +329,7 @@ onMounted(() => {
     <AppLayout :breadcrumbs="breadcrumbs">
         <Head :title="t('calendar.title')" />
 
-        <div class="space-y-4">
+        <div class="space-y-4 p-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h1 class="text-2xl font-semibold tracking-tight">

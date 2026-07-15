@@ -9,7 +9,7 @@ type Props = {
     selectionEnd?: string | null;
 };
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
     selectionStart: null,
     selectionEnd: null,
 });
