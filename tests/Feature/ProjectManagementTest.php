@@ -430,3 +430,32 @@ test('project cannot be completed while tasks remain open', function () {
         'expected_completion_at' => null,
     ])->assertSessionHasErrors('status');
 });
+
+test('project show page includes overview section counts', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $project = Project::factory()->for($user)->create();
+
+    ProjectRevision::factory()->for($project)->count(2)->create();
+    Task::factory()->for($project)->count(3)->create();
+    ProjectTodo::factory()->for($project)->count(4)->create();
+
+    $document = Document::factory()->for($user)->create();
+    $project->documents()->attach($document);
+
+    ProjectGitRepository::factory()->for($project)->create();
+    ProjectEmailLink::factory()->for($project)->count(5)->create();
+
+    actingAs($user)
+        ->get(route('projects.show', $project))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('projects/Show')
+            ->where('project.tasks_count', 3)
+            ->where('project.email_links_count', 5)
+            ->where('project.revisions', fn ($revisions) => count($revisions) === 2)
+            ->where('project.todos', fn ($todos) => count($todos) === 4)
+            ->where('project.documents', fn ($documents) => count($documents) === 1)
+            ->where('project.git_repository', fn ($gitRepository) => $gitRepository !== null));
+});

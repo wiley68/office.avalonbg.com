@@ -15,7 +15,7 @@ import TodoPanel from '@/components/projects/TodoPanel.vue';
 import type { ProjectTodoItem } from '@/components/projects/TodoPanel.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     Tooltip,
@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useTranslations } from '@/composables/useTranslations';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { PROJECT_TAB_THEMES, type ProjectSectionTab } from '@/lib/projectTabTheme';
 import type { ProjectListItem, ProjectStatus } from '@/pages/projects/columns';
 import { dashboard } from '@/routes';
 import { index, show } from '@/routes/projects';
@@ -58,6 +59,8 @@ type Props = {
         revisions: ProjectRevision[];
         documents: ProjectDocument[];
         git_repository: ProjectGitRepositoryConfig | null;
+        tasks_count: number;
+        email_links_count: number;
         todos: ProjectTodoItem[];
     };
     hasImapConfigured: boolean;
@@ -69,9 +72,8 @@ const { t } = useTranslations();
 
 const projectTabs = ['overview', 'stages', 'tasks', 'todos', 'documents', 'git', 'email'] as const;
 type ProjectTab = (typeof projectTabs)[number];
-type OverviewSectionTab = Exclude<ProjectTab, 'overview'>;
 
-const overviewSectionTabs: OverviewSectionTab[] = [
+const overviewSectionTabs: ProjectSectionTab[] = [
     'stages',
     'tasks',
     'todos',
@@ -143,7 +145,7 @@ const clearStageFilter = (): void => {
     updateProjectUrl('tasks', null);
 };
 
-const openProjectTab = (tab: OverviewSectionTab): void => {
+const openProjectTab = (tab: ProjectSectionTab): void => {
     if (tab !== 'tasks') {
         stageFilterId.value = null;
     }
@@ -173,6 +175,19 @@ const flattenTaskTree = (nodes: TaskTreeNode[]): TaskTreeNode[] => {
 const overviewTasks = computed(() =>
     flattenTaskTree(overviewTaskTree.value).slice(0, 5),
 );
+
+const overviewTodos = computed(() => props.project.todos.slice(0, 5));
+
+const overviewDocuments = computed(() => props.project.documents.slice(0, 5));
+
+const overviewSectionCounts = computed<Record<ProjectSectionTab, number>>(() => ({
+    stages: props.project.revisions.length,
+    tasks: props.project.tasks_count,
+    todos: props.project.todos.length,
+    documents: props.project.documents.length,
+    git: props.project.git_repository !== null ? 1 : 0,
+    email: props.project.email_links_count,
+}));
 
 const taskStatusClass = (status: TaskStatus): string => {
     switch (status) {
@@ -356,12 +371,26 @@ const handleDocumentUploaded = (documentId: number): void => {
                                     <CardTitle class="text-base">
                                         <button
                                             type="button"
-                                            class="font-semibold text-foreground underline-offset-4 hover:underline"
+                                            class="inline-flex items-center gap-2 font-semibold text-foreground underline-offset-4 hover:underline"
                                             @click="openProjectTab(tab)"
                                         >
+                                            <component
+                                                :is="PROJECT_TAB_THEMES[tab].icon"
+                                                class="size-4 shrink-0"
+                                                :class="PROJECT_TAB_THEMES[tab].iconClass"
+                                                aria-hidden="true"
+                                            />
                                             {{ t(`projects.tabs.${tab}`) }}
                                         </button>
                                     </CardTitle>
+                                    <CardAction>
+                                        <span
+                                            class="inline-flex min-w-6 items-center justify-center rounded-md px-2 py-0.5 text-xs font-semibold tabular-nums"
+                                            :class="PROJECT_TAB_THEMES[tab].badgeClass"
+                                        >
+                                            {{ overviewSectionCounts[tab] }}
+                                        </span>
+                                    </CardAction>
                                 </CardHeader>
 
                                 <CardContent
@@ -380,17 +409,22 @@ const handleDocumentUploaded = (documentId: number): void => {
                                         class="divide-y divide-border/50"
                                     >
                                         <div
-                                            v-for="revision in overviewStages"
+                                            v-for="(revision, index) in overviewStages"
                                             :key="revision.id"
-                                            class="flex items-start gap-3 py-1 first:pt-0 last:pb-0"
+                                            class="flex items-start gap-2 py-1 first:pt-0 last:pb-0"
                                         >
+                                            <span
+                                                class="w-5 shrink-0 pt-0.5 text-xs tabular-nums text-muted-foreground"
+                                            >
+                                                {{ index + 1 }}.
+                                            </span>
                                             <div class="min-w-0 flex-1 space-y-1">
                                                 <p class="text-sm font-medium">
                                                     {{ revision.label }}
                                                 </p>
                                                 <p
                                                     v-if="revision.description"
-                                                    class="text-xs text-muted-foreground"
+                                                    class="truncate text-xs text-muted-foreground"
                                                 >
                                                     {{ revision.description }}
                                                 </p>
@@ -433,10 +467,16 @@ const handleDocumentUploaded = (documentId: number): void => {
                                         class="divide-y divide-border/50"
                                     >
                                         <div
-                                            v-for="task in overviewTasks"
+                                            v-for="(task, index) in overviewTasks"
                                             :key="task.id"
-                                            class="space-y-1 py-1 first:pt-0 last:pb-0"
+                                            class="flex min-w-0 gap-2 py-1 first:pt-0 last:pb-0"
                                         >
+                                            <span
+                                                class="w-5 shrink-0 pt-0.5 text-xs tabular-nums text-muted-foreground"
+                                            >
+                                                {{ index + 1 }}.
+                                            </span>
+                                            <div class="min-w-0 flex-1 space-y-1">
                                             <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
                                                 <p
                                                     class="text-sm font-medium"
@@ -464,10 +504,89 @@ const handleDocumentUploaded = (documentId: number): void => {
                                             </div>
                                             <p
                                                 v-if="task.description"
-                                                class="text-xs text-muted-foreground"
+                                                class="truncate text-xs text-muted-foreground"
                                             >
                                                 {{ task.description }}
                                             </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+
+                                <CardContent
+                                    v-else-if="tab === 'todos'"
+                                    class="pt-4"
+                                >
+                                    <p
+                                        v-if="overviewTodos.length === 0"
+                                        class="text-sm text-muted-foreground"
+                                    >
+                                        {{ t('projects.todos.empty') }}
+                                    </p>
+
+                                    <div
+                                        v-else
+                                        class="divide-y divide-border/50"
+                                    >
+                                        <div
+                                            v-for="(todo, index) in overviewTodos"
+                                            :key="todo.id"
+                                            class="flex min-w-0 gap-2 py-1 first:pt-0 last:pb-0"
+                                        >
+                                            <span
+                                                class="w-5 shrink-0 pt-0.5 text-xs tabular-nums text-muted-foreground"
+                                            >
+                                                {{ index + 1 }}.
+                                            </span>
+                                            <p
+                                                class="min-w-0 flex-1 truncate text-sm"
+                                                :class="{
+                                                    'text-muted-foreground line-through':
+                                                        todo.status === 'completed',
+                                                }"
+                                            >
+                                                {{ todo.body }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+
+                                <CardContent
+                                    v-else-if="tab === 'documents'"
+                                    class="pt-4"
+                                >
+                                    <p
+                                        v-if="overviewDocuments.length === 0"
+                                        class="text-sm text-muted-foreground"
+                                    >
+                                        {{ t('projects.documents.none_attached') }}
+                                    </p>
+
+                                    <div
+                                        v-else
+                                        class="divide-y divide-border/50"
+                                    >
+                                        <div
+                                            v-for="(document, index) in overviewDocuments"
+                                            :key="document.id"
+                                            class="flex min-w-0 gap-2 py-1 first:pt-0 last:pb-0"
+                                        >
+                                            <span
+                                                class="w-5 shrink-0 pt-0.5 text-xs tabular-nums text-muted-foreground"
+                                            >
+                                                {{ index + 1 }}.
+                                            </span>
+                                            <div class="min-w-0 flex-1 space-y-1">
+                                                <p class="truncate text-sm font-medium">
+                                                    {{ document.original_name }}
+                                                </p>
+                                                <p
+                                                    v-if="document.description"
+                                                    class="truncate text-xs text-muted-foreground"
+                                                >
+                                                    {{ document.description }}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
                                 </CardContent>

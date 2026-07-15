@@ -33,6 +33,9 @@ class ProjectController extends Controller
             'todos' => fn ($query) => $query
                 ->orderByRaw("CASE WHEN status = '".ProjectTodoStatus::Active->value."' THEN 0 ELSE 1 END")
                 ->orderByDesc('created_at'),
+        ])->loadCount([
+            'tasks',
+            'emailLinks',
         ]);
 
         /** @var User $user */
@@ -67,6 +70,8 @@ class ProjectController extends Controller
                     'repository_url' => $project->gitRepository->repositoryUrl(),
                     'has_access_token' => filled($project->gitRepository->access_token),
                 ] : null,
+                'tasks_count' => $project->tasks_count,
+                'email_links_count' => $project->email_links_count,
                 'todos' => $project->todos->map(fn ($todo) => [
                     'id' => $todo->id,
                     'body' => $todo->body,
