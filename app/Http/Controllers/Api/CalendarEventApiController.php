@@ -37,12 +37,14 @@ class CalendarEventApiController extends Controller
                 'id' => $event->id,
                 'title' => $event->title,
                 'description' => $event->description,
-                'starts_at' => $event->starts_at->toIso8601String(),
-                'ends_at' => $event->ends_at->toIso8601String(),
+                // Naive local wall-clock times (no Z/+00:00) so the browser
+                // does not shift Europe/Sofia display against APP_TIMEZONE=UTC.
+                'starts_at' => $event->starts_at->format('Y-m-d\\TH:i:s'),
+                'ends_at' => $event->ends_at->format('Y-m-d\\TH:i:s'),
                 'type' => $event->type->value,
                 'priority' => $event->priority->value,
                 'status' => $event->status->value,
-                'completed_at' => $event->completed_at?->toIso8601String(),
+                'completed_at' => $event->completed_at?->format('Y-m-d\\TH:i:s'),
                 'created_at' => $event->created_at?->toIso8601String(),
             ]);
 

@@ -158,8 +158,19 @@ export function rangeToDateTimes(startIso: string, endIso: string): {
     };
 }
 
+/**
+ * Format a stored wall-clock datetime for <input type="datetime-local">.
+ * Strips timezone suffixes so UTC ISO strings are not shifted to local TZ.
+ */
 export function toDateTimeLocalValue(value: string): string {
-    return dayjs(value).format('YYYY-MM-DDTHH:mm');
+    const naive = value
+        .replace('T', ' ')
+        .replace(/([Zz]|[+-]\d{2}:?\d{2})$/, '')
+        .trim()
+        .slice(0, 16)
+        .replace(' ', 'T');
+
+    return naive.length >= 16 ? naive : dayjs(value).format('YYYY-MM-DDTHH:mm');
 }
 
 export function formatMonthLabel(month: Dayjs, locale: string): string {

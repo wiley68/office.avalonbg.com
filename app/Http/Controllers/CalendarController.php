@@ -32,11 +32,11 @@ class CalendarController extends Controller
         $user = Auth::user();
 
         $startsAt = $request->filled('starts_at')
-            ? Carbon::parse($request->validated('starts_at'))
+            ? $this->parseWallClockDateTime($request->validated('starts_at'))
             : now();
 
         $endsAt = $request->filled('ends_at')
-            ? Carbon::parse($request->validated('ends_at'))
+            ? $this->parseWallClockDateTime($request->validated('ends_at'))
             : $startsAt->copy()->addHour();
 
         $status = CalendarEventStatus::tryFrom((string) $request->input('status'))
@@ -69,8 +69,8 @@ class CalendarController extends Controller
         $calendarEvent->update([
             'title' => $request->validated('title'),
             'description' => $request->validated('description'),
-            'starts_at' => Carbon::parse($request->validated('starts_at')),
-            'ends_at' => Carbon::parse($request->validated('ends_at')),
+            'starts_at' => $this->parseWallClockDateTime($request->validated('starts_at')),
+            'ends_at' => $this->parseWallClockDateTime($request->validated('ends_at')),
             'type' => CalendarEventType::from($request->validated('type')),
             'priority' => CalendarEventPriority::from($request->validated('priority')),
             'status' => $status,
@@ -89,5 +89,20 @@ class CalendarController extends Controller
         $calendarEvent->delete();
 
         return back();
+    }
+
+    /**
+     * Parse datetime-local / naive wall-clock values without applying a
+     * timezone conversion against APP_TIMEZONE (UTC).
+     */
+    private function parseWallClockDateTime(string $value): Carbon
+    {
+        $normalized = str_replace('T', ' ', trim($value));
+        $normalized = preg_replace('/(Z|[+-]\d{2}:?\d{2})$/', '', $normalized) ?? $normalized;
+        $normalized = preg_replace('/\.\d+$/', '', trim($normalized)) ?? $normalized;
+
+        return Carbon::createFromFormat('Y-m-d H:i:s', strlen($normalized) === 16
+            ? "{$normalized}:00"
+            : $normalized) ?: Carbon::parse($value);
     }
 }

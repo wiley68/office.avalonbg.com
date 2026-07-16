@@ -133,7 +133,27 @@ test('calendar events api returns only overlapping events in range', function ()
         ]))
         ->assertOk()
         ->assertJsonCount(1)
-        ->assertJsonPath('0.title', 'Inside range');
+        ->assertJsonPath('0.title', 'Inside range')
+        ->assertJsonPath('0.starts_at', '2026-07-10T09:00:00')
+        ->assertJsonPath('0.ends_at', '2026-07-12T18:00:00');
+});
+
+test('calendar event store keeps wall-clock datetime without timezone shift', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    actingAs($user);
+
+    post(route('calendar-events.store'), [
+        'title' => 'Morning standup',
+        'starts_at' => '2026-07-16T09:00',
+        'ends_at' => '2026-07-16T10:00',
+    ])->assertRedirect();
+
+    $event = CalendarEvent::query()->firstOrFail();
+
+    expect($event->starts_at->format('Y-m-d H:i:s'))->toBe('2026-07-16 09:00:00')
+        ->and($event->ends_at->format('Y-m-d H:i:s'))->toBe('2026-07-16 10:00:00');
 });
 
 test('user cannot access another users calendar event', function () {
