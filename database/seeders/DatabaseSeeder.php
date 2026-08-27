@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RolesSeeder::class,
+            ProfitTypeSeeder::class,
         ]);
 
         $password = Hash::make('1Nikola@Stefanov9');

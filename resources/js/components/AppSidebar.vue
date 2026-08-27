@@ -13,6 +13,7 @@ import {
     User,
     Users,
     FileText,
+    Wallet,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
@@ -34,6 +35,7 @@ import { index as accessesIndex } from '@/routes/accesses';
 import { index as auditLogsIndex } from '@/routes/audit-logs';
 import { index as calendarIndex } from '@/routes/calendar';
 import { index as documentsIndex } from '@/routes/documents';
+import { index as profitsIndex } from '@/routes/profits';
 import { index as projectsIndex } from '@/routes/projects';
 import { index as usersIndex } from '@/routes/users';
 import type { NavItem } from '@/types';
@@ -127,6 +129,11 @@ const mainNavItems = computed<NavItem[]>(() => {
                 title: t('nav.accesses'),
                 href: accessesIndex(),
                 icon: KeyRound,
+            });
+            items.push({
+                title: t('nav.profits'),
+                href: profitsIndex(),
+                icon: Wallet,
             });
         }
 

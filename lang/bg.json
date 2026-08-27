@@ -52,7 +52,8 @@
         "accesses": "Достъпи",
         "projects": "Проекти",
         "documents": "Документи",
-        "calendar": "Календар"
+        "calendar": "Календар",
+        "profits": "Profit"
     },
     "roles": {
         "profiler": "Профайлер",
@@ -390,6 +391,56 @@
             "current_password": "Текуща парола",
             "rotate_button": "Смени ключа",
             "rotated": "Ключът е сменен и записите са прекриптирани."
+        }
+    },
+    "profits": {
+        "title": "Profit",
+        "add": "Нов запис",
+        "create_title": "Нов приход/разход",
+        "edit_title": "Редакция на запис",
+        "form_description": "Въведете данни за приход или разход за избрания период.",
+        "delete_confirm": "Сигурни ли сте, че искате да изтриете този запис?",
+        "month": "Месец",
+        "prev_month": "Предишен месец",
+        "next_month": "Следващ месец",
+        "income": "Приходи",
+        "expense": "Разходи",
+        "empty_income": "Няма приходи за този месец.",
+        "empty_expense": "Няма разходи за този месец.",
+        "add_type": "Нов тип",
+        "save_type": "Запиши типа",
+        "type_created": "Типът е създаден.",
+        "kinds": {
+            "income": "Приход",
+            "expense": "Разход"
+        },
+        "fields": {
+            "kind": "Вид",
+            "date": "Дата",
+            "document_number": "№ документ",
+            "document_number_placeholder": "по желание",
+            "type": "Тип",
+            "type_placeholder": "Изберете тип",
+            "new_type_placeholder": "Име на типа",
+            "amount": "Сума"
+        },
+        "columns": {
+            "date": "Дата",
+            "document_number": "№ документ",
+            "type": "Тип",
+            "amount": "Сума",
+            "actions": "Управление"
+        },
+        "summary": {
+            "period": "Период",
+            "income": "Общо приходи",
+            "expense": "Общо разходи",
+            "result": "Резултат"
+        },
+        "errors": {
+            "load": "Неуспешно зареждане на данните.",
+            "load_types": "Неуспешно зареждане на типовете.",
+            "create_type": "Неуспешно създаване на тип."
         }
     },
     "projects": {

@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\AuditLogApiController;
 use App\Http\Controllers\Api\CalendarEventApiController;
 use App\Http\Controllers\Api\DocumentApiController;
 use App\Http\Controllers\Api\ImapBrowseApiController;
+use App\Http\Controllers\Api\ProfitApiController;
+use App\Http\Controllers\Api\ProfitTypeApiController;
 use App\Http\Controllers\Api\ProjectApiController;
 use App\Http\Controllers\Api\ProjectEmailApiController;
 use App\Http\Controllers\Api\ProjectGitApiController;
@@ -18,6 +20,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\DocumentDownloadController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\ProfitController;
+use App\Http\Controllers\ProfitTypeController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectDocumentController;
 use App\Http\Controllers\ProjectEmailLinkController;
@@ -31,6 +35,7 @@ use App\Http\Controllers\UserTwoFactorController;
 use App\Models\Access;
 use App\Models\CalendarEvent;
 use App\Models\Document;
+use App\Models\ProfitEntry;
 use App\Models\Project;
 use App\Models\ProjectEmailLink;
 use App\Models\ProjectRevision;
@@ -108,6 +113,23 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
     Route::resource('accesses', AccessController::class)
         ->except(['show', 'create', 'edit']);
 
+    Route::bind('profit', function (string $value): ProfitEntry {
+        $userId = Auth::id();
+
+        abort_unless($userId !== null, 404);
+
+        return ProfitEntry::query()
+            ->where('user_id', $userId)
+            ->findOrFail($value);
+    });
+
+    Route::resource('profits', ProfitController::class)
+        ->parameters(['profits' => 'profit'])
+        ->except(['show', 'create', 'edit']);
+
+    Route::post('profit-types', [ProfitTypeController::class, 'store'])
+        ->name('profit-types.store');
+
     Route::prefix('internal-api')
         ->name('internal.')
         ->group(function () {
@@ -116,6 +138,12 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
 
             Route::post('accesses/transform-data', AccessDataTransformController::class)
                 ->name('accesses.transform-data');
+
+            Route::get('profits', [ProfitApiController::class, 'index'])
+                ->name('profits.index');
+
+            Route::get('profit-types', [ProfitTypeApiController::class, 'index'])
+                ->name('profit-types.index');
 
             Route::get('projects', [ProjectApiController::class, 'index'])
                 ->name('projects.index');

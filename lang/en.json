@@ -52,7 +52,8 @@
         "accesses": "Accesses",
         "projects": "Projects",
         "documents": "Documents",
-        "calendar": "Calendar"
+        "calendar": "Calendar",
+        "profits": "Profit"
     },
     "roles": {
         "profiler": "Profiler",
@@ -390,6 +391,56 @@
             "current_password": "Current password",
             "rotate_button": "Change key",
             "rotated": "Encryption key changed and records were re-encrypted."
+        }
+    },
+    "profits": {
+        "title": "Profit",
+        "add": "New entry",
+        "create_title": "New income/expense",
+        "edit_title": "Edit entry",
+        "form_description": "Enter income or expense details for the selected period.",
+        "delete_confirm": "Are you sure you want to delete this entry?",
+        "month": "Month",
+        "prev_month": "Previous month",
+        "next_month": "Next month",
+        "income": "Income",
+        "expense": "Expenses",
+        "empty_income": "No income for this month.",
+        "empty_expense": "No expenses for this month.",
+        "add_type": "New type",
+        "save_type": "Save type",
+        "type_created": "Type created.",
+        "kinds": {
+            "income": "Income",
+            "expense": "Expense"
+        },
+        "fields": {
+            "kind": "Kind",
+            "date": "Date",
+            "document_number": "Document No.",
+            "document_number_placeholder": "optional",
+            "type": "Type",
+            "type_placeholder": "Select a type",
+            "new_type_placeholder": "Type name",
+            "amount": "Amount"
+        },
+        "columns": {
+            "date": "Date",
+            "document_number": "Document No.",
+            "type": "Type",
+            "amount": "Amount",
+            "actions": "Manage"
+        },
+        "summary": {
+            "period": "Period",
+            "income": "Total income",
+            "expense": "Total expenses",
+            "result": "Result"
+        },
+        "errors": {
+            "load": "Failed to load data.",
+            "load_types": "Failed to load types.",
+            "create_type": "Failed to create type."
         }
     },
     "projects": {

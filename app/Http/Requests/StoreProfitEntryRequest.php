@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Http\Requests;
+
+use App\Models\ProfitEntry;
+use App\Models\ProfitType;
+use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+class StoreProfitEntryRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return $this->user()?->can('create', ProfitEntry::class) ?? false;
+    }
+
+    /**
+     * @return array<string, ValidationRule|array<mixed>|string>
+     */
+    public function rules(): array
+    {
+        return [
+            'profit_type_id' => ['required', 'integer', Rule::exists(ProfitType::class, 'id')],
+            'date' => ['required', 'date'],
+            'document_number' => ['nullable', 'string', 'max:64'],
+            'amount' => ['required', 'numeric', 'gt:0', 'decimal:0,2'],
+        ];
+    }
+}
