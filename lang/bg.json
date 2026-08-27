@@ -441,6 +441,27 @@
             "load": "Неуспешно зареждане на данните.",
             "load_types": "Неуспешно зареждане на типовете.",
             "create_type": "Неуспешно създаване на тип."
+        },
+        "export": {
+            "xlsx": "XLSX",
+            "pdf": "PDF",
+            "xlsx_title": "Експорт към XLSX",
+            "pdf_title": "Експорт към PDF",
+            "dialog_description": "Изберете период за данните, които ще бъдат експортирани.",
+            "date_from": "Начална дата",
+            "date_to": "Крайна дата",
+            "confirm": "Изтегли",
+            "exporting": "Експорт...",
+            "success": "Файлът :filename беше изтеглен успешно.",
+            "error": "Грешка при експорт на файла.",
+            "sheet_title": "Profit",
+            "sheet_columns": {
+                "date": "Дата",
+                "document_number": "№ документ",
+                "kind": "Вид",
+                "type": "Тип",
+                "amount": "Сума"
+            }
         }
     },
     "projects": {

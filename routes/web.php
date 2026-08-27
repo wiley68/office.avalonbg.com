@@ -127,6 +127,9 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
         ->parameters(['profits' => 'profit'])
         ->except(['show', 'create', 'edit']);
 
+    Route::post('profits-export', [ProfitController::class, 'export'])
+        ->name('profits.export');
+
     Route::post('profit-types', [ProfitTypeController::class, 'store'])
         ->name('profit-types.store');
 

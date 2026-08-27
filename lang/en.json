@@ -441,6 +441,27 @@
             "load": "Failed to load data.",
             "load_types": "Failed to load types.",
             "create_type": "Failed to create type."
+        },
+        "export": {
+            "xlsx": "XLSX",
+            "pdf": "PDF",
+            "xlsx_title": "Export to XLSX",
+            "pdf_title": "Export to PDF",
+            "dialog_description": "Choose the period for the data to export.",
+            "date_from": "Start date",
+            "date_to": "End date",
+            "confirm": "Download",
+            "exporting": "Exporting...",
+            "success": "File :filename was downloaded successfully.",
+            "error": "Failed to export the file.",
+            "sheet_title": "Profit",
+            "sheet_columns": {
+                "date": "Date",
+                "document_number": "Document No.",
+                "kind": "Kind",
+                "type": "Type",
+                "amount": "Amount"
+            }
         }
     },
     "projects": {

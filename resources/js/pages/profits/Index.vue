@@ -1,18 +1,27 @@
 <script setup lang="ts">
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { ChevronLeft, ChevronRight, Loader2, Plus } from 'lucide-vue-next';
+import {
+    ChevronLeft,
+    ChevronRight,
+    FileSpreadsheet,
+    FileText,
+    Loader2,
+    Plus,
+} from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 import AppAlertDialog from '@/components/AppAlertDialog.vue';
 import ProfitEntriesPanel from '@/components/profits/ProfitEntriesPanel.vue';
 import ProfitEntryFormModal from '@/components/profits/ProfitEntryFormModal.vue';
+import ProfitExportDialog from '@/components/profits/ProfitExportDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAppToast } from '@/composables/useAppToast';
 import { profitsApiIndex } from '@/composables/useProfitsApiRoute';
 import { useTranslations } from '@/composables/useTranslations';
 import AppLayout from '@/layouts/AppLayout.vue';
+import type { ProfitExportFormat } from '@/lib/profitExport';
 import { dashboard } from '@/routes';
-import { destroy, index } from '@/routes/profits';
+import { destroy, exportMethod, index } from '@/routes/profits';
 import type { BreadcrumbItem } from '@/types';
 import type {
     ProfitEntryItem,
@@ -22,7 +31,7 @@ import type {
 } from '@/types/profits';
 
 const { t } = useTranslations();
-const { showError } = useAppToast();
+const { showError, showMessage } = useAppToast();
 const page = usePage();
 
 const locale = computed(() =>
@@ -63,6 +72,9 @@ const defaultKind = ref<ProfitTypeKind>('income');
 
 const showDeleteDialog = ref(false);
 const entryToDelete = ref<ProfitEntryItem | null>(null);
+
+const showExportDialog = ref(false);
+const exportFormat = ref<ProfitExportFormat>('xlsx');
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     {
@@ -107,6 +119,37 @@ const resultClass = computed(() => {
 
     return 'text-foreground';
 });
+
+const exportDefaultDateFrom = computed(
+    () => period.value.from || `${month.value}-01`,
+);
+
+const exportDefaultDateTo = computed(() => {
+    if (period.value.to) {
+        return period.value.to;
+    }
+
+    const [year, monthPart] = month.value.split('-').map(Number);
+    const lastDay = new Date(year, monthPart, 0).getDate();
+
+    return `${month.value}-${String(lastDay).padStart(2, '0')}`;
+});
+
+const openExport = (format: ProfitExportFormat): void => {
+    exportFormat.value = format;
+    showExportDialog.value = true;
+};
+
+const handleExportSuccess = (filename: string): void => {
+    showMessage(
+        t('common.success'),
+        t('profits.export.success', { filename }),
+    );
+};
+
+const handleExportError = (message: string): void => {
+    showError(t('common.error'), message);
+};
 
 const syncMonthToUrl = (): void => {
     const url = new URL(window.location.href);
@@ -251,6 +294,47 @@ onMounted(async () => {
                             {{ monthLabel }}
                         </span>
                     </div>
+
+                    <div class="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            class="hidden sm:inline-flex"
+                            @click="openExport('xlsx')"
+                        >
+                            <FileSpreadsheet class="mr-2 size-4" />
+                            {{ t('profits.export.xlsx') }}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            class="size-8 sm:hidden"
+                            :aria-label="t('profits.export.xlsx')"
+                            @click="openExport('xlsx')"
+                        >
+                            <FileSpreadsheet class="size-4" />
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            class="hidden sm:inline-flex"
+                            @click="openExport('pdf')"
+                        >
+                            <FileText class="mr-2 size-4" />
+                            {{ t('profits.export.pdf') }}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            class="size-8 sm:hidden"
+                            :aria-label="t('profits.export.pdf')"
+                            @click="openExport('pdf')"
+                        >
+                            <FileText class="size-4" />
+                        </Button>
+                    </div>
                 </div>
             </header>
 
@@ -359,6 +443,16 @@ onMounted(async () => {
             :entry="editingEntry"
             :default-kind="defaultKind"
             @saved="fetchMonth"
+        />
+
+        <ProfitExportDialog
+            v-model:open="showExportDialog"
+            :export-url="exportMethod().url"
+            :format="exportFormat"
+            :default-date-from="exportDefaultDateFrom"
+            :default-date-to="exportDefaultDateTo"
+            @success="handleExportSuccess"
+            @error="handleExportError"
         />
 
         <AppAlertDialog
