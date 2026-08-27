@@ -145,6 +145,9 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
             Route::get('profits', [ProfitApiController::class, 'index'])
                 ->name('profits.index');
 
+            Route::get('profits/stats', [ProfitApiController::class, 'stats'])
+                ->name('profits.stats');
+
             Route::get('profit-types', [ProfitTypeApiController::class, 'index'])
                 ->name('profit-types.index');
 

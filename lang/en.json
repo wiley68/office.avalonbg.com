@@ -440,7 +440,19 @@
         "errors": {
             "load": "Failed to load data.",
             "load_types": "Failed to load types.",
-            "create_type": "Failed to create type."
+            "create_type": "Failed to create type.",
+            "load_stats": "Failed to load statistics."
+        },
+        "stats": {
+            "title": "Monthly statistics",
+            "show": "Statistics",
+            "hide": "List",
+            "year": "Year",
+            "prev_year": "Previous year",
+            "next_year": "Next year",
+            "range_year": "Calendar year",
+            "range_custom": "Custom period",
+            "period_total": "Period total"
         },
         "export": {
             "xlsx": "XLSX",

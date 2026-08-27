@@ -35,3 +35,19 @@ export type ProfitMonthResponse = {
     expense: ProfitEntryItem[];
     totals: ProfitMonthTotals;
 };
+
+export type ProfitStatsMonth = {
+    month: string;
+    income: string;
+    expense: string;
+    result: string;
+};
+
+export type ProfitStatsResponse = {
+    period: {
+        from: string;
+        to: string;
+    };
+    months: ProfitStatsMonth[];
+    totals: ProfitMonthTotals;
+};
