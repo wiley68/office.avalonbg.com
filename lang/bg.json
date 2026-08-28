@@ -53,7 +53,7 @@
         "projects": "Проекти",
         "documents": "Документи",
         "calendar": "Календар",
-        "profits": "Profit"
+        "profits": "Печалба"
     },
     "roles": {
         "profiler": "Профайлер",
@@ -419,6 +419,8 @@
             "date": "Дата",
             "document_number": "№ документ",
             "document_number_placeholder": "по желание",
+            "description": "Описание",
+            "description_placeholder": "Кратко описание на сделката (по избор)",
             "type": "Тип",
             "type_placeholder": "Изберете тип",
             "new_type_placeholder": "Име на типа",
@@ -429,8 +431,11 @@
             "document_number": "№ документ",
             "type": "Тип",
             "amount": "Сума",
+            "description": "Описание",
             "actions": "Управление"
         },
+        "info": "Инфо",
+        "info_title": "Описание на сделката",
         "summary": {
             "period": "Период",
             "income": "Общо приходи",
@@ -470,6 +475,7 @@
             "sheet_columns": {
                 "date": "Дата",
                 "document_number": "№ документ",
+                "description": "Описание",
                 "kind": "Вид",
                 "type": "Тип",
                 "amount": "Сума"

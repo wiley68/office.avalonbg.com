@@ -1,6 +1,15 @@
 <script setup lang="ts">
-import { Pencil, Trash2 } from 'lucide-vue-next';
+import { Info, Pencil, Trash2 } from 'lucide-vue-next';
+import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { useTranslations } from '@/composables/useTranslations';
 import type { ProfitEntryItem } from '@/types/profits';
 
@@ -19,6 +28,19 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useTranslations();
+
+const showInfoDialog = ref(false);
+const infoEntry = ref<ProfitEntryItem | null>(null);
+
+const openInfo = (entry: ProfitEntryItem): void => {
+    infoEntry.value = entry;
+    showInfoDialog.value = true;
+};
+
+const closeInfo = (): void => {
+    showInfoDialog.value = false;
+    infoEntry.value = null;
+};
 </script>
 
 <template>
@@ -84,6 +106,17 @@ const { t } = useTranslations();
                         <td class="px-3 py-2">
                             <div class="flex items-center justify-end gap-1">
                                 <Button
+                                    v-if="entry.description"
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    class="size-8"
+                                    :aria-label="t('profits.info')"
+                                    @click="openInfo(entry)"
+                                >
+                                    <Info class="size-4" />
+                                </Button>
+                                <Button
                                     type="button"
                                     variant="ghost"
                                     size="icon"
@@ -109,5 +142,29 @@ const { t } = useTranslations();
                 </tbody>
             </table>
         </div>
+
+        <Dialog :open="showInfoDialog" @update:open="showInfoDialog = $event">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>{{ t('profits.info_title') }}</DialogTitle>
+                    <DialogDescription v-if="infoEntry">
+                        {{ infoEntry.type.name }} · {{ infoEntry.date }}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <p
+                    v-if="infoEntry?.description"
+                    class="whitespace-pre-wrap text-sm text-foreground"
+                >
+                    {{ infoEntry.description }}
+                </p>
+
+                <DialogFooter>
+                    <Button type="button" variant="outline" @click="closeInfo">
+                        {{ t('common.close') }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </section>
 </template>

@@ -33,6 +33,7 @@ class ProfitsPdfExportService
                 'result' => Translations::get('profits.summary.result'),
                 'date' => Translations::get('profits.columns.date'),
                 'documentNumber' => Translations::get('profits.columns.document_number'),
+                'description' => Translations::get('profits.columns.description'),
                 'type' => Translations::get('profits.columns.type'),
                 'amount' => Translations::get('profits.columns.amount'),
                 'emptyIncome' => Translations::get('profits.empty_income'),

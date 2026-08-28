@@ -53,6 +53,7 @@ test('office user can create update and delete own profit entries', function () 
         'profit_type_id' => $incomeType->id,
         'date' => '2026-08-15',
         'document_number' => 'INV-001',
+        'description' => 'Продажба на услуга',
         'amount' => 1500.50,
     ])->assertRedirect();
 
@@ -63,18 +64,21 @@ test('office user can create update and delete own profit entries', function () 
         ->and($entry->user_id)->toBe($user->id)
         ->and($entry->profit_type_id)->toBe($incomeType->id)
         ->and($entry->document_number)->toBe('INV-001')
+        ->and($entry->description)->toBe('Продажба на услуга')
         ->and((float) $entry->amount)->toBe(1500.50);
 
     put(route('profits.update', $entry), [
         'profit_type_id' => $expenseType->id,
         'date' => '2026-08-20',
         'document_number' => 'EXP-002',
+        'description' => 'Наем за август',
         'amount' => 200,
     ])->assertRedirect();
 
     expect($entry->fresh())
         ->profit_type_id->toBe($expenseType->id)
         ->document_number->toBe('EXP-002')
+        ->description->toBe('Наем за август')
         ->and((float) $entry->fresh()->amount)->toBe(200.0);
 
     delete(route('profits.destroy', $entry))

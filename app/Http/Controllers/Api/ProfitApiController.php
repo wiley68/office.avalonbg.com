@@ -49,6 +49,7 @@ class ProfitApiController extends Controller
                 'id' => $entry->id,
                 'date' => $entry->date?->format('Y-m-d'),
                 'document_number' => $entry->document_number,
+                'description' => $entry->description,
                 'amount' => (string) $entry->amount,
                 'profit_type_id' => $entry->profit_type_id,
                 'type' => [

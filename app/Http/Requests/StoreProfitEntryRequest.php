@@ -24,6 +24,7 @@ class StoreProfitEntryRequest extends FormRequest
             'profit_type_id' => ['required', 'integer', Rule::exists(ProfitType::class, 'id')],
             'date' => ['required', 'date'],
             'document_number' => ['nullable', 'string', 'max:64'],
+            'description' => ['nullable', 'string', 'max:5000'],
             'amount' => ['required', 'numeric', 'gt:0', 'decimal:0,2'],
         ];
     }

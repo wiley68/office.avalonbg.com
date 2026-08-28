@@ -62,6 +62,7 @@ const emptyFormState = {
     profit_type_id: '',
     date: '',
     document_number: '',
+    description: '',
     amount: '',
 };
 
@@ -138,6 +139,7 @@ watch(
             form.profit_type_id = String(entry.profit_type_id);
             form.date = entry.date;
             form.document_number = entry.document_number ?? '';
+            form.description = entry.description ?? '';
             form.amount = entry.amount;
         } else {
             kind.value = defaultKind;
@@ -220,6 +222,7 @@ const submit = (): void => {
         profit_type_id: Number(form.profit_type_id),
         date: form.date,
         document_number: form.document_number || null,
+        description: form.description.trim() === '' ? null : form.description,
         amount: form.amount,
     };
 
@@ -293,6 +296,20 @@ const submit = (): void => {
                         "
                     />
                     <InputError :message="form.errors.document_number" />
+                </div>
+
+                <div class="grid gap-2">
+                    <Label for="profit-description">{{
+                        t('profits.fields.description')
+                    }}</Label>
+                    <textarea
+                        id="profit-description"
+                        v-model="form.description"
+                        rows="3"
+                        :placeholder="t('profits.fields.description_placeholder')"
+                        class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    />
+                    <InputError :message="form.errors.description" />
                 </div>
 
                 <div class="grid gap-2">

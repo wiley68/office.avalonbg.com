@@ -67,6 +67,7 @@ class ProfitsExportDataBuilder
         $headings = [
             Translations::get('profits.export.sheet_columns.date'),
             Translations::get('profits.export.sheet_columns.document_number'),
+            Translations::get('profits.export.sheet_columns.description'),
             Translations::get('profits.export.sheet_columns.kind'),
             Translations::get('profits.export.sheet_columns.type'),
             Translations::get('profits.export.sheet_columns.amount'),
@@ -77,6 +78,7 @@ class ProfitsExportDataBuilder
                 return [
                     $entry->date?->format('Y-m-d'),
                     $entry->document_number,
+                    $entry->description,
                     Translations::get('profits.kinds.'.$kind->value),
                     $entry->profitType?->name,
                     (string) $entry->amount,
@@ -95,6 +97,7 @@ class ProfitsExportDataBuilder
             '',
             '',
             '',
+            '',
             $data['totals']['income'],
         ];
         $rows[] = [
@@ -102,10 +105,12 @@ class ProfitsExportDataBuilder
             '',
             '',
             '',
+            '',
             $data['totals']['expense'],
         ];
         $rows[] = [
             Translations::get('profits.summary.result'),
+            '',
             '',
             '',
             '',

@@ -31,6 +31,7 @@
                 <tr>
                     <th>{{ $labels['date'] }}</th>
                     <th>{{ $labels['documentNumber'] }}</th>
+                    <th>{{ $labels['description'] }}</th>
                     <th>{{ $labels['type'] }}</th>
                     <th class="num">{{ $labels['amount'] }}</th>
                 </tr>
@@ -40,6 +41,7 @@
                     <tr>
                         <td>{{ $entry->date?->format('Y-m-d') }}</td>
                         <td>{{ $entry->document_number ?: '—' }}</td>
+                        <td>{{ $entry->description ?: '—' }}</td>
                         <td>{{ $entry->profitType?->name }}</td>
                         <td class="num">{{ number_format((float) $entry->amount, 2, '.', '') }}</td>
                     </tr>
@@ -57,6 +59,7 @@
                 <tr>
                     <th>{{ $labels['date'] }}</th>
                     <th>{{ $labels['documentNumber'] }}</th>
+                    <th>{{ $labels['description'] }}</th>
                     <th>{{ $labels['type'] }}</th>
                     <th class="num">{{ $labels['amount'] }}</th>
                 </tr>
@@ -66,6 +69,7 @@
                     <tr>
                         <td>{{ $entry->date?->format('Y-m-d') }}</td>
                         <td>{{ $entry->document_number ?: '—' }}</td>
+                        <td>{{ $entry->description ?: '—' }}</td>
                         <td>{{ $entry->profitType?->name }}</td>
                         <td class="num">{{ number_format((float) $entry->amount, 2, '.', '') }}</td>
                     </tr>

@@ -419,6 +419,8 @@
             "date": "Date",
             "document_number": "Document No.",
             "document_number_placeholder": "optional",
+            "description": "Description",
+            "description_placeholder": "Brief description of the deal (optional)",
             "type": "Type",
             "type_placeholder": "Select a type",
             "new_type_placeholder": "Type name",
@@ -429,8 +431,11 @@
             "document_number": "Document No.",
             "type": "Type",
             "amount": "Amount",
+            "description": "Description",
             "actions": "Manage"
         },
+        "info": "Info",
+        "info_title": "Deal description",
         "summary": {
             "period": "Period",
             "income": "Total income",
@@ -470,6 +475,7 @@
             "sheet_columns": {
                 "date": "Date",
                 "document_number": "Document No.",
+                "description": "Description",
                 "kind": "Kind",
                 "type": "Type",
                 "amount": "Amount"

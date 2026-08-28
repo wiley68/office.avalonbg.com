@@ -24,6 +24,7 @@ class ProfitEntryFactory extends Factory
             'profit_type_id' => ProfitType::factory(),
             'date' => fake()->dateTimeBetween('-6 months', 'now')->format('Y-m-d'),
             'document_number' => fake()->optional()->bothify('DOC-####'),
+            'description' => fake()->optional()->sentence(),
             'amount' => fake()->randomFloat(2, 10, 5000),
         ];
     }

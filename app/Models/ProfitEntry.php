@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['user_id', 'profit_type_id', 'date', 'document_number', 'amount'])]
+#[Fillable(['user_id', 'profit_type_id', 'date', 'document_number', 'description', 'amount'])]
 class ProfitEntry extends Model
 {
     /** @use HasFactory<ProfitEntryFactory> */

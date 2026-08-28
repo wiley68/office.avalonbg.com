@@ -30,6 +30,7 @@ test('profits api returns only current user entries for selected month', functio
     ProfitEntry::factory()->for($user)->for($incomeType, 'profitType')->create([
         'date' => '2026-08-10',
         'amount' => 1000,
+        'description' => 'Monthly sales',
     ]);
 
     ProfitEntry::factory()->for($user)->for($expenseType, 'profitType')->create([
@@ -55,7 +56,8 @@ test('profits api returns only current user entries for selected month', functio
         ->assertJsonCount(1, 'expense')
         ->assertJsonPath('totals.income', '1000.00')
         ->assertJsonPath('totals.expense', '250.25')
-        ->assertJsonPath('totals.result', '749.75');
+        ->assertJsonPath('totals.result', '749.75')
+        ->assertJsonPath('income.0.description', 'Monthly sales');
 });
 
 test('profit types api can filter by kind', function () {

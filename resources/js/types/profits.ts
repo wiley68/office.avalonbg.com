@@ -10,6 +10,7 @@ export type ProfitEntryItem = {
     id: number;
     date: string;
     document_number: string | null;
+    description: string | null;
     amount: string;
     profit_type_id: number;
     type: {
