@@ -307,7 +307,7 @@ const submit = (): void => {
                         v-model="form.description"
                         rows="3"
                         :placeholder="t('profits.fields.description_placeholder')"
-                        class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        class="flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                     />
                     <InputError :message="form.errors.description" />
                 </div>
