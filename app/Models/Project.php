@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\PreservesCreator;
 use App\Enums\ProjectStatus;
 use Database\Factories\ProjectFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -26,7 +27,13 @@ use Illuminate\Support\Carbon;
 class Project extends Model
 {
     /** @use HasFactory<ProjectFactory> */
-    use HasFactory;
+    use HasFactory, PreservesCreator;
+
+    /** @return BelongsTo<Group, $this> */
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(Group::class);
+    }
 
     /**
      * @return BelongsTo<User, $this>
@@ -65,7 +72,7 @@ class Project extends Model
      */
     public function documents(): BelongsToMany
     {
-        return $this->belongsToMany(Document::class)->withTimestamps();
+        return $this->belongsToMany(Document::class)->using(DocumentProject::class)->withTimestamps();
     }
 
     /**

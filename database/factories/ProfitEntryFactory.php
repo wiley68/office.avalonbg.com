@@ -20,8 +20,9 @@ class ProfitEntryFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => User::factory(),
-            'profit_type_id' => ProfitType::factory(),
+            'user_id' => User::factory()->officeUser(),
+            'group_id' => fn (array $attributes): int => User::query()->findOrFail($attributes['user_id'])->group()->firstOrFail()->id,
+            'profit_type_id' => fn (array $attributes): int => ProfitType::factory()->create(['group_id' => $attributes['group_id']])->id,
             'date' => fake()->dateTimeBetween('-6 months', 'now')->format('Y-m-d'),
             'document_number' => fake()->optional()->bothify('DOC-####'),
             'description' => fake()->optional()->sentence(),

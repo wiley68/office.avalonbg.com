@@ -5,7 +5,6 @@ namespace Database\Factories;
 use App\Enums\TaskStatus;
 use App\Models\Project;
 use App\Models\Task;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,7 +21,7 @@ class TaskFactory extends Factory
     {
         return [
             'project_id' => Project::factory(),
-            'user_id' => User::factory(),
+            'user_id' => fn (array $attributes): int => Project::query()->findOrFail($attributes['project_id'])->user_id,
             'parent_id' => null,
             'project_revision_id' => null,
             'name' => fake()->unique()->sentence(3),

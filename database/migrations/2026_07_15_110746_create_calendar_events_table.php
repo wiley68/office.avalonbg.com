@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('calendar_events', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('group_id')->constrained()->restrictOnDelete();
+            $table->foreignId('user_id')->constrained()->restrictOnDelete();
             $table->string('title', 120);
             $table->text('description')->nullable();
             $table->dateTime('starts_at');
@@ -24,7 +25,7 @@ return new class extends Migration
             $table->timestamp('completed_at')->nullable();
             $table->timestamps();
 
-            $table->index(['user_id', 'starts_at']);
+            $table->index(['group_id', 'starts_at']);
         });
     }
 

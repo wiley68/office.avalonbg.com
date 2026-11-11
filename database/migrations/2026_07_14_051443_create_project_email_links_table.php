@@ -10,8 +10,9 @@ return new class extends Migration
     {
         Schema::create('project_email_links', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('project_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('project_id');
+            $table->foreignId('group_id')->index()->constrained()->restrictOnDelete();
+            $table->foreignId('user_id')->constrained()->restrictOnDelete();
             $table->string('folder', 255);
             $table->unsignedBigInteger('imap_uid');
             $table->unsignedBigInteger('uidvalidity');
@@ -24,6 +25,8 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['project_id', 'folder', 'imap_uid']);
+            $table->unique(['id', 'group_id']);
+            $table->foreign(['project_id', 'group_id'])->references(['id', 'group_id'])->on('projects')->cascadeOnDelete();
         });
     }
 

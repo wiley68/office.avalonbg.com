@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\PreservesCreator;
 use Database\Factories\DocumentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class Document extends Model
 {
     /** @use HasFactory<DocumentFactory> */
-    use HasFactory;
+    use HasFactory, PreservesCreator;
+
+    /** @return BelongsTo<Group, $this> */
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(Group::class);
+    }
 
     /**
      * @return BelongsTo<User, $this>
@@ -28,7 +35,7 @@ class Document extends Model
      */
     public function projects(): BelongsToMany
     {
-        return $this->belongsToMany(Project::class)->withTimestamps();
+        return $this->belongsToMany(Project::class)->using(DocumentProject::class)->withTimestamps();
     }
 
     /**
@@ -36,6 +43,6 @@ class Document extends Model
      */
     public function tasks(): BelongsToMany
     {
-        return $this->belongsToMany(Task::class)->withTimestamps();
+        return $this->belongsToMany(Task::class)->using(DocumentTask::class)->withTimestamps();
     }
 }

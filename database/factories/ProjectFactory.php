@@ -20,7 +20,8 @@ class ProjectFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => User::factory(),
+            'user_id' => User::factory()->officeUser(),
+            'group_id' => fn (array $attributes): int => User::query()->findOrFail($attributes['user_id'])->group()->firstOrFail()->id,
             'name' => fake()->unique()->sentence(3),
             'description' => fake()->optional()->paragraph(),
             'status' => ProjectStatus::Active,

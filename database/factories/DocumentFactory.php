@@ -22,7 +22,8 @@ class DocumentFactory extends Factory
         $name = fake()->word().'.pdf';
 
         return [
-            'user_id' => User::factory(),
+            'user_id' => User::factory()->officeUser(),
+            'group_id' => fn (array $attributes): int => User::query()->findOrFail($attributes['user_id'])->group()->firstOrFail()->id,
             'original_name' => $name,
             'storage_path' => 'documents/'.Str::uuid().'/'.Str::slug($name),
             'mime_type' => 'application/pdf',

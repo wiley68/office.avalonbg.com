@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\PreservesCreator;
 use App\Enums\CalendarEventPriority;
 use App\Enums\CalendarEventStatus;
 use App\Enums\CalendarEventType;
@@ -35,7 +36,13 @@ use Illuminate\Support\Carbon;
 class CalendarEvent extends Model
 {
     /** @use HasFactory<CalendarEventFactory> */
-    use HasFactory;
+    use HasFactory, PreservesCreator;
+
+    /** @return BelongsTo<Group, $this> */
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(Group::class);
+    }
 
     /**
      * @return BelongsTo<User, $this>

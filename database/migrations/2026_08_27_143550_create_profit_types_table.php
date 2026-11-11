@@ -13,11 +13,13 @@ return new class extends Migration
     {
         Schema::create('profit_types', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('group_id')->constrained()->restrictOnDelete();
             $table->string('name');
             $table->string('kind', 16);
             $table->timestamps();
 
-            $table->unique(['name', 'kind']);
+            $table->unique(['group_id', 'name', 'kind']);
+            $table->unique(['id', 'group_id']);
             $table->index('kind');
         });
     }

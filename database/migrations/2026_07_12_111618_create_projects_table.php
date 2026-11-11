@@ -13,13 +13,15 @@ return new class extends Migration
     {
         Schema::create('projects', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('group_id')->index()->constrained()->restrictOnDelete();
+            $table->foreignId('user_id')->constrained()->restrictOnDelete();
             $table->string('name', 120);
             $table->text('description')->nullable();
             $table->string('status', 20)->default('active');
             $table->date('expected_completion_at')->nullable();
             $table->timestamp('completed_at')->nullable();
             $table->timestamps();
+            $table->unique(['id', 'group_id']);
         });
     }
 

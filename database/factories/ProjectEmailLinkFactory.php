@@ -5,7 +5,6 @@ namespace Database\Factories;
 use App\Enums\ProjectEmailLinkStatus;
 use App\Models\Project;
 use App\Models\ProjectEmailLink;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,7 +21,7 @@ class ProjectEmailLinkFactory extends Factory
     {
         return [
             'project_id' => Project::factory(),
-            'user_id' => User::factory(),
+            'user_id' => fn (array $attributes): int => Project::query()->findOrFail($attributes['project_id'])->user_id,
             'folder' => 'INBOX',
             'imap_uid' => fake()->unique()->numberBetween(1, 99999),
             'uidvalidity' => fake()->numberBetween(1, 999999),

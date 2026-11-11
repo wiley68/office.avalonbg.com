@@ -13,15 +13,17 @@ return new class extends Migration
     {
         Schema::create('profit_entries', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('profit_type_id')->constrained('profit_types')->restrictOnDelete();
+            $table->foreignId('group_id')->constrained()->restrictOnDelete();
+            $table->foreignId('user_id')->constrained()->restrictOnDelete();
+            $table->foreignId('profit_type_id');
             $table->date('date');
             $table->string('document_number', 64)->nullable();
             $table->decimal('amount', 12, 2);
             $table->timestamps();
 
-            $table->index(['user_id', 'date']);
-            $table->index(['user_id', 'profit_type_id']);
+            $table->index(['group_id', 'date']);
+            $table->index(['group_id', 'profit_type_id']);
+            $table->foreign(['profit_type_id', 'group_id'])->references(['id', 'group_id'])->on('profit_types')->restrictOnDelete();
         });
     }
 

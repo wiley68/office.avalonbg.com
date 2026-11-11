@@ -13,13 +13,15 @@ return new class extends Migration
     {
         Schema::create('documents', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('group_id')->index()->constrained()->restrictOnDelete();
+            $table->foreignId('user_id')->constrained()->restrictOnDelete();
             $table->string('original_name');
             $table->string('storage_path');
             $table->string('mime_type', 127);
             $table->unsignedBigInteger('size_bytes');
             $table->text('description')->nullable();
             $table->timestamps();
+            $table->unique(['id', 'group_id']);
         });
     }
 

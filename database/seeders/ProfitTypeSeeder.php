@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\ProfitTypeKind;
-use App\Models\ProfitType;
+use App\Models\Group;
 use Illuminate\Database\Seeder;
 
 class ProfitTypeSeeder extends Seeder
@@ -23,14 +23,13 @@ class ProfitTypeSeeder extends Seeder
             ['name' => 'Други разходи', 'kind' => ProfitTypeKind::Expense],
         ];
 
-        foreach ($types as $type) {
-            ProfitType::query()->updateOrCreate(
-                [
+        foreach (Group::query()->lazyById() as $group) {
+            foreach ($types as $type) {
+                $group->profitTypes()->firstOrCreate([
                     'name' => $type['name'],
                     'kind' => $type['kind']->value,
-                ],
-                [],
-            );
+                ]);
+            }
         }
     }
 }

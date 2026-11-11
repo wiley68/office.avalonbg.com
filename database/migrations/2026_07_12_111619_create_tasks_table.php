@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::create('tasks', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('project_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('project_id');
+            $table->foreignId('group_id')->index()->constrained()->restrictOnDelete();
+            $table->foreignId('user_id')->constrained()->restrictOnDelete();
             $table->foreignId('parent_id')->nullable()->constrained('tasks')->nullOnDelete();
             $table->foreignId('project_revision_id')->nullable()->constrained()->nullOnDelete();
             $table->string('name', 120);
@@ -24,6 +25,8 @@ return new class extends Migration
             $table->timestamp('completed_at')->nullable();
             $table->timestamps();
 
+            $table->unique(['id', 'group_id']);
+            $table->foreign(['project_id', 'group_id'])->references(['id', 'group_id'])->on('projects')->cascadeOnDelete();
             $table->index(['project_id', 'parent_id', 'sort_order']);
             $table->index(['project_id', 'status']);
         });

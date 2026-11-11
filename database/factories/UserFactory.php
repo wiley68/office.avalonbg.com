@@ -2,16 +2,28 @@
 
 namespace Database\Factories;
 
+use App\Enums\UserRole;
+use App\Models\Group;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 /**
  * @extends Factory<User>
  */
 class UserFactory extends Factory
 {
+    public function officeUser(?Group $group = null): static
+    {
+        return $this->state(fn (): array => [
+            'group_id' => $group?->id ?? Group::factory(),
+        ])->afterCreating(function (User $user): void {
+            $user->assignRole(Role::findOrCreate(UserRole::User->value, 'web'));
+        });
+    }
+
     /**
      * The current password being used by the factory.
      */

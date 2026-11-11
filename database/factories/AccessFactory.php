@@ -19,7 +19,8 @@ class AccessFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => User::factory(),
+            'user_id' => User::factory()->officeUser(),
+            'group_id' => fn (array $attributes): int => User::query()->findOrFail($attributes['user_id'])->group()->firstOrFail()->id,
             'name' => fake()->unique()->words(2, true),
             'category' => fake()->optional()->word(),
             'content' => fake()->sentence(),
@@ -29,7 +30,7 @@ class AccessFactory extends Factory
 
     public function encrypted(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'is_encrypted' => true,
         ]);
     }

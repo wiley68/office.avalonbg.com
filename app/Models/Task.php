@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\PreservesCreator;
 use App\Enums\TaskStatus;
 use Database\Factories\TaskFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use LogicException;
 
 #[Fillable([
     'project_id',
@@ -25,7 +27,30 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Task extends Model
 {
     /** @use HasFactory<TaskFactory> */
-    use HasFactory;
+    use HasFactory, PreservesCreator;
+
+    protected static function booted(): void
+    {
+        static::creating(function (Task $task): void {
+            $task->group_id = $task->project()->firstOrFail()->group_id;
+        });
+
+        static::saving(function (Task $task): void {
+            if ($task->parent_id !== null && ! self::query()->where('project_id', $task->project_id)->whereKey($task->parent_id)->exists()) {
+                throw new LogicException('The parent task must belong to the same project.');
+            }
+
+            if ($task->project_revision_id !== null && ! ProjectRevision::query()->where('project_id', $task->project_id)->whereKey($task->project_revision_id)->exists()) {
+                throw new LogicException('The revision must belong to the same project.');
+            }
+        });
+    }
+
+    /** @return BelongsTo<Group, $this> */
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(Group::class);
+    }
 
     /**
      * @return BelongsTo<Project, $this>
@@ -72,7 +97,7 @@ class Task extends Model
      */
     public function documents(): BelongsToMany
     {
-        return $this->belongsToMany(Document::class)->withTimestamps();
+        return $this->belongsToMany(Document::class)->using(DocumentTask::class)->withTimestamps();
     }
 
     /**

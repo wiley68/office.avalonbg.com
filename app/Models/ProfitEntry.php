@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\PreservesCreator;
 use Database\Factories\ProfitEntryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +13,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ProfitEntry extends Model
 {
     /** @use HasFactory<ProfitEntryFactory> */
-    use HasFactory;
+    use HasFactory, PreservesCreator;
+
+    /** @return BelongsTo<Group, $this> */
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(Group::class);
+    }
 
     /**
      * @return BelongsTo<User, $this>

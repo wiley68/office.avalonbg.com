@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\ProfitTypeKind;
+use App\Models\Group;
 use App\Models\ProfitType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -19,6 +20,7 @@ class ProfitTypeFactory extends Factory
     public function definition(): array
     {
         return [
+            'group_id' => Group::factory(),
             'name' => fake()->unique()->words(2, true),
             'kind' => fake()->randomElement(ProfitTypeKind::cases()),
         ];

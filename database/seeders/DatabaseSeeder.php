@@ -5,44 +5,40 @@ namespace Database\Seeders;
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
+use LogicException;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        $this->call([
-            RolesSeeder::class,
-            ProfitTypeSeeder::class,
-        ]);
+        $profiler = Validator::make((array) config('seeding.profiler'), [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255'],
+            'password' => ['required', 'string', Password::min(12)->mixedCase()->numbers()->symbols()],
+        ])->validate();
 
-        $password = Hash::make('1Nikola@Stefanov9');
+        DB::transaction(function () use ($profiler): void {
+            $this->call(RolesSeeder::class);
 
-        $users = [
-            [
-                'email' => 'ilko@avalonbg.com',
-                'name' => 'Илко Профайлър',
-                'role' => UserRole::Profiler,
-            ],
-        ];
-
-        foreach ($users as $data) {
-            $user = User::query()->updateOrCreate(
-                ['email' => $data['email']],
+            $user = User::query()->firstOrCreate(
+                ['email' => $profiler['email']],
                 [
-                    'name' => $data['name'],
+                    'name' => $profiler['name'],
+                    'password' => $profiler['password'],
                     'email_verified_at' => now(),
-                    'password' => $password,
-                    'two_factor_secret' => null,
-                    'two_factor_recovery_codes' => null,
-                    'two_factor_confirmed_at' => null,
                 ],
             );
 
-            $user->syncRoles([$data['role']->value]);
-        }
+            if ($user->wasRecentlyCreated) {
+                $user->assignRole(UserRole::Profiler->value);
+            } elseif (! $user->isProfiler()) {
+                throw new LogicException('The bootstrap account must be a profiler.');
+            }
+
+            $this->call(ProfitTypeSeeder::class);
+        });
     }
 }

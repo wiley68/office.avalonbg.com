@@ -25,7 +25,8 @@ class CalendarEventFactory extends Factory
         $endsAt = (clone $startsAt)->modify('+1 hour');
 
         return [
-            'user_id' => User::factory(),
+            'user_id' => User::factory()->officeUser(),
+            'group_id' => fn (array $attributes): int => User::query()->findOrFail($attributes['user_id'])->group()->firstOrFail()->id,
             'title' => fake()->sentence(3),
             'description' => fake()->optional()->paragraph(),
             'starts_at' => $startsAt,

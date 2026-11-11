@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\PreservesCreator;
 use App\Enums\ProjectEmailLinkStatus;
 use Database\Factories\ProjectEmailLinkFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -37,7 +38,20 @@ use Illuminate\Support\Carbon;
 class ProjectEmailLink extends Model
 {
     /** @use HasFactory<ProjectEmailLinkFactory> */
-    use HasFactory;
+    use HasFactory, PreservesCreator;
+
+    protected static function booted(): void
+    {
+        static::creating(function (ProjectEmailLink $link): void {
+            $link->group_id = $link->project()->firstOrFail()->group_id;
+        });
+    }
+
+    /** @return BelongsTo<Group, $this> */
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(Group::class);
+    }
 
     /**
      * @return BelongsTo<Project, $this>
