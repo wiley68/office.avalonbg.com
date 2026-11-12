@@ -20,10 +20,25 @@ complete the existing two-factor setup. No mail is sent by the seeder.
 The seed creates only the existing three roles and the configured profiler. It
 does not create demo groups or module records. `ProfitTypeSeeder` creates the
 seven default categories independently for each existing group; with no groups,
-it creates no categories. New group initialization belongs to the group CRUD
-phase. Seeded categories count as group data and restrict group deletion.
+it creates no categories. Groups created through administration start empty.
+Seeded categories count as group data and restrict group deletion.
 
-## Group foundation fixtures (IMP-01)
+## Group architecture
+
+The three roles are `profiler`, `admin` and `user`. The profiler manages admins;
+admins manage groups and user-role accounts. Each user-role account belongs to
+exactly one group; profiler and admin accounts remain groupless. Office access
+requires an active account, the required password change and two-factor setup.
+
+Accesses, projects, tasks, documents, calendar events and Profit records are
+shared within their owning group. Creator attribution survives edits and group
+reassignment; reassignment ends the user's sessions and does not move records.
+Nonempty groups and creators with attributed records cannot be deleted.
+Accesses use an automatically generated group encryption key, wrapped by
+Laravel's application key. Keep `APP_KEY` stable and protect it with database
+backups. IMAP credentials remain personal; archived project mail is group-shared.
+
+## Group test fixtures
 
 Use `User::factory()->officeUser($group)` (or omit `$group` to create one) for an
 office user. The default `UserFactory` still permits groupless profiler/admin
@@ -35,7 +50,9 @@ default to their project's creator; attachment documents use the link's group.
 Explicit related fixtures must use the same group. Group keys are generated on
 Eloquent creation, never provided as factory attributes.
 
-IMP-01 prepares schema and models only. Existing HTTP creation, validation,
-authorization and Accesses encryption still require IMP-02 through IMP-05 before
-the new schema is ready for application use. Do not deploy this phase alone or
-reset a shared database without the owner's explicit approval.
+The consolidated migration chain supports fresh installations. An existing
+installation needs a separately reviewed upgrade or reset plan, a backup and
+the owner's explicit approval. Build frontend assets after source updates;
+generated build and Wayfinder files are not committed.
+Regular Pest tests require SQLite `:memory:`. MySQL acceptance runners are
+explicitly opt-in and restricted to the dedicated acceptance schema.

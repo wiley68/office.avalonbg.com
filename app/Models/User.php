@@ -18,7 +18,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'must_change_password', 'status', 'appearance', 'access_encryption_key'])]
+#[Fillable(['name', 'email', 'password', 'must_change_password', 'status', 'appearance'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'access_encryption_key'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -28,16 +28,28 @@ class User extends Authenticatable implements MustVerifyEmail
     protected static function booted(): void
     {
         static::updated(function (User $user): void {
-            if (! $user->wasChanged('status') || $user->isActive()) {
+            if (! $user->wasChanged('group_id') && (! $user->wasChanged('status') || $user->isActive())) {
                 return;
             }
 
-            DB::table('sessions')->where('user_id', $user->id)->delete();
+            DB::connection(config('session.connection'))
+                ->table(config('session.table', 'sessions'))
+                ->where('user_id', $user->id)->delete();
 
             if ($user->remember_token !== null) {
                 $user->forceFill(['remember_token' => null])->saveQuietly();
             }
         });
+    }
+
+    public function authorizationContext(): string
+    {
+        return hash('sha256', json_encode([
+            $this->id,
+            $this->group_id,
+            $this->status,
+            $this->roles->pluck('name')->sort()->values()->all(),
+        ], JSON_THROW_ON_ERROR));
     }
 
     public function isActive(): bool

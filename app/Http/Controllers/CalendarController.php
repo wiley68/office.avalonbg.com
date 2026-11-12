@@ -42,7 +42,8 @@ class CalendarController extends Controller
         $status = CalendarEventStatus::tryFrom((string) $request->input('status'))
             ?? CalendarEventStatus::Active;
 
-        $user->calendarEvents()->create([
+        $user->group->calendarEvents()->create([
+            'user_id' => $user->id,
             'title' => $request->validated('title'),
             'description' => $request->validated('description'),
             'starts_at' => $startsAt,

@@ -4,10 +4,8 @@ namespace App\Http\Requests\Settings;
 
 use App\Concerns\PasswordValidationRules;
 use App\Models\Access;
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Support\Translations;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Validator;
 
 class RotateAccessEncryptionKeyRequest extends FormRequest
 {
@@ -18,26 +16,27 @@ class RotateAccessEncryptionKeyRequest extends FormRequest
         return $this->user()?->can('manageEncryptionKey', Access::class) ?? false;
     }
 
-    /**
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
+    /** @return array<string, list<string>> */
     public function rules(): array
     {
         return [
-            'current_password' => ['required', 'string'],
-            'encryption_key' => ['required', 'string', 'min:8', 'max:255'],
-            'encryption_key_confirmation' => ['required', 'same:encryption_key'],
+            'current_password' => $this->currentPasswordRules(),
+            'encryption_context' => ['required', 'string', 'size:64'],
+            'encryption_key' => ['prohibited'],
+            'encryption_key_confirmation' => ['prohibited'],
+            'access_encryption_key' => ['prohibited'],
+            'group_id' => ['prohibited'],
+            'user_id' => ['prohibited'],
         ];
     }
 
-    public function withValidator(Validator $validator): void
+    /** @return array<string, string> */
+    public function messages(): array
     {
-        $validator->after(function (Validator $validator): void {
-            $user = $this->user();
-
-            if ($user === null || ! Hash::check((string) $this->input('current_password'), $user->password)) {
-                $validator->errors()->add('current_password', 'The provided password is incorrect.');
-            }
-        });
+        return [
+            'current_password.required' => Translations::get('accesses.encryption_key.password_required'),
+            'current_password.current_password' => Translations::get('accesses.encryption_key.password_invalid'),
+            '*.prohibited' => Translations::get('accesses.errors.key_override_prohibited'),
+        ];
     }
 }

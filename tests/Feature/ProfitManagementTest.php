@@ -22,8 +22,7 @@ beforeEach(function () {
 });
 
 test('office user can view profits index page', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     actingAs($user)
         ->get(route('profits.index'))
@@ -41,11 +40,10 @@ test('admin cannot access profits pages', function () {
 });
 
 test('office user can create update and delete own profit entries', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
-    $incomeType = ProfitType::factory()->income()->create(['name' => 'Продажби']);
-    $expenseType = ProfitType::factory()->expense()->create(['name' => 'Наем']);
+    $incomeType = ProfitType::factory()->for($user->group)->income()->create(['name' => 'Продажби']);
+    $expenseType = ProfitType::factory()->for($user->group)->expense()->create(['name' => 'Наем']);
 
     actingAs($user);
 
@@ -88,13 +86,11 @@ test('office user can create update and delete own profit entries', function () 
 });
 
 test('office user cannot manage another users profit entry', function () {
-    $owner = User::factory()->create();
-    $owner->assignRole('user');
+    $owner = User::factory()->officeUser()->create();
 
-    $other = User::factory()->create();
-    $other->assignRole('user');
+    $other = User::factory()->officeUser()->create();
 
-    $type = ProfitType::factory()->income()->create();
+    $type = ProfitType::factory()->for($owner->group)->income()->create();
     $entry = ProfitEntry::factory()->for($owner)->for($type, 'profitType')->create();
 
     actingAs($other);
@@ -111,8 +107,7 @@ test('office user cannot manage another users profit entry', function () {
 });
 
 test('office user can create a global profit type', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     actingAs($user)
         ->post(route('profit-types.store'), [

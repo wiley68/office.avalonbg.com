@@ -56,9 +56,9 @@ class CalendarEvent extends Model
      * @param  Builder<self>  $query
      * @return Builder<self>
      */
-    public function scopeForUser(Builder $query, int $userId): Builder
+    public function scopeForGroup(Builder $query, int $groupId): Builder
     {
-        return $query->where('user_id', $userId);
+        return $query->where('group_id', $groupId);
     }
 
     /**

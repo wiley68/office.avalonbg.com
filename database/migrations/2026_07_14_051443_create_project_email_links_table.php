@@ -13,6 +13,7 @@ return new class extends Migration
             $table->foreignId('project_id');
             $table->foreignId('group_id')->index()->constrained()->restrictOnDelete();
             $table->foreignId('user_id')->constrained()->restrictOnDelete();
+            $table->string('source_mailbox', 64)->nullable();
             $table->string('folder', 255);
             $table->unsignedBigInteger('imap_uid');
             $table->unsignedBigInteger('uidvalidity');
@@ -24,7 +25,7 @@ return new class extends Migration
             $table->timestamp('last_verified_at')->nullable();
             $table->timestamps();
 
-            $table->unique(['project_id', 'folder', 'imap_uid']);
+            $table->unique(['project_id', 'source_mailbox', 'folder', 'uidvalidity', 'imap_uid'], 'email_links_source_message_unique');
             $table->unique(['id', 'group_id']);
             $table->foreign(['project_id', 'group_id'])->references(['id', 'group_id'])->on('projects')->cascadeOnDelete();
         });

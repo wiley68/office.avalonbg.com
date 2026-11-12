@@ -25,8 +25,7 @@ beforeEach(function () {
 });
 
 test('office user can upload update download and delete documents', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     actingAs($user);
 
@@ -60,8 +59,7 @@ test('office user can upload update download and delete documents', function () 
 });
 
 test('office user can attach the same document to project and task', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
     $task = Task::factory()->for($project)->for($user)->create();
@@ -88,11 +86,9 @@ test('office user can attach the same document to project and task', function ()
 });
 
 test('office user cannot access another users document', function () {
-    $owner = User::factory()->create();
-    $owner->assignRole('user');
+    $owner = User::factory()->officeUser()->create();
 
-    $other = User::factory()->create();
-    $other->assignRole('user');
+    $other = User::factory()->officeUser()->create();
 
     $document = Document::factory()->for($owner)->create();
 
@@ -103,13 +99,11 @@ test('office user cannot access another users document', function () {
 });
 
 test('documents api returns only current user records', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     Document::factory()->for($user)->count(2)->create();
 
-    $other = User::factory()->create();
-    $other->assignRole('user');
+    $other = User::factory()->officeUser()->create();
     Document::factory()->for($other)->create();
 
     actingAs($user)
@@ -119,8 +113,7 @@ test('documents api returns only current user records', function () {
 });
 
 test('documents api can store a document and return its id', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     actingAs($user)
         ->post(route('internal.documents.store'), [
@@ -136,8 +129,7 @@ test('documents api can store a document and return its id', function () {
 });
 
 test('viewable documents are served inline in the browser', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $document = Document::factory()->for($user)->create([
         'mime_type' => 'application/pdf',
@@ -154,8 +146,7 @@ test('viewable documents are served inline in the browser', function () {
 });
 
 test('office documents are served as attachments', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $document = Document::factory()->for($user)->create([
         'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -174,8 +165,7 @@ test('office documents are served as attachments', function () {
 });
 
 test('viewable documents can be forced to download as attachments', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $document = Document::factory()->for($user)->create([
         'mime_type' => 'application/pdf',
@@ -194,8 +184,7 @@ test('viewable documents can be forced to download as attachments', function () 
 });
 
 test('office user can replace document file while keeping id and attachments', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
     $task = Task::factory()->for($project)->for($user)->create();
@@ -239,8 +228,7 @@ test('office user can replace document file while keeping id and attachments', f
 });
 
 test('office user can upload svg documents', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     actingAs($user);
 
@@ -264,12 +252,13 @@ test('office user can upload svg documents', function () {
         ->get(route('documents.download', $document))
         ->assertOk()
         ->assertHeader('Content-Type', 'image/svg+xml')
-        ->assertHeader('Content-Disposition', 'inline; filename="logo.svg"; filename*=UTF-8\'\'logo.svg');
+        ->assertHeader('Content-Disposition', 'attachment; filename="logo.svg"; filename*=UTF-8\'\'logo.svg')
+        ->assertHeader('X-Content-Type-Options', 'nosniff')
+        ->assertHeader('Content-Security-Policy', "sandbox; default-src 'none'");
 });
 
 test('office user can upload txt file reported as octet-stream', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     actingAs($user);
 
@@ -288,8 +277,7 @@ test('office user can upload txt file reported as octet-stream', function () {
 });
 
 test('office user cannot delete document used by archived project email attachment', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create([
         'name' => 'Website redesign',

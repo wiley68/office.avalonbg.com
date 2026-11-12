@@ -21,8 +21,7 @@ beforeEach(function () {
 });
 
 test('office user can create update toggle and delete project todos', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
 
@@ -68,8 +67,7 @@ test('office user can create update toggle and delete project todos', function (
 });
 
 test('project show includes todos ordered with active items first', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
 
@@ -95,11 +93,9 @@ test('project show includes todos ordered with active items first', function () 
 });
 
 test('office user cannot manage todos on another users project', function () {
-    $owner = User::factory()->create();
-    $owner->assignRole('user');
+    $owner = User::factory()->officeUser()->create();
 
-    $other = User::factory()->create();
-    $other->assignRole('user');
+    $other = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($owner)->create();
     $todo = ProjectTodo::factory()->for($project)->create();
@@ -122,8 +118,7 @@ test('office user cannot manage todos on another users project', function () {
 });
 
 test('todo body validation rejects empty and overly long text', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
 
@@ -139,8 +134,7 @@ test('todo body validation rejects empty and overly long text', function () {
 });
 
 test('todo from another project cannot be accessed through route binding', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
     $otherProject = Project::factory()->for($user)->create();

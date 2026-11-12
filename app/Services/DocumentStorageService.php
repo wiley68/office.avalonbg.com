@@ -6,9 +6,12 @@ use App\Models\Document;
 use App\Models\User;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class DocumentStorageService
 {
@@ -41,7 +44,6 @@ class DocumentStorageService
         'image/png',
         'image/webp',
         'image/gif',
-        'image/svg+xml',
     ];
 
     /**
@@ -73,20 +75,31 @@ class DocumentStorageService
 
     public function store(User $user, UploadedFile $file, ?string $description = null): Document
     {
+        Gate::forUser($user)->authorize('create', Document::class);
+
         $originalName = $file->getClientOriginalName();
         $extension = $file->getClientOriginalExtension();
         $filename = Str::uuid().($extension !== '' ? '.'.$extension : '');
-        $directory = 'documents/'.$user->id;
-        $path = $file->storeAs($directory, $filename, self::Disk);
+        $directory = 'documents/groups/'.$user->group_id;
+        $path = $directory.'/'.$filename;
 
-        return Document::query()->create([
-            'user_id' => $user->id,
-            'original_name' => $originalName,
-            'storage_path' => $path,
-            'mime_type' => $this->resolveMimeType($file),
-            'size_bytes' => $file->getSize(),
-            'description' => $description,
-        ]);
+        try {
+            if ($file->storeAs($directory, $filename, ['disk' => self::Disk, 'visibility' => 'private']) === false) {
+                throw new RuntimeException('Unable to store document.');
+            }
+
+            return $user->group->documents()->create([
+                'user_id' => $user->id,
+                'original_name' => $originalName,
+                'storage_path' => $path,
+                'mime_type' => $this->resolveMimeType($file),
+                'size_bytes' => $file->getSize(),
+                'description' => $description,
+            ]);
+        } catch (Throwable $exception) {
+            $this->disk()->delete($path);
+            throw $exception;
+        }
     }
 
     public function storeFromContents(
@@ -96,25 +109,36 @@ class DocumentStorageService
         string $mimeType,
         ?string $description = null,
     ): Document {
+        Gate::forUser($user)->authorize('create', Document::class);
+
         $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
         $filename = Str::uuid().($extension !== '' ? '.'.$extension : '');
-        $directory = 'documents/'.$user->id;
+        $directory = 'documents/groups/'.$user->group_id;
         $path = $directory.'/'.$filename;
 
-        $this->disk()->put($path, $contents);
+        try {
+            if (! $this->disk()->put($path, $contents, 'private')) {
+                throw new RuntimeException('Unable to store document.');
+            }
 
-        return Document::query()->create([
-            'user_id' => $user->id,
-            'original_name' => $originalName,
-            'storage_path' => $path,
-            'mime_type' => $this->resolveMimeTypeFromName($originalName, $mimeType),
-            'size_bytes' => strlen($contents),
-            'description' => $description,
-        ]);
+            return $user->group->documents()->create([
+                'user_id' => $user->id,
+                'original_name' => $originalName,
+                'storage_path' => $path,
+                'mime_type' => $this->resolveMimeTypeFromName($originalName, $mimeType),
+                'size_bytes' => strlen($contents),
+                'description' => $description,
+            ]);
+        } catch (Throwable $exception) {
+            $this->disk()->delete($path);
+            throw $exception;
+        }
     }
 
     public function delete(Document $document): void
     {
+        Gate::authorize('delete', $document);
+
         $disk = $this->disk();
 
         if ($disk->exists($document->storage_path)) {
@@ -128,43 +152,48 @@ class DocumentStorageService
 
     public function download(Document $document, bool $forceAttachment = false): StreamedResponse
     {
-        $headers = [
-            'Content-Type' => $document->mime_type,
-        ];
+        Gate::authorize('download', $document);
 
-        if (! $forceAttachment && $this->displaysInlineInBrowser($document->mime_type)) {
-            $headers['Content-Disposition'] = $this->contentDisposition(
-                'inline',
-                $document->original_name,
-            );
-
-            return $this->disk()->response(
-                $document->storage_path,
-                $document->original_name,
-                $headers,
-            );
-        }
-
-        $headers['Content-Disposition'] = $this->contentDisposition(
-            'attachment',
-            $document->original_name,
-        );
-
-        return $this->disk()->download(
+        return $this->disk()->response(
             $document->storage_path,
             $document->original_name,
-            $headers,
+            $this->downloadHeaders($document->mime_type, $document->original_name, $forceAttachment),
         );
+    }
+
+    /** @return array<string, string> */
+    public function downloadHeaders(string $mimeType, string $filename, bool $forceAttachment = false): array
+    {
+        $headers = [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => $this->contentDispositionHeader($mimeType, $filename, $forceAttachment),
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-store',
+        ];
+
+        if ($this->isSvg($mimeType, $filename)) {
+            $headers['Content-Security-Policy'] = "sandbox; default-src 'none'";
+        }
+
+        return $headers;
+    }
+
+    private function isSvg(string $mimeType, string $filename): bool
+    {
+        return strtolower(trim(explode(';', $mimeType)[0])) === 'image/svg+xml'
+            || strtolower(pathinfo($filename, PATHINFO_EXTENSION)) === 'svg';
     }
 
     public function replaceFile(Document $document, UploadedFile $file): void
     {
+        Gate::authorize('update', $document);
+
         $disk = $this->disk();
         $oldPath = $document->storage_path;
 
         $extension = $file->getClientOriginalExtension();
         $filename = Str::uuid().($extension !== '' ? '.'.$extension : '');
-        $directory = 'documents/'.$document->user_id;
+        $directory = 'documents/groups/'.$document->group_id;
         $newPath = $file->storeAs($directory, $filename, self::Disk);
 
         $document->update([
@@ -189,7 +218,7 @@ class DocumentStorageService
         string $filename,
         bool $forceAttachment = false,
     ): string {
-        $disposition = ! $forceAttachment && $this->displaysInlineInBrowser($mimeType)
+        $disposition = ! $forceAttachment && ! $this->isSvg($mimeType, $filename) && $this->displaysInlineInBrowser($mimeType)
             ? 'inline'
             : 'attachment';
 

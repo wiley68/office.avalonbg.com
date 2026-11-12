@@ -5,7 +5,6 @@ namespace App\Http\Middleware;
 use App\Enums\Appearance;
 use App\Enums\UserRole;
 use App\Models\User;
-use App\Services\AccessEncryptionService;
 use App\Support\DashboardCache;
 use App\Support\Translations;
 use Illuminate\Http\Request;
@@ -56,6 +55,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'translations' => Translations::forLocale(),
             'appearance' => $this->resolveAppearance($request),
+            'authorizationContext' => $request->user()?->authorizationContext(),
             'auth' => [
                 'user' => $request->user()
                     ? [
@@ -67,7 +67,6 @@ class HandleInertiaRequests extends Middleware
                         'can_manage_users' => $request->user()->canManageUsers(),
                         'has_office_access' => $request->user()->hasOfficeAccess(),
                         'is_office_user' => $request->user()->isOfficeUser(),
-                        'has_access_encryption_key' => app(AccessEncryptionService::class)->hasStoredKey($request->user()),
                     ]
                     : null,
             ],

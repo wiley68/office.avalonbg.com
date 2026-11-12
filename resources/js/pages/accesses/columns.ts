@@ -10,6 +10,8 @@ export interface AccessListItem {
     category: string | null;
     content: string;
     is_encrypted: boolean;
+    version: string;
+    encryption_context: string;
     created_at: string;
 }
 

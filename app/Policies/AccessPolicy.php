@@ -45,11 +45,14 @@ class AccessPolicy
 
     private function isOfficeUser(User $user): bool
     {
-        return $user->hasRole(UserRole::User->value);
+        return $user->isActive()
+            && $user->hasRole(UserRole::User->value)
+            && $user->group_id !== null
+            && $user->group()->exists();
     }
 
     private function ownsAccess(User $user, Access $access): bool
     {
-        return $this->isOfficeUser($user) && $access->user_id === $user->id;
+        return $this->isOfficeUser($user) && $access->group_id === $user->group_id;
     }
 }

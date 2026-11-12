@@ -356,7 +356,8 @@
             "data": "Data",
             "data_placeholder": "Access data",
             "encrypted": "Encrypted",
-            "plain": "Plain text"
+            "plain": "Plain text",
+            "remove_encryption": "Remove encryption and save this record as plain text"
         },
         "actions": {
             "encrypt": "Encrypt",
@@ -374,23 +375,24 @@
             "actions": "Actions"
         },
         "errors": {
-            "not_encrypted": "The data is not marked as encrypted.",
-            "no_encryption_key": "Set an encryption key in Security settings first."
+            "not_encrypted": "The data is not encrypted.",
+            "already_encrypted": "The data is already encrypted. Decrypt it before editing or encrypting again.",
+            "confirm_remove_encryption": "Encrypt the data again or explicitly confirm saving it as plain text.",
+            "invalid_ciphertext": "Encrypted data is invalid or outdated. Reload the record.",
+            "key_unavailable": "The group key is unavailable or corrupted. Contact the system administrator.",
+            "operation_failed": "The operation could not finish. No changes were saved. Try again.",
+            "stale_form": "The group, key, or record has changed. Reload the page and try again.",
+            "key_override_prohibited": "The key is generated automatically. Supplying a key or ownership is not allowed."
         },
         "encryption_key": {
-            "title": "Access encryption key",
-            "description": "Personal key for optional encryption of access data. Stored securely and used only for your records.",
-            "field": "Encryption key",
-            "confirm_field": "Confirm encryption key",
-            "save": "Save key",
-            "saved": "Encryption key saved.",
-            "already_set": "An encryption key is already configured. Use key rotation to change it.",
-            "not_set": "No encryption key is configured yet.",
-            "rotate_title": "Change encryption key",
-            "rotate_description": "All encrypted access records will be decrypted with the current key and re-encrypted with the new one.",
+            "title": "Group encryption",
+            "description": "A key is generated automatically and protects encrypted records for every group member.",
+            "rotate_description": "A new random key will be generated and every encrypted record in the group will be encrypted again. Open forms must be reloaded. Confirm with your current password.",
             "current_password": "Current password",
-            "rotate_button": "Change key",
-            "rotated": "Encryption key changed and records were re-encrypted."
+            "password_required": "Enter your current password.",
+            "password_invalid": "The current password is invalid.",
+            "rotate_button": "Rotate group key",
+            "rotated": "The group key was rotated successfully."
         }
     },
     "profits": {
@@ -696,6 +698,8 @@
             "body_error": "Failed to load message content.",
             "no_body": "No text content.",
             "errors": {
+                "archive_failed": "Unable to retrieve or archive email. Please try again.",
+                "mailbox_owner_required": "This operation requires the mail link to have been created by the current user.",
                 "missing_on_server": "The message is no longer available on the IMAP server."
             }
         }
@@ -808,5 +812,29 @@
         "errors": {
             "load_failed": "Failed to load calendar events."
         }
+    },
+    "groups": {
+        "title": "Groups",
+        "singular": "Group",
+        "create": "Add group",
+        "rename": "Rename group",
+        "members": "Members",
+        "empty": "No groups created.",
+        "select": "Select a group",
+        "create_first": "Create a group using the Groups menu first.",
+        "assignment_hint": "Changing the group ends the user’s sessions. Records keep their group and creator.",
+        "form_description": "Create or rename a group.",
+        "delete_title": "Delete group",
+        "delete_confirm": "Delete “:name”? Only groups without members or data can be deleted.",
+        "name_required": "Enter a group name.",
+        "name_invalid": "The name must be text of up to 255 characters.",
+        "key_unavailable": "A valid group key could not be generated. Contact the system administrator.",
+        "create_failed": "The group could not be created. Contact the system administrator.",
+        "delete_restricted": "The group cannot be deleted because it has members or related data.",
+        "membership_required": "A valid group is required. Contact an administrator.",
+        "assignment_required": "Select a group for the user.",
+        "assignment_invalid": "Select an existing group.",
+        "assignment_prohibited": "Privileged accounts cannot be assigned to a group.",
+        "creator_delete_restricted": "This account has authored records and cannot be deleted. Deactivate it instead."
     }
 }

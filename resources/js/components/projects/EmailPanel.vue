@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useAppToast } from '@/composables/useAppToast';
 import { useTranslations } from '@/composables/useTranslations';
+import { isAccessFailure, useAccessRevocation } from '@/lib/accessRevocation';
 import { openEmailAttachment } from '@/lib/openEmailAttachment';
 import { edit as editEmailSettings } from '@/routes/email';
 import { destroy as destroyEmailLink, link as linkProjectEmail } from '@/routes/projects/email';
@@ -28,6 +29,7 @@ type EmailLink = {
     sent_at: string | null;
     status: 'active' | 'missing_on_server';
     is_archived?: boolean;
+    can_read?: boolean;
     attachments?: EmailAttachment[];
     last_verified_at: string | null;
 };
@@ -67,6 +69,22 @@ const attachmentsByLinkId = ref<Record<number, EmailAttachment[]>>({});
 const linkToDelete = ref<number | null>(null);
 const threadLinkIdsToDelete = ref<number[] | null>(null);
 const showDeleteDialog = ref(false);
+
+let cacheEpoch = 0;
+const clearCache = (): void => {
+    cacheEpoch++;
+    threads.value = [];
+    bodies.value = {};
+    attachmentsByLinkId.value = {};
+    expandedThreadIds.value = new Set();
+    expandedLinkId.value = null;
+    bodyLoadingId.value = null;
+    loading.value = false;
+    linkToDelete.value = null;
+    threadLinkIdsToDelete.value = null;
+    showDeleteDialog.value = false;
+};
+useAccessRevocation(clearCache);
 
 const deleteDialogDescription = computed(() => {
     if (threadLinkIdsToDelete.value !== null) {
@@ -127,9 +145,11 @@ const openAttachment = (linkId: number, attachment: EmailAttachment): void => {
 };
 
 const fetchLinkAttachments = async (link: EmailLink): Promise<void> => {
-    if (link.status === 'missing_on_server' || attachmentsByLinkId.value[link.id] !== undefined) {
+    if (link.can_read === false || link.status === 'missing_on_server' || attachmentsByLinkId.value[link.id] !== undefined) {
         return;
     }
+
+    const epoch = cacheEpoch;
 
     try {
         const response = await fetch(
@@ -140,14 +160,29 @@ const fetchLinkAttachments = async (link: EmailLink): Promise<void> => {
                     'X-Requested-With': 'XMLHttpRequest',
                 },
                 credentials: 'same-origin',
+                cache: 'no-store',
             },
         );
+
+        if (epoch !== cacheEpoch) {
+            return;
+        }
+
+        if (isAccessFailure(response)) {
+            clearCache();
+
+            return;
+        }
 
         if (!response.ok) {
             return;
         }
 
         const payload = (await response.json()) as { data: EmailAttachment[] };
+
+        if (epoch !== cacheEpoch) {
+            return;
+        }
 
         attachmentsByLinkId.value = {
             ...attachmentsByLinkId.value,
@@ -180,6 +215,8 @@ const fetchThreads = async (): Promise<void> => {
     loading.value = true;
     loadError.value = null;
 
+    const epoch = cacheEpoch;
+
     try {
         const response = await fetch(
             `/internal-api/projects/${props.projectId}/email`,
@@ -189,8 +226,19 @@ const fetchThreads = async (): Promise<void> => {
                     'X-Requested-With': 'XMLHttpRequest',
                 },
                 credentials: 'same-origin',
+                cache: 'no-store',
             },
         );
+
+        if (epoch !== cacheEpoch) {
+            return;
+        }
+
+        if (isAccessFailure(response)) {
+            clearCache();
+
+            return;
+        }
 
         if (!response.ok) {
             const payload = (await response.json()) as { message?: string };
@@ -203,10 +251,19 @@ const fetchThreads = async (): Promise<void> => {
             data: { configured: boolean; threads: EmailThread[] };
         };
 
+        if (epoch !== cacheEpoch) {
+            return;
+        }
+
+        bodies.value = {};
         threads.value = payload.data.threads;
         attachmentsByLinkId.value = {};
         preloadArchivedAttachments(payload.data.threads);
     } catch {
+        if (epoch !== cacheEpoch) {
+            return;
+        }
+
         loadError.value = t('projects.email.load_error');
         showError(t('common.error'), t('projects.email.load_error'));
     } finally {
@@ -215,7 +272,7 @@ const fetchThreads = async (): Promise<void> => {
 };
 
 const toggleBody = async (link: EmailLink): Promise<void> => {
-    if (link.status === 'missing_on_server') {
+    if (link.can_read === false || link.status === 'missing_on_server') {
         return;
     }
 
@@ -227,11 +284,9 @@ const toggleBody = async (link: EmailLink): Promise<void> => {
 
     expandedLinkId.value = link.id;
 
-    if (bodies.value[link.id]) {
-        return;
-    }
-
     bodyLoadingId.value = link.id;
+
+    const epoch = cacheEpoch;
 
     try {
         const response = await fetch(
@@ -242,8 +297,19 @@ const toggleBody = async (link: EmailLink): Promise<void> => {
                     'X-Requested-With': 'XMLHttpRequest',
                 },
                 credentials: 'same-origin',
+                cache: 'no-store',
             },
         );
+
+        if (epoch !== cacheEpoch) {
+            return;
+        }
+
+        if (isAccessFailure(response)) {
+            clearCache();
+
+            return;
+        }
 
         if (!response.ok) {
             showError(t('common.error'), t('projects.email.body_error'));
@@ -255,8 +321,16 @@ const toggleBody = async (link: EmailLink): Promise<void> => {
             data: { text: string | null; html: string | null };
         };
 
+        if (epoch !== cacheEpoch) {
+            return;
+        }
+
         bodies.value[link.id] = payload.data;
     } catch {
+        if (epoch !== cacheEpoch) {
+            return;
+        }
+
         showError(t('common.error'), t('projects.email.body_error'));
     } finally {
         bodyLoadingId.value = null;
@@ -477,6 +551,7 @@ onMounted(() => {
                                             'cursor-pointer hover:opacity-80': link.status === 'active',
                                             'cursor-not-allowed': link.status === 'missing_on_server',
                                         }"
+                                        :disabled="link.can_read === false || link.status === 'missing_on_server'"
                                         @click="toggleBody(link)"
                                     >
                                         <p

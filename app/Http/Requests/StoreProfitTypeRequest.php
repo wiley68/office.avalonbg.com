@@ -26,7 +26,7 @@ class StoreProfitTypeRequest extends FormRequest
                 'string',
                 'max:100',
                 Rule::unique('profit_types', 'name')->where(
-                    fn ($query) => $query->where('kind', $this->input('kind')),
+                    fn ($query) => $query->where('kind', $this->input('kind'))->where('group_id', $this->user()->group_id),
                 ),
             ],
             'kind' => ['required', Rule::enum(ProfitTypeKind::class)],

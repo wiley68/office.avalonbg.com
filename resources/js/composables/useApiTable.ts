@@ -1,4 +1,5 @@
 import { onMounted, ref, watch } from 'vue';
+import { isAccessFailure, useAccessRevocation } from '@/lib/accessRevocation';
 
 type PaginatorResponse<T> = {
     data: T[];
@@ -66,7 +67,8 @@ export function useApiTable<T = unknown>(opts: UseApiTableOptions) {
             abortController.abort();
         }
 
-        abortController = new AbortController();
+        const controller = new AbortController();
+        abortController = controller;
 
         const params = new URLSearchParams({
             page: String(pagination.value.page),
@@ -83,8 +85,19 @@ export function useApiTable<T = unknown>(opts: UseApiTableOptions) {
                     'X-Requested-With': 'XMLHttpRequest',
                 },
                 credentials: 'same-origin',
-                signal: abortController.signal,
+                cache: 'no-store',
+                signal: controller.signal,
             });
+
+            if (controller.signal.aborted) {
+                return;
+            }
+
+            if (isAccessFailure(response)) {
+                clear();
+
+                return;
+            }
 
             if (!response.ok) {
                 const data = (await response.json().catch(() => null)) as {
@@ -97,6 +110,10 @@ export function useApiTable<T = unknown>(opts: UseApiTableOptions) {
 
             const payload = (await response.json()) as PaginatorResponse<T>;
 
+            if (controller.signal.aborted) {
+                return;
+            }
+
             rows.value = payload.data;
             pagination.value.rowsNumber = payload.total;
             pagination.value.page = payload.current_page;
@@ -106,9 +123,20 @@ export function useApiTable<T = unknown>(opts: UseApiTableOptions) {
                 onError?.('Възникна грешка при зареждане.');
             }
         } finally {
-            loading.value = false;
+            if (abortController === controller) {
+                loading.value = false;
+            }
         }
     }
+
+    const clear = (): void => {
+        abortController?.abort();
+        rows.value = [];
+        loading.value = false;
+        pagination.value.rowsNumber = 0;
+        pagination.value.page = 1;
+    };
+    useAccessRevocation(clear);
 
     const debouncedFetch = debounce(() => fetchData(), searchDebounceMs);
 

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Document;
 use App\Models\ProjectEmailAttachment;
 use App\Support\Translations;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class DocumentUsageService
@@ -14,6 +15,8 @@ class DocumentUsageService
      */
     public function usages(Document $document): array
     {
+        Gate::authorize('view', $document);
+
         $usages = [];
 
         $emailAttachments = ProjectEmailAttachment::query()

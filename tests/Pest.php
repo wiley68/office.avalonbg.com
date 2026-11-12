@@ -48,6 +48,8 @@ function something()
     // ..
 }
 
+use App\Models\Access;
+use App\Services\AccessEncryptionService;
 use Laravel\Fortify\Features;
 use PHPUnit\Framework\SkippedWithMessageException;
 
@@ -58,4 +60,13 @@ function skipUnlessFortifyFeature(string $feature, ?string $message = null): voi
             $message ?? "Fortify feature [{$feature}] is not enabled.",
         );
     }
+}
+
+/** @return array{encryption_context: string, version?: string} */
+function accessFormState(?Access $access = null): array
+{
+    return [
+        'encryption_context' => app(AccessEncryptionService::class)->context(),
+        ...($access === null ? [] : ['version' => $access->version()]),
+    ];
 }

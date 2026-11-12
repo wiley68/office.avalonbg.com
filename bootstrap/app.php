@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Middleware\EnsureCurrentOfficeContext;
 use App\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use App\Http\Middleware\EnsurePasswordIsChanged;
 use App\Http\Middleware\EnsureTwoFactorIsEnabled;
+use App\Http\Middleware\EnsureUserHasGroup;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\EnsureUserIsNotAdmin;
 use App\Http\Middleware\HandleAppearance;
@@ -12,6 +14,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
@@ -36,8 +39,10 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+        $middleware->trimStrings(except: ['content']);
 
         $middleware->web(append: [
+            EnsureCurrentOfficeContext::class,
             SetLocale::class,
             HandleAppearance::class,
             HandleInertiaRequests::class,
@@ -49,15 +54,18 @@ return Application::configure(basePath: dirname(__DIR__))
             EnsureFrontendRequestsAreStateful::class,
         ]);
 
+        $middleware->prependToPriorityList(SubstituteBindings::class, EnsureCurrentOfficeContext::class);
+
         $middleware->alias([
             'password.changed' => EnsurePasswordIsChanged::class,
             'two-factor.enabled' => EnsureTwoFactorIsEnabled::class,
             'office.user' => EnsureUserIsNotAdmin::class,
+            'group.member' => EnsureUserHasGroup::class,
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->dontFlash(['access_encryption_key', 'encryption_settings', 'encryption_key', 'encryption_key_confirmation', 'current_password', 'content']);
     })->create();

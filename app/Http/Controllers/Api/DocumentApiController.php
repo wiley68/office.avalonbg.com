@@ -36,7 +36,7 @@ class DocumentApiController extends Controller
         $filter = $validated['search'] ?? '';
 
         $query = Document::query()
-            ->where('user_id', $user->id)
+            ->where('group_id', $user->group_id)
             ->select([
                 'id',
                 'original_name',

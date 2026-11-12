@@ -6,6 +6,7 @@ use App\Concerns\PreservesCreator;
 use App\Enums\ProjectEmailLinkStatus;
 use Database\Factories\ProjectEmailLinkFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -35,6 +36,7 @@ use Illuminate\Support\Carbon;
     'last_verified_at',
     'archived_at',
 ])]
+#[Hidden(['source_mailbox'])]
 class ProjectEmailLink extends Model
 {
     /** @use HasFactory<ProjectEmailLinkFactory> */

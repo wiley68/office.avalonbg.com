@@ -19,6 +19,7 @@ use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\DocumentDownloadController;
+use App\Http\Controllers\GroupController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfitController;
 use App\Http\Controllers\ProfitTypeController;
@@ -99,14 +100,18 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
         });
 });
 
-Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled', 'role:user'])->group(function () {
-    Route::bind('access', function (string $value): Access {
-        $userId = Auth::id();
+Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled', 'role:admin'])->group(function () {
+    Route::resource('groups', GroupController::class)->only(['index', 'store', 'update', 'destroy']);
+});
 
-        abort_unless($userId !== null, 404);
+Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled', 'role:user', 'group.member'])->group(function () {
+    Route::bind('access', function (string $value): Access {
+        $groupId = Auth::user()?->group_id;
+
+        abort_unless($groupId !== null && Auth::user()->isOfficeUser() && Auth::user()->group()->exists(), 404);
 
         return Access::query()
-            ->where('user_id', $userId)
+            ->where('group_id', $groupId)
             ->findOrFail($value);
     });
 
@@ -114,12 +119,12 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
         ->except(['show', 'create', 'edit']);
 
     Route::bind('profit', function (string $value): ProfitEntry {
-        $userId = Auth::id();
+        $groupId = Auth::user()?->group_id;
 
-        abort_unless($userId !== null, 404);
+        abort_unless($groupId !== null && Auth::user()->isOfficeUser() && Auth::user()->group()->exists(), 404);
 
         return ProfitEntry::query()
-            ->where('user_id', $userId)
+            ->where('group_id', $groupId)
             ->findOrFail($value);
     });
 
@@ -199,12 +204,12 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
         });
 
     Route::bind('project', function (string $value): Project {
-        $userId = Auth::id();
+        $groupId = Auth::user()?->group_id;
 
-        abort_unless($userId !== null, 404);
+        abort_unless($groupId !== null && Auth::user()->isOfficeUser() && Auth::user()->group()->exists(), 404);
 
         return Project::query()
-            ->where('user_id', $userId)
+            ->where('group_id', $groupId)
             ->findOrFail($value);
     });
 
@@ -239,32 +244,32 @@ Route::middleware(['auth', 'verified', 'password.changed', 'two-factor.enabled',
     });
 
     Route::bind('task', function (string $value): Task {
-        $userId = Auth::id();
+        $groupId = Auth::user()?->group_id;
 
-        abort_unless($userId !== null, 404);
+        abort_unless($groupId !== null && Auth::user()->isOfficeUser() && Auth::user()->group()->exists(), 404);
 
         return Task::query()
-            ->where('user_id', $userId)
+            ->where('group_id', $groupId)
             ->findOrFail($value);
     });
 
     Route::bind('document', function (string $value): Document {
-        $userId = Auth::id();
+        $groupId = Auth::user()?->group_id;
 
-        abort_unless($userId !== null, 404);
+        abort_unless($groupId !== null && Auth::user()->isOfficeUser() && Auth::user()->group()->exists(), 404);
 
         return Document::query()
-            ->where('user_id', $userId)
+            ->where('group_id', $groupId)
             ->findOrFail($value);
     });
 
     Route::bind('calendarEvent', function (string $value): CalendarEvent {
-        $userId = Auth::id();
+        $groupId = Auth::user()?->group_id;
 
-        abort_unless($userId !== null, 404);
+        abort_unless($groupId !== null && Auth::user()->isOfficeUser() && Auth::user()->group()->exists(), 404);
 
         return CalendarEvent::query()
-            ->where('user_id', $userId)
+            ->where('group_id', $groupId)
             ->findOrFail($value);
     });
 

@@ -35,11 +35,13 @@ class ProfitEntryPolicy
 
     private function isOfficeUser(User $user): bool
     {
-        return $user->hasRole(UserRole::User->value);
+        return $user->hasRole(UserRole::User->value)
+            && $user->group_id !== null
+            && $user->group()->exists();
     }
 
     private function ownsEntry(User $user, ProfitEntry $profitEntry): bool
     {
-        return $this->isOfficeUser($user) && $profitEntry->user_id === $user->id;
+        return $this->isOfficeUser($user) && $profitEntry->group_id === $user->group_id;
     }
 }

@@ -29,7 +29,7 @@ class CalendarEventApiController extends Controller
         $to = Carbon::parse($validated['to'])->endOfDay();
 
         $events = CalendarEvent::query()
-            ->forUser($user->id)
+            ->forGroup($user->group_id)
             ->overlapping($from, $to)
             ->orderBy('starts_at')
             ->get()

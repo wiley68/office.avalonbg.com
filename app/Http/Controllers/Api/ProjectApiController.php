@@ -36,7 +36,7 @@ class ProjectApiController extends Controller
         $filter = $validated['search'] ?? '';
 
         $query = Project::query()
-            ->where('user_id', $user->id)
+            ->where('group_id', $user->group_id)
             ->withCount([
                 'documents',
                 'tasks',

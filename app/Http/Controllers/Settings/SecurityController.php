@@ -38,7 +38,7 @@ class SecurityController extends Controller implements HasMiddleware
         $props = [
             'canManageTwoFactor' => Features::canManageTwoFactorAuthentication(),
             'canManageAccessEncryptionKey' => $user !== null && $user->can('manageEncryptionKey', Access::class),
-            'hasAccessEncryptionKey' => $user !== null && $encryptionService->hasStoredKey($user),
+            'accessEncryptionContext' => $user?->can('manageEncryptionKey', Access::class) ? $encryptionService->context() : null,
         ];
 
         if (Features::canManageTwoFactorAuthentication()) {

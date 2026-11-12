@@ -20,8 +20,7 @@ beforeEach(function () {
 });
 
 test('office user can manage tasks within own project', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
     $revision = $project->revisions()->create([
@@ -83,8 +82,7 @@ test('office user can manage tasks within own project', function () {
 });
 
 test('office user can bulk reorder sibling tasks', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
 
@@ -120,11 +118,9 @@ test('office user can bulk reorder sibling tasks', function () {
 });
 
 test('office user cannot bulk reorder tasks from another users project', function () {
-    $owner = User::factory()->create();
-    $owner->assignRole('user');
+    $owner = User::factory()->officeUser()->create();
 
-    $other = User::factory()->create();
-    $other->assignRole('user');
+    $other = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($owner)->create();
 
@@ -151,8 +147,7 @@ test('office user cannot bulk reorder tasks from another users project', functio
 });
 
 test('office user can reorder a single task', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
 
@@ -187,11 +182,9 @@ test('office user can reorder a single task', function () {
 });
 
 test('office user cannot manage tasks from another users project', function () {
-    $owner = User::factory()->create();
-    $owner->assignRole('user');
+    $owner = User::factory()->officeUser()->create();
 
-    $other = User::factory()->create();
-    $other->assignRole('user');
+    $other = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($owner)->create();
     $task = Task::factory()->for($project)->for($owner)->create();

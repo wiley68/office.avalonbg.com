@@ -13,7 +13,7 @@ class ProjectDocumentController extends Controller
         $this->authorize('update', $project);
         $this->authorize('view', $document);
 
-        abort_unless($document->user_id === $project->user_id, 404);
+        abort_unless($document->group_id !== null && $document->group_id === $project->group_id, 404);
 
         $project->documents()->syncWithoutDetaching([$document->id]);
 
@@ -25,7 +25,7 @@ class ProjectDocumentController extends Controller
         $this->authorize('update', $project);
         $this->authorize('view', $document);
 
-        abort_unless($document->user_id === $project->user_id, 404);
+        abort_unless($document->group_id !== null && $document->group_id === $project->group_id, 404);
 
         $project->documents()->detach($document->id);
 

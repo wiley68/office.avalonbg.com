@@ -11,7 +11,6 @@ const INLINE_MIME_TYPES = new Set([
     'image/png',
     'image/webp',
     'image/gif',
-    'image/svg+xml',
 ]);
 
 const INLINE_EXTENSIONS = new Set([
@@ -22,10 +21,13 @@ const INLINE_EXTENSIONS = new Set([
     'png',
     'webp',
     'gif',
-    'svg',
 ]);
 
 export function canOpenEmailAttachmentInline(attachment: EmailAttachmentLike): boolean {
+    if (attachment.mime_type?.toLowerCase().split(';')[0].trim() === 'image/svg+xml' || attachment.filename.toLowerCase().endsWith('.svg')) {
+        return false;
+    }
+
     if (attachment.mime_type && INLINE_MIME_TYPES.has(attachment.mime_type)) {
         return true;
     }

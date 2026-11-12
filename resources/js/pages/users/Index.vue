@@ -81,6 +81,7 @@ const columns = computed(() =>
     createUserColumns({
         t,
         onDelete: requestDeleteUser,
+        showGroup: props.manageableRole === 'user',
     }),
 );
 
@@ -100,6 +101,7 @@ const confirmDelete = (): void => {
 
     router.delete(destroy(userId).url, {
         preserveScroll: true,
+        onError: (errors) => showError(t('common.error'), Object.values(errors).join('\n')),
         onSuccess: async () => {
             rows.value = rows.value.filter((row) => row.id !== userId);
             pagination.value.rowsNumber = Math.max(

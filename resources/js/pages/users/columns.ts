@@ -18,6 +18,7 @@ export interface UserListItem {
     email: string;
     status: number;
     created_at: string;
+    group: { id: number; name: string } | null;
 }
 
 type TranslateFn = (
@@ -35,12 +36,14 @@ export function createUserColumnTitleMap(
         status: t('users.columns.status'),
         created_at: t('users.columns.created_at'),
         actions: t('users.columns.actions'),
+        group: t('groups.singular'),
     };
 }
 
 type UserColumnOptions = {
     t: TranslateFn;
     onDelete: (id: number) => void;
+    showGroup: boolean;
 };
 
 const sortableHeader = (
@@ -137,6 +140,12 @@ export const createUserColumns = (
                 );
             },
         },
+        ...(options.showGroup ? [{
+            id: 'group',
+            header: t('groups.singular'),
+            enableSorting: false,
+            cell: ({ row }) => row.original.group?.name ?? '—',
+        } satisfies ColumnDef<UserListItem>] : []),
         {
             accessorKey: 'status',
             header: t('users.columns.status'),

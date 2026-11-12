@@ -21,8 +21,7 @@ beforeEach(function () {
 });
 
 test('office user can create update and delete calendar events', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     actingAs($user);
 
@@ -66,8 +65,7 @@ test('office user can create update and delete calendar events', function () {
 });
 
 test('calendar event store validates ends_at is after starts_at', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     actingAs($user);
 
@@ -79,8 +77,7 @@ test('calendar event store validates ends_at is after starts_at', function () {
 });
 
 test('completing calendar event sets completed_at', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $event = CalendarEvent::factory()->for($user)->create([
         'starts_at' => '2026-07-10 09:00:00',
@@ -105,8 +102,7 @@ test('completing calendar event sets completed_at', function () {
 });
 
 test('calendar events api returns only overlapping events in range', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     CalendarEvent::factory()->for($user)->create([
         'title' => 'Inside range',
@@ -139,8 +135,7 @@ test('calendar events api returns only overlapping events in range', function ()
 });
 
 test('calendar event store keeps wall-clock datetime without timezone shift', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     actingAs($user);
 
@@ -157,11 +152,9 @@ test('calendar event store keeps wall-clock datetime without timezone shift', fu
 });
 
 test('user cannot access another users calendar event', function () {
-    $owner = User::factory()->create();
-    $owner->assignRole('user');
+    $owner = User::factory()->officeUser()->create();
 
-    $other = User::factory()->create();
-    $other->assignRole('user');
+    $other = User::factory()->officeUser()->create();
 
     $event = CalendarEvent::factory()->for($owner)->create();
 
@@ -181,8 +174,7 @@ test('user cannot access another users calendar event', function () {
 });
 
 test('calendar index page renders for office user', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     actingAs($user)
         ->get(route('calendar.index'))

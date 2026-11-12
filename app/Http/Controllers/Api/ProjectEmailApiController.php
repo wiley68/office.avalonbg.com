@@ -50,7 +50,7 @@ class ProjectEmailApiController extends Controller
             $threads = $projectEmailService->refreshLinkThreads($project, $user);
         } catch (\Throwable $exception) {
             return response()->json([
-                'message' => $exception->getMessage(),
+                'message' => Translations::get('projects.email.errors.archive_failed'),
             ], 422);
         }
 
@@ -83,9 +83,7 @@ class ProjectEmailApiController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $account = $user->imapAccount;
-
-        abort_if($account === null, 422, Translations::get('settings.email.errors.not_configured'));
+        $account = app(ProjectEmailService::class)->accountForLink($user, $emailLink);
 
         if ($emailLink->status->value === 'missing_on_server') {
             return response()->json([
@@ -101,9 +99,11 @@ class ProjectEmailApiController extends Controller
             );
         } catch (\Throwable $exception) {
             return response()->json([
-                'message' => $exception->getMessage(),
+                'message' => Translations::get('projects.email.errors.archive_failed'),
             ], 422);
         }
+
+        app(ProjectEmailService::class)->accountForLink($user, $emailLink);
 
         return response()->json([
             'data' => $body,
@@ -137,9 +137,7 @@ class ProjectEmailApiController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $account = $user->imapAccount;
-
-        abort_if($account === null, 422, Translations::get('settings.email.errors.not_configured'));
+        $account = app(ProjectEmailService::class)->accountForLink($user, $emailLink);
 
         if ($emailLink->status->value === 'missing_on_server') {
             return response()->json([
@@ -155,9 +153,11 @@ class ProjectEmailApiController extends Controller
             );
         } catch (\Throwable $exception) {
             return response()->json([
-                'message' => $exception->getMessage(),
+                'message' => Translations::get('projects.email.errors.archive_failed'),
             ], 422);
         }
+
+        app(ProjectEmailService::class)->accountForLink($user, $emailLink);
 
         return response()->json([
             'data' => $attachments,
@@ -195,9 +195,7 @@ class ProjectEmailApiController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $account = $user->imapAccount;
-
-        abort_if($account === null, 422, Translations::get('settings.email.errors.not_configured'));
+        $account = app(ProjectEmailService::class)->accountForLink($user, $emailLink);
 
         abort_if($emailLink->status->value === 'missing_on_server', 404);
 
@@ -209,18 +207,17 @@ class ProjectEmailApiController extends Controller
                 $part,
             );
         } catch (\Throwable $exception) {
-            abort(422, $exception->getMessage());
+            abort(422, Translations::get('projects.email.errors.archive_failed'));
         }
+
+        app(ProjectEmailService::class)->accountForLink($user, $emailLink);
 
         $filename = str_replace(['"', '\\'], '', basename($attachment['filename']));
 
-        return response($attachment['content'], 200, [
-            'Content-Type' => $attachment['mime_type'],
-            'Content-Disposition' => $documentStorageService->contentDispositionHeader(
-                $attachment['mime_type'],
-                $filename,
-                $request->boolean('download'),
-            ),
-        ]);
+        return response($attachment['content'], 200, $documentStorageService->downloadHeaders(
+            $attachment['mime_type'],
+            $filename,
+            $request->boolean('download'),
+        ));
     }
 }

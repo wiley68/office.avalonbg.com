@@ -36,7 +36,8 @@ class UserApiController extends Controller
 
         $query = User::query()
             ->role($manageableRole?->value)
-            ->select(['id', 'name', 'email', 'status', 'created_at']);
+            ->select(['id', 'name', 'email', 'status', 'created_at', 'group_id'])
+            ->with('group:id,name');
 
         if ($filter !== '') {
             $query->where(function ($q) use ($filter) {

@@ -22,8 +22,7 @@ beforeEach(function () {
 test('office user can view email settings page', function () {
     withoutVite();
 
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     actingAs($user)
         ->get(route('email.edit'))
@@ -34,8 +33,7 @@ test('office user can view email settings page', function () {
 });
 
 test('office user can save imap account settings', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     actingAs($user);
 
@@ -56,8 +54,7 @@ test('office user can save imap account settings', function () {
 });
 
 test('office user cannot save starttls settings on port 143', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     actingAs($user);
 
@@ -72,8 +69,7 @@ test('office user cannot save starttls settings on port 143', function () {
 });
 
 test('office user can test imap connection', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     UserImapAccount::factory()->for($user)->create([
         'host' => 'mail.example.com',
@@ -99,8 +95,7 @@ test('office user can test imap connection', function () {
 });
 
 test('office user cannot test starttls settings on port 143', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     UserImapAccount::factory()->for($user)->create();
 

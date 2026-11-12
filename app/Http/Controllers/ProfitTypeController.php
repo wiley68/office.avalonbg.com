@@ -12,7 +12,7 @@ class ProfitTypeController extends Controller
     {
         $this->authorize('create', ProfitType::class);
 
-        ProfitType::query()->create($request->validated());
+        $request->user()->group->profitTypes()->create($request->validated());
 
         return back();
     }

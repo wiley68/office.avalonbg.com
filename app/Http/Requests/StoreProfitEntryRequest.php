@@ -21,7 +21,7 @@ class StoreProfitEntryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'profit_type_id' => ['required', 'integer', Rule::exists(ProfitType::class, 'id')],
+            'profit_type_id' => ['required', 'integer', Rule::exists(ProfitType::class, 'id')->where('group_id', $this->user()->group_id)],
             'date' => ['required', 'date'],
             'document_number' => ['nullable', 'string', 'max:64'],
             'description' => ['nullable', 'string', 'max:5000'],

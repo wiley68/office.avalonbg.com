@@ -38,7 +38,7 @@ class ProfitApiController extends Controller
 
         $entries = ProfitEntry::query()
             ->with(['profitType:id,name,kind'])
-            ->where('user_id', $user->id)
+            ->where('group_id', $user->group_id)
             ->whereBetween('date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->orderBy('date')
             ->orderBy('id')
@@ -112,7 +112,7 @@ class ProfitApiController extends Controller
 
         $entries = ProfitEntry::query()
             ->with(['profitType:id,name,kind'])
-            ->where('user_id', $user->id)
+            ->where('group_id', $user->group_id)
             ->whereBetween('date', [
                 $periodStart->toDateString(),
                 $periodEnd->toDateString(),

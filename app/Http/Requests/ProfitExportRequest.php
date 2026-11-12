@@ -36,7 +36,7 @@ class ProfitExportRequest extends FormRequest
             'date_to.required' => 'Крайната дата е задължителна.',
             'date_to.after_or_equal' => 'Крайната дата трябва да е след или равна на началната.',
             'format.required' => 'Форматът е задължителен.',
-            'format.in' => 'Форматът трябва да е xlsx или pdf.',
+            'format.in' => 'Невалиден формат за експорт.',
         ];
     }
 }

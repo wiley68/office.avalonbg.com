@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Group;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -25,6 +26,7 @@ test('creating a user requires password change on first login', function () {
     post('/users', [
         'name' => 'New User',
         'email' => 'new.user@example.com',
+        'group_id' => Group::factory()->create()->id,
         'password' => 'Password123!',
         'password_confirmation' => 'Password123!',
     ])->assertRedirect('/users');
@@ -106,12 +108,13 @@ test('admin password reset requires user to change password on next login', func
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
-    $managedUser = User::factory()->create();
+    $managedUser = User::factory()->officeUser()->create();
     $managedUser->assignRole('user');
 
     actingAs($admin)
         ->put("/users/{$managedUser->id}", [
             'name' => $managedUser->name,
+            'group_id' => $managedUser->group_id,
             'email' => $managedUser->email,
             'status' => 1,
             'password' => 'ResetPass1!',

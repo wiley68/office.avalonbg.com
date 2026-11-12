@@ -35,6 +35,7 @@ import { index as accessesIndex } from '@/routes/accesses';
 import { index as auditLogsIndex } from '@/routes/audit-logs';
 import { index as calendarIndex } from '@/routes/calendar';
 import { index as documentsIndex } from '@/routes/documents';
+import { index as groupsIndex } from '@/routes/groups';
 import { index as profitsIndex } from '@/routes/profits';
 import { index as projectsIndex } from '@/routes/projects';
 import { index as usersIndex } from '@/routes/users';
@@ -108,6 +109,10 @@ const mainNavItems = computed<NavItem[]>(() => {
             },
             ...(usersItem ? [usersItem] : []),
         ];
+
+        if (user.is_admin) {
+            items.push({ title: t('groups.title'), href: groupsIndex(), icon: Users });
+        }
 
         if (user.is_office_user) {
             items.push({

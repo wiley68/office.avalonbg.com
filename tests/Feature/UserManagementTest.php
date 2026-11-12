@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Group;
 use App\Models\User;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -106,6 +107,7 @@ test('admin can create user and verification email is sent', function () {
     post('/users', [
         'name' => 'New User',
         'email' => 'new.user@example.com',
+        'group_id' => Group::factory()->create()->id,
         'password' => 'Password123!',
         'password_confirmation' => 'Password123!',
     ])
@@ -254,12 +256,13 @@ test('admin can update and delete user role account', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
-    $managedUser = User::factory()->create();
+    $managedUser = User::factory()->officeUser()->create();
     $managedUser->assignRole('user');
 
     actingAs($admin);
 
     put("/users/{$managedUser->id}", [
+        'group_id' => $managedUser->group_id,
         'name' => 'Updated Name',
         'email' => 'updated@example.com',
         'status' => 1,

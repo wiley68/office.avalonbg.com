@@ -59,22 +59,35 @@ test('database seeder preserves an existing profilers password and two factor co
     $profiler->forceFill([
         'two_factor_secret' => encrypt(Str::random(16)),
         'two_factor_confirmed_at' => now(),
+        'two_factor_recovery_codes' => encrypt(json_encode(['existing-test-recovery-code'])),
     ])->save();
-    config(['seeding.profiler.password' => Str::random(24).'aA1!']);
+    $attributes = $profiler->getRawOriginal();
+    config(['seeding.profiler.password' => Str::random(24).'aA1!', 'seeding.profiler.name' => 'Changed bootstrap name']);
     $this->seed(DatabaseSeeder::class);
 
     expect($profiler->fresh()->password === $existingPassword)->toBeTrue()
         ->and($profiler->fresh()->hasEnabledTwoFactorAuthentication())->toBeTrue()
+        ->and($profiler->fresh()->getRawOriginal())->toBe($attributes)
         ->and(User::query()->count())->toBe(1);
 });
 
-test('bootstrap refuses missing or weak credentials before writing data', function (?string $password): void {
-    config(['seeding.profiler.password' => $password]);
+test('bootstrap refuses missing or malformed settings before writing data', function (string $field, ?string $value): void {
+    config(['seeding.profiler.'.$field => $value]);
 
     expect(fn () => $this->seed(DatabaseSeeder::class))->toThrow(ValidationException::class);
     expect(User::query()->count())->toBe(0)
-        ->and(Role::query()->count())->toBe(0);
-})->with([null, 'short']);
+        ->and(Role::query()->count())->toBe(0)
+        ->and(Group::query()->count())->toBe(0)
+        ->and(ProfitType::query()->count())->toBe(0);
+})->with([
+    'missing name' => ['name', null],
+    'blank name' => ['name', '   '],
+    'oversized name' => ['name', str_repeat('n', 256)],
+    'missing email' => ['email', null],
+    'malformed email' => ['email', 'invalid-address'],
+    'missing password' => ['password', null],
+    'weak password' => ['password', 'short'],
+]);
 
 test('bootstrap cannot promote an existing office user', function (): void {
     $user = User::factory()->officeUser()->create(['email' => config('seeding.profiler.email')]);

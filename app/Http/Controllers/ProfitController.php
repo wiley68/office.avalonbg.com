@@ -33,7 +33,7 @@ class ProfitController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $user->profitEntries()->create($request->validated());
+        $user->group->profitEntries()->create([...$request->validated(), 'user_id' => $user->id]);
 
         return back();
     }

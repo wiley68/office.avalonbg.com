@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Support\Translations;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Gate;
 
 class ProfitsExportDataBuilder
 {
@@ -22,12 +23,16 @@ class ProfitsExportDataBuilder
      */
     public function build(User $user, string $dateFrom, string $dateTo): array
     {
+        $user = $user->fresh();
+        abort_unless($user?->isActive(), 403);
+        Gate::forUser($user)->authorize('viewAny', ProfitEntry::class);
+
         $from = Carbon::parse($dateFrom)->toDateString();
         $to = Carbon::parse($dateTo)->toDateString();
 
         $entries = ProfitEntry::query()
             ->with(['profitType:id,name,kind'])
-            ->where('user_id', $user->id)
+            ->where('group_id', $user->group_id)
             ->whereBetween('date', [$from, $to])
             ->orderBy('date')
             ->orderBy('id')

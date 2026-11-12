@@ -92,7 +92,7 @@ class ProjectController extends Controller
 
         $data = $taskTreeService->applyProjectStatusAttributes($request->validated());
 
-        $user->projects()->create($data);
+        $user->group->projects()->create([...$data, 'user_id' => $user->id]);
 
         return to_route('projects.index');
     }

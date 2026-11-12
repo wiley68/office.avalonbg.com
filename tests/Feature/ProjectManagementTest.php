@@ -28,8 +28,7 @@ beforeEach(function () {
 });
 
 test('office user can view projects index page', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     actingAs($user)
         ->get(route('projects.index'))
@@ -47,8 +46,7 @@ test('admin cannot access projects pages', function () {
 });
 
 test('office user can create update and delete own projects', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     actingAs($user);
 
@@ -85,11 +83,9 @@ test('office user can create update and delete own projects', function () {
 });
 
 test('office user cannot manage another users project', function () {
-    $owner = User::factory()->create();
-    $owner->assignRole('user');
+    $owner = User::factory()->officeUser()->create();
 
-    $other = User::factory()->create();
-    $other->assignRole('user');
+    $other = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($owner)->create();
 
@@ -107,13 +103,11 @@ test('office user cannot manage another users project', function () {
 });
 
 test('projects api returns only current user records', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     Project::factory()->for($user)->count(2)->create();
 
-    $other = User::factory()->create();
-    $other->assignRole('user');
+    $other = User::factory()->officeUser()->create();
     Project::factory()->for($other)->create();
 
     actingAs($user)
@@ -125,8 +119,7 @@ test('projects api returns only current user records', function () {
 });
 
 test('projects api includes project document count excluding task attachments', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
     $document = Document::factory()->for($user)->create();
@@ -140,8 +133,7 @@ test('projects api includes project document count excluding task attachments', 
 });
 
 test('projects api includes git and email link indicators', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
 
@@ -156,8 +148,7 @@ test('projects api includes git and email link indicators', function () {
 });
 
 test('projects api includes active todos count', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
 
@@ -171,8 +162,7 @@ test('projects api includes active todos count', function () {
 });
 
 test('projects api includes latest revision label', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
 
@@ -203,8 +193,7 @@ test('projects api includes latest revision label', function () {
 });
 
 test('projects api includes task count', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
 
@@ -217,8 +206,7 @@ test('projects api includes task count', function () {
 });
 
 test('projects api includes task timeline in tree order', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
 
@@ -254,8 +242,7 @@ test('projects api includes task timeline in tree order', function () {
 });
 
 test('tasks api includes mime type for attached documents', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
     $task = Task::factory()->for($project)->for($user)->create();
@@ -275,8 +262,7 @@ test('tasks api includes mime type for attached documents', function () {
 });
 
 test('project show includes mime type for attached documents', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
     $mimeType = 'text/plain';
@@ -298,8 +284,7 @@ test('project show includes mime type for attached documents', function () {
 });
 
 test('office user can manage project revisions', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
 
@@ -340,8 +325,7 @@ test('office user can manage project revisions', function () {
 });
 
 test('office user can reorder project revisions', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
 
@@ -379,8 +363,7 @@ test('office user can reorder project revisions', function () {
 });
 
 test('completing project sets completed_at and clearing status removes it', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create([
         'status' => ProjectStatus::Active,
@@ -409,8 +392,7 @@ test('completing project sets completed_at and clearing status removes it', func
 });
 
 test('project cannot be completed while tasks remain open', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
 
@@ -432,8 +414,7 @@ test('project cannot be completed while tasks remain open', function () {
 });
 
 test('project show page includes overview section counts', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
 

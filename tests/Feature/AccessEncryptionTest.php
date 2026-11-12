@@ -4,111 +4,51 @@ use App\Models\Access;
 use App\Models\User;
 use App\Services\AccessEncryptionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Spatie\Permission\Models\Role;
-
-use function Pest\Laravel\actingAs;
-use function Pest\Laravel\postJson;
+use Illuminate\Support\Facades\Crypt;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function () {
-    Role::findOrCreate('user', 'web');
+test('office users have an automatically generated wrapped group key and cannot supply a user key', function (): void {
+    $user = User::factory()->officeUser()->create();
+    $this->actingAs($user);
+    $encoded = Crypt::decryptString($user->group->getRawOriginal('access_encryption_key'));
+    expect(strlen(base64_decode($encoded, true)))->toBe(32);
+    $this->postJson('/settings/access-encryption-key', ['encryption_key' => 'ForbiddenKey123!'])->assertNotFound();
+    expect($user->fresh()->access_encryption_key)->toBeNull();
 });
 
-test('office user can store access encryption key in security settings', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
-
-    actingAs($user)
-        ->from(route('security.edit'))
-        ->post(route('access-encryption-key.store'), [
-            'encryption_key' => 'MySecretKey123!',
-            'encryption_key_confirmation' => 'MySecretKey123!',
-        ])
-        ->assertRedirect(route('security.edit'));
-
-    expect(app(AccessEncryptionService::class)->hasStoredKey($user->fresh()))->toBeTrue();
-});
-
-test('access data can be encrypted and decrypted with user key', function () {
+test('access data can be encrypted and decrypted with the current group key', function (): void {
+    $user = User::factory()->officeUser()->create();
+    $this->actingAs($user);
     $service = app(AccessEncryptionService::class);
-    $user = User::factory()->create();
-    $user->assignRole('user');
-
-    $service->storeKey($user, 'MySecretKey123!');
-
-    $encrypted = $service->encryptData('plain-secret', 'MySecretKey123!');
-
-    expect($encrypted)->not->toBe('plain-secret')
-        ->and($service->decryptData($encrypted, 'MySecretKey123!'))->toBe('plain-secret');
+    $context = $service->context();
+    $encrypted = $service->encryptData('plain-secret', $context);
+    expect($encrypted)->not->toBe('plain-secret')->and($service->decryptData($encrypted, $context))->toBe('plain-secret');
 });
 
-test('office user can transform access data through api', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
-
-    app(AccessEncryptionService::class)->storeKey($user, 'MySecretKey123!');
-
-    actingAs($user);
-
-    $encryptedResponse = postJson(route('internal.accesses.transform-data'), [
-        'action' => 'encrypt',
-        'content' => 'plain-secret',
-        'is_encrypted' => false,
-    ])->assertOk();
-
-    $encryptedPayload = $encryptedResponse->json('content');
-
-    postJson(route('internal.accesses.transform-data'), [
-        'action' => 'decrypt',
-        'content' => $encryptedPayload,
-        'is_encrypted' => true,
-    ])
-        ->assertOk()
-        ->assertJson([
-            'content' => 'plain-secret',
-            'is_encrypted' => false,
-        ]);
+test('office user can transform unsaved access data through the API without exposing a key', function (): void {
+    $user = User::factory()->officeUser()->create();
+    $this->actingAs($user);
+    $state = accessFormState();
+    $response = $this->postJson(route('internal.accesses.transform-data'), [...$state, 'action' => 'encrypt', 'content' => 'plain-secret', 'is_encrypted' => false])->assertOk();
+    $this->postJson(route('internal.accesses.transform-data'), [...$state, 'action' => 'decrypt', 'content' => $response->json('content'), 'is_encrypted' => true])->assertOk()->assertJsonPath('content', 'plain-secret');
+    expect(Access::query()->count())->toBe(0);
 });
 
-test('rotating encryption key re-encrypts stored access records', function () {
+test('rotating the group key re-encrypts stored records without asking for replacement key material', function (): void {
+    $user = User::factory()->officeUser()->create();
+    $this->actingAs($user);
     $service = app(AccessEncryptionService::class);
-    $user = User::factory()->create();
-    $user->assignRole('user');
-
-    $service->storeKey($user, 'OldSecretKey123!');
-    $encrypted = $service->encryptData('credential-data', 'OldSecretKey123!');
-
-    Access::factory()->for($user)->create([
-        'content' => $encrypted,
-        'is_encrypted' => true,
-    ]);
-
-    actingAs($user)
-        ->from(route('security.edit'))
-        ->put(route('access-encryption-key.rotate'), [
-            'current_password' => 'Password123!',
-            'encryption_key' => 'NewSecretKey456!',
-            'encryption_key_confirmation' => 'NewSecretKey456!',
-        ])
-        ->assertRedirect(route('security.edit'));
-
-    $access = Access::query()->firstOrFail();
-    $newKey = $service->resolveKey($user->fresh());
-
-    expect($newKey)->toBe('NewSecretKey456!')
-        ->and($service->decryptData($access->content, $newKey))->toBe('credential-data');
+    $state = accessFormState();
+    $encrypted = $service->encryptData('credential-data', $state['encryption_context']);
+    $record = Access::factory()->for($user)->create(['content' => $encrypted, 'is_encrypted' => true]);
+    $this->put(route('access-encryption-key.rotate'), [...$state, 'current_password' => 'Password123!'])->assertSessionHasNoErrors()->assertRedirect();
+    expect($record->fresh()->content)->not->toBe($encrypted)
+        ->and($service->decryptData($record->fresh()->content, $service->context(), $record, $record->fresh()->version()))->toBe('credential-data');
 });
 
-test('transform api requires configured encryption key', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
-
-    actingAs($user)
-        ->postJson(route('internal.accesses.transform-data'), [
-            'action' => 'encrypt',
-            'content' => 'plain-secret',
-            'is_encrypted' => false,
-        ])
-        ->assertStatus(422);
+test('transform API fails closed when the wrapped group key is unavailable', function (): void {
+    $user = User::factory()->officeUser()->create();
+    $user->group->forceFill(['access_encryption_key' => ''])->save();
+    $this->actingAs($user)->postJson(route('internal.accesses.transform-data'), [...accessFormState(), 'action' => 'encrypt', 'content' => 'plain-secret', 'is_encrypted' => false])->assertUnprocessable()->assertJsonValidationErrors('content');
 });

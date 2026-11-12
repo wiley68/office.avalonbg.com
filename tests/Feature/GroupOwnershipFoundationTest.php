@@ -72,6 +72,10 @@ test('group migration precedes users and ownership columns and indexes exist', f
         expect(Schema::hasColumn($table, 'group_id'))->toBeTrue();
         $column = collect(Schema::getColumns($table))->firstWhere('name', 'group_id');
         expect($column['nullable'])->toBe($table === 'users');
+        $groupKey = collect(Schema::getForeignKeys($table))->first(fn (array $key): bool => $key['columns'] === ['group_id']);
+        expect($groupKey['foreign_table'])->toBe('groups')
+            ->and($groupKey['foreign_columns'])->toBe(['id'])
+            ->and(strtolower($groupKey['on_delete']))->toBe('restrict');
     }
 
     foreach (['project_revisions', 'project_todos', 'project_git_repositories'] as $table) {
@@ -270,3 +274,79 @@ test('composite foreign keys reject a project from another group on dependent up
     expect(fn () => $record->update(['project_id' => $otherProject->id]))->toThrow(QueryException::class);
     expect($record->fresh()->project_id)->not->toBe($otherProject->id);
 })->with(['task' => [Task::class], 'email' => [ProjectEmailLink::class]]);
+
+test('the original email migration creates source identity without an ownership alter', function (): void {
+    $migration = require database_path('migrations/2026_07_14_051443_create_project_email_links_table.php');
+    $queries = Schema::getConnection()->pretend(fn () => $migration->up());
+    $create = collect($queries)->first(fn (array $query): bool => str_starts_with($query['query'], 'create table "project_email_links"'));
+
+    expect($create)->not->toBeNull()
+        ->and($create['query'])->toContain('"source_mailbox" varchar');
+
+    $column = collect(Schema::getColumns('project_email_links'))->firstWhere('name', 'source_mailbox');
+    expect($column['nullable'])->toBeTrue();
+    $indexes = collect(Schema::getIndexes('project_email_links'));
+    $identity = $indexes->firstWhere('name', 'email_links_source_message_unique');
+    expect($identity['unique'])->toBeTrue()
+        ->and($identity['columns'])->toBe(['project_id', 'source_mailbox', 'folder', 'uidvalidity', 'imap_uid'])
+        ->and($indexes->contains(fn (array $index): bool => $index['columns'] === ['project_id', 'folder', 'imap_uid']))->toBeFalse()
+        ->and($indexes->contains(fn (array $index): bool => $index['unique'] && $index['columns'] === ['id', 'group_id']))->toBeTrue();
+
+    $keys = collect(Schema::getForeignKeys('project_email_links'));
+    $projectKey = $keys->first(fn (array $key): bool => $key['columns'] === ['project_id', 'group_id']);
+    expect($projectKey['foreign_table'])->toBe('projects')
+        ->and($projectKey['foreign_columns'])->toBe(['id', 'group_id'])
+        ->and(strtolower($projectKey['on_delete']))->toBe('cascade');
+});
+
+test('the database enforces the complete email source tuple and permits distinct source generations', function (): void {
+    $project = Project::factory()->create();
+    $identity = ['source_mailbox' => str_repeat('a', 64), 'folder' => 'INBOX', 'uidvalidity' => 100, 'imap_uid' => 42];
+    ProjectEmailLink::factory()->for($project)->create($identity);
+    ProjectEmailLink::factory()->for($project)->create([...$identity, 'source_mailbox' => str_repeat('b', 64)]);
+    ProjectEmailLink::factory()->for($project)->create([...$identity, 'uidvalidity' => 101]);
+    ProjectEmailLink::factory()->for($project)->create([...$identity, 'source_mailbox' => null]);
+
+    expect($project->emailLinks()->count())->toBe(4);
+    expect(fn () => ProjectEmailLink::factory()->for($project)->create($identity))->toThrow(QueryException::class);
+});
+
+test('composite foreign keys and their parent indexes preserve group consistency', function (): void {
+    $expected = [
+        ['tasks', ['project_id', 'group_id'], 'projects', 'cascade'],
+        ['project_email_links', ['project_id', 'group_id'], 'projects', 'cascade'],
+        ['document_project', ['document_id', 'group_id'], 'documents', 'cascade'],
+        ['document_project', ['project_id', 'group_id'], 'projects', 'cascade'],
+        ['document_task', ['document_id', 'group_id'], 'documents', 'cascade'],
+        ['document_task', ['task_id', 'group_id'], 'tasks', 'cascade'],
+        ['project_email_attachments', ['project_email_link_id', 'group_id'], 'project_email_links', 'cascade'],
+        ['project_email_attachments', ['document_id', 'group_id'], 'documents', 'restrict'],
+        ['profit_entries', ['profit_type_id', 'group_id'], 'profit_types', 'restrict'],
+    ];
+
+    foreach ($expected as [$table, $columns, $parent, $onDelete]) {
+        $key = collect(Schema::getForeignKeys($table))->first(fn (array $key): bool => $key['columns'] === $columns);
+        expect($key)->not->toBeNull()
+            ->and($key['foreign_table'])->toBe($parent)
+            ->and($key['foreign_columns'])->toBe(['id', 'group_id'])
+            ->and(strtolower($key['on_delete']))->toBe($onDelete)
+            ->and(collect(Schema::getIndexes($parent))->contains(fn (array $index): bool => $index['unique'] && $index['columns'] === ['id', 'group_id']))->toBeTrue();
+    }
+});
+
+test('fresh migration creation order has no forward foreign key dependencies', function (): void {
+    $tables = collect(Schema::getConnection()->select("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY rowid"))->pluck('name')->all();
+
+    foreach ($tables as $position => $table) {
+        foreach (Schema::getForeignKeys($table) as $key) {
+            $parent = $key['foreign_table'];
+            if ($parent === $table) {
+                expect($table)->toBe('tasks');
+
+                continue;
+            }
+
+            expect(array_search($parent, $tables, true))->not->toBeFalse()->toBeLessThan($position);
+        }
+    }
+});

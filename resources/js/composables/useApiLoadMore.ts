@@ -1,4 +1,5 @@
 import { computed, onMounted, ref, watch } from 'vue';
+import { isAccessFailure, useAccessRevocation } from '@/lib/accessRevocation';
 
 type PaginatorResponse<T> = {
     data: T[];
@@ -64,7 +65,8 @@ export function useApiLoadMore<T = unknown>(opts: UseApiLoadMoreOptions) {
             abortController.abort();
         }
 
-        abortController = new AbortController();
+        const controller = new AbortController();
+        abortController = controller;
 
         const params = new URLSearchParams({
             page: String(targetPage),
@@ -81,8 +83,19 @@ export function useApiLoadMore<T = unknown>(opts: UseApiLoadMoreOptions) {
                     'X-Requested-With': 'XMLHttpRequest',
                 },
                 credentials: 'same-origin',
-                signal: abortController.signal,
+                cache: 'no-store',
+                signal: controller.signal,
             });
+
+            if (controller.signal.aborted) {
+                return;
+            }
+
+            if (isAccessFailure(response)) {
+                clear();
+
+                return;
+            }
 
             if (!response.ok) {
                 const data = (await response.json().catch(() => null)) as {
@@ -95,11 +108,16 @@ export function useApiLoadMore<T = unknown>(opts: UseApiLoadMoreOptions) {
 
             const payload = (await response.json()) as PaginatorResponse<T>;
 
+            if (controller.signal.aborted) {
+                return;
+            }
+
             if (append) {
                 rows.value = (rows.value as T[]).concat(payload.data);
             } else {
                 rows.value = payload.data;
             }
+
             total.value = payload.total;
             page.value = payload.current_page;
         } catch (error) {
@@ -107,8 +125,10 @@ export function useApiLoadMore<T = unknown>(opts: UseApiLoadMoreOptions) {
                 onError?.('Възникна грешка при зареждане.');
             }
         } finally {
-            loading.value = false;
-            loadingMore.value = false;
+            if (abortController === controller) {
+                loading.value = false;
+                loadingMore.value = false;
+            }
         }
     }
 
@@ -124,6 +144,16 @@ export function useApiLoadMore<T = unknown>(opts: UseApiLoadMoreOptions) {
 
         await fetchPage(page.value + 1, true);
     }
+
+    const clear = (): void => {
+        abortController?.abort();
+        rows.value = [];
+        loading.value = false;
+        total.value = 0;
+        page.value = 1;
+        loadingMore.value = false;
+    };
+    useAccessRevocation(clear);
 
     const debouncedSearch = debounce(() => {
         void fetchData();

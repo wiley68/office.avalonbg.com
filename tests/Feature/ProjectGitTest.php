@@ -46,8 +46,7 @@ function fakeGitHubResponses(): void
 }
 
 test('office user can connect github repository to own project', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
 
@@ -66,8 +65,7 @@ test('office user can connect github repository to own project', function () {
 });
 
 test('office user cannot connect invalid github repository', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
 
@@ -86,8 +84,7 @@ test('office user cannot connect invalid github repository', function () {
 test('office user can fetch github overview for own project', function () {
     fakeGitHubResponses();
 
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
 
@@ -108,8 +105,7 @@ test('office user can fetch github overview for own project', function () {
 });
 
 test('office user can remove github repository from own project', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
     ProjectGitRepository::factory()->for($project)->create();
@@ -126,8 +122,7 @@ test('office user sees translated error when private github repository is inacce
         'api.github.com/repos/acme/private-repo' => Http::response([], 404),
     ]);
 
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($user)->create();
 
@@ -148,11 +143,9 @@ test('office user sees translated error when private github repository is inacce
 });
 
 test('office user cannot manage git settings for another users project', function () {
-    $owner = User::factory()->create();
-    $owner->assignRole('user');
+    $owner = User::factory()->officeUser()->create();
 
-    $other = User::factory()->create();
-    $other->assignRole('user');
+    $other = User::factory()->officeUser()->create();
 
     $project = Project::factory()->for($owner)->create();
 

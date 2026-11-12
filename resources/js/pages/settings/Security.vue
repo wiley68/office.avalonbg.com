@@ -21,7 +21,7 @@ import type { BreadcrumbItem } from '@/types';
 type Props = {
     canManageTwoFactor?: boolean;
     canManageAccessEncryptionKey?: boolean;
-    hasAccessEncryptionKey?: boolean;
+    accessEncryptionContext?: string | null;
     requiresConfirmation?: boolean;
     twoFactorEnabled?: boolean;
 };
@@ -29,7 +29,7 @@ type Props = {
 withDefaults(defineProps<Props>(), {
     canManageTwoFactor: false,
     canManageAccessEncryptionKey: false,
-    hasAccessEncryptionKey: false,
+    accessEncryptionContext: null,
     requiresConfirmation: false,
     twoFactorEnabled: false,
 });
@@ -139,8 +139,8 @@ onUnmounted(() => clearTwoFactorAuthData());
             </div>
 
             <AccessEncryptionKeyPanel
-                v-if="canManageAccessEncryptionKey"
-                :has-access-encryption-key="hasAccessEncryptionKey"
+                v-if="canManageAccessEncryptionKey && accessEncryptionContext"
+                :encryption-context="accessEncryptionContext"
             />
 
             <div v-if="canManageTwoFactor" class="space-y-6">

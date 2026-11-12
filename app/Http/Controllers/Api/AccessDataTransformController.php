@@ -4,54 +4,39 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TransformAccessDataRequest;
-use App\Models\User;
+use App\Models\Access;
 use App\Services\AccessEncryptionService;
+use App\Support\Translations;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
-use InvalidArgumentException;
-use RuntimeException;
+use Illuminate\Validation\ValidationException;
 
 class AccessDataTransformController extends Controller
 {
-    public function __invoke(
-        TransformAccessDataRequest $request,
-        AccessEncryptionService $encryptionService,
-    ): JsonResponse {
-        /** @var User $user */
-        $user = Auth::user();
-
+    public function __invoke(TransformAccessDataRequest $request, AccessEncryptionService $encryptionService): JsonResponse
+    {
         $validated = $request->validated();
+        $access = isset($validated['access_id']) ? Access::query()->where('group_id', $request->user()->group_id)->findOrFail($validated['access_id']) : null;
+        $context = $validated['encryption_context'];
+        $version = $validated['version'] ?? null;
 
-        try {
-            $userKey = $encryptionService->requireKey($user);
-        } catch (RuntimeException $exception) {
-            return response()->json([
-                'message' => $exception->getMessage(),
-            ], 422);
-        }
-
-        try {
-            if ($validated['action'] === 'encrypt') {
-                return response()->json([
-                    'content' => $encryptionService->encryptData($validated['content'], $userKey),
-                    'is_encrypted' => true,
-                ]);
+        if ($validated['action'] === 'encrypt') {
+            if ($validated['is_encrypted']) {
+                throw ValidationException::withMessages(['is_encrypted' => Translations::get('accesses.errors.already_encrypted')]);
             }
 
+            $content = $encryptionService->encryptData($validated['content'], $context, $access, $version);
+        } else {
             if (! $validated['is_encrypted']) {
-                return response()->json([
-                    'message' => __('accesses.errors.not_encrypted'),
-                ], 422);
+                throw ValidationException::withMessages(['content' => Translations::get('accesses.errors.not_encrypted')]);
             }
 
-            return response()->json([
-                'content' => $encryptionService->decryptData($validated['content'], $userKey),
-                'is_encrypted' => false,
-            ]);
-        } catch (InvalidArgumentException $exception) {
-            return response()->json([
-                'message' => $exception->getMessage(),
-            ], 422);
+            $content = $encryptionService->decryptData($validated['content'], $context, $access, $version);
         }
+
+        return response()->json([
+            'content' => $content,
+            'is_encrypted' => $validated['action'] === 'encrypt',
+            'encryption_context' => $context,
+        ]);
     }
 }

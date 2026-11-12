@@ -33,18 +33,14 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         ->middleware('throttle:6,1')
         ->name('user-password.update');
 
-    Route::post('settings/access-encryption-key', [AccessEncryptionKeyController::class, 'store'])
-        ->middleware(['role:user', 'throttle:6,1'])
-        ->name('access-encryption-key.store');
-
     Route::put('settings/access-encryption-key/rotate', [AccessEncryptionKeyController::class, 'rotate'])
-        ->middleware(['role:user', 'throttle:6,1'])
+        ->middleware(['role:user', 'group.member', 'throttle:6,1'])
         ->name('access-encryption-key.rotate');
 
     Route::get('settings/appearance', [AppearanceController::class, 'edit'])->name('appearance.edit');
     Route::patch('settings/appearance', [AppearanceController::class, 'update'])->name('appearance.update');
 
-    Route::middleware(['role:user'])->group(function () {
+    Route::middleware(['role:user', 'group.member'])->group(function () {
         Route::get('settings/email', [EmailController::class, 'edit'])->name('email.edit');
         Route::put('settings/email', [EmailController::class, 'update'])->name('email.update');
         Route::post('settings/email/test', [EmailController::class, 'testConnection'])

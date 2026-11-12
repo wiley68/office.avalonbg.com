@@ -10,6 +10,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { documentsApiIndex } from '@/composables/useDocumentsApiRoute';
 import { useTranslations } from '@/composables/useTranslations';
+import { isAccessFailure, useAccessRevocation } from '@/lib/accessRevocation';
 
 type DocumentListItem = {
     id: number;
@@ -44,8 +45,19 @@ const filteredDocuments = computed(() => {
     );
 });
 
+let epoch = 0;
+const clear = (): void => {
+    epoch++;
+    documents.value = [];
+    search.value = '';
+    open.value = false;
+};
+useAccessRevocation(clear);
+
 const fetchDocuments = async (): Promise<void> => {
     loading.value = true;
+
+    const requestEpoch = ++epoch;
 
     try {
         const params = new URLSearchParams({
@@ -61,14 +73,30 @@ const fetchDocuments = async (): Promise<void> => {
                 'X-Requested-With': 'XMLHttpRequest',
             },
             credentials: 'same-origin',
+            cache: 'no-store',
         });
+
+        if (requestEpoch !== epoch) {
+            return;
+        }
+
+        if (isAccessFailure(response)) {
+            clear();
+
+            return;
+        }
 
         if (!response.ok) {
             return;
         }
 
         const payload = (await response.json()) as { data: DocumentListItem[] };
-        documents.value = payload.data;
+
+        if (requestEpoch === epoch) {
+            documents.value = payload.data;
+        }
+    } catch {
+        // Keep the previous list on a temporary network error.
     } finally {
         loading.value = false;
     }

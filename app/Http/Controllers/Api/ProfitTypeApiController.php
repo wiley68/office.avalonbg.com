@@ -20,7 +20,7 @@ class ProfitTypeApiController extends Controller
             'kind' => ['nullable', Rule::enum(ProfitTypeKind::class)],
         ]);
 
-        $query = ProfitType::query()
+        $query = ProfitType::query()->where('group_id', $request->user()->group_id)
             ->select(['id', 'name', 'kind'])
             ->orderBy('name');
 

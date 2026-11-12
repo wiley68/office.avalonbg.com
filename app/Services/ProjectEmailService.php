@@ -8,6 +8,8 @@ use App\Models\ProjectEmailLink;
 use App\Models\User;
 use App\Models\UserImapAccount;
 use App\Support\EmailConversation;
+use App\Support\Translations;
+use Illuminate\Support\Facades\Gate;
 
 class ProjectEmailService
 {
@@ -19,6 +21,30 @@ class ProjectEmailService
     public function accountForUser(User $user): ?UserImapAccount
     {
         return $user->imapAccount;
+    }
+
+    public function accountForLink(User $user, ProjectEmailLink $link): UserImapAccount
+    {
+        $user = $user->fresh();
+        abort_unless($user?->isActive(), 403);
+        Gate::forUser($user)->authorize('view', $link->project);
+        $account = $user->imapAccount;
+        abort_unless($account !== null && $this->canReadLive($user, $account, $link), 403, Translations::get('projects.email.errors.mailbox_owner_required'));
+        try {
+            $validity = $this->imapMailboxService->folderUidValidity($account, $link->folder);
+        } catch (\Throwable) {
+            abort(422, Translations::get('projects.email.errors.archive_failed'));
+        }
+        abort_unless($validity > 0, 422, Translations::get('projects.email.errors.archive_failed'));
+        abort_unless($validity === $link->uidvalidity, 404, Translations::get('projects.email.errors.missing_on_server'));
+
+        return $account;
+    }
+
+    private function canReadLive(User $user, UserImapAccount $account, ProjectEmailLink $link): bool
+    {
+        return $link->user_id === $user->id && $account->user_id === $user->id
+            && $link->source_mailbox !== null && hash_equals($link->source_mailbox, $account->mailboxIdentity());
     }
 
     /**
@@ -39,6 +65,8 @@ class ProjectEmailService
      */
     public function refreshLinks(Project $project, User $user): array
     {
+        Gate::forUser($user)->authorize('view', $project);
+
         $account = $user->imapAccount;
         $folderUidValidities = [];
 
@@ -50,7 +78,7 @@ class ProjectEmailService
 
         if ($account !== null) {
             foreach ($links as $link) {
-                if ($link->isArchived()) {
+                if ($link->isArchived() || ! $this->canReadLive($user, $account, $link)) {
                     continue;
                 }
 
@@ -65,7 +93,7 @@ class ProjectEmailService
         }
 
         return $links
-            ->map(fn (ProjectEmailLink $link): array => $this->formatLink($link))
+            ->map(fn (ProjectEmailLink $link): array => [...$this->formatLink($link), 'can_read' => $link->isArchived() || ($account !== null && $this->canReadLive($user, $account, $link))])
             ->values()
             ->all();
     }
@@ -90,14 +118,14 @@ class ProjectEmailService
             'is_archived' => $link->isArchived(),
             'conversation_key' => $link->conversation_key,
             'last_verified_at' => $link->last_verified_at?->toIso8601String(),
-            'attachments' => $link->attachments
+            'attachments' => $link->isArchived() ? $link->attachments
                 ->map(fn ($attachment): array => [
                     'part' => $attachment->imap_part,
                     'filename' => $attachment->document->original_name,
                     'mime_type' => $attachment->document->mime_type,
                 ])
                 ->values()
-                ->all(),
+                ->all() : [],
         ];
     }
 
@@ -117,19 +145,17 @@ class ProjectEmailService
         array &$folderUidValidities,
     ): void {
         if (! array_key_exists($link->folder, $folderUidValidities)) {
-            try {
-                $folderUidValidities[$link->folder] = $this->imapMailboxService->folderUidValidity(
-                    $account,
-                    $link->folder,
-                );
-            } catch (\Throwable) {
-                $folderUidValidities[$link->folder] = 0;
-            }
+            $folderUidValidities[$link->folder] = $this->imapMailboxService->folderUidValidity(
+                $account,
+                $link->folder,
+            );
         }
 
         $currentUidValidity = $folderUidValidities[$link->folder];
 
-        if ($currentUidValidity !== 0 && $currentUidValidity !== $link->uidvalidity) {
+        abort_unless($currentUidValidity > 0, 422, Translations::get('projects.email.errors.archive_failed'));
+
+        if ($currentUidValidity !== $link->uidvalidity) {
             $link->update([
                 'status' => ProjectEmailLinkStatus::MissingOnServer,
                 'last_verified_at' => now(),
@@ -144,7 +170,7 @@ class ProjectEmailService
             $link->imap_uid,
         );
 
-        if ($summary === null) {
+        if ($summary === null || $summary['uidvalidity'] !== $link->uidvalidity) {
             $link->update([
                 'status' => ProjectEmailLinkStatus::MissingOnServer,
                 'last_verified_at' => now(),
@@ -155,7 +181,6 @@ class ProjectEmailService
 
         $link->update([
             'status' => ProjectEmailLinkStatus::Active,
-            'uidvalidity' => $summary['uidvalidity'],
             'subject' => $summary['subject'],
             'from_name' => $summary['from_name'],
             'from_address' => $summary['from_address'],

@@ -17,15 +17,13 @@ beforeEach(function () {
     Role::findOrCreate('user', 'web');
 });
 
-test('profits api returns only current user entries for selected month', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+test('profits api returns only current group entries for selected month', function () {
+    $user = User::factory()->officeUser()->create();
 
-    $other = User::factory()->create();
-    $other->assignRole('user');
+    $other = User::factory()->officeUser()->create();
 
-    $incomeType = ProfitType::factory()->income()->create(['name' => 'Sales']);
-    $expenseType = ProfitType::factory()->expense()->create(['name' => 'Rent']);
+    $incomeType = ProfitType::factory()->for($user->group)->income()->create(['name' => 'Sales']);
+    $expenseType = ProfitType::factory()->for($user->group)->expense()->create(['name' => 'Rent']);
 
     ProfitEntry::factory()->for($user)->for($incomeType, 'profitType')->create([
         'date' => '2026-08-10',
@@ -43,7 +41,7 @@ test('profits api returns only current user entries for selected month', functio
         'amount' => 500,
     ]);
 
-    ProfitEntry::factory()->for($other)->for($incomeType, 'profitType')->create([
+    ProfitEntry::factory()->for($other)->for(ProfitType::factory()->for($other->group)->state(['kind' => $incomeType->kind]), 'profitType')->create([
         'date' => '2026-08-05',
         'amount' => 999,
     ]);
@@ -61,11 +59,10 @@ test('profits api returns only current user entries for selected month', functio
 });
 
 test('profit types api can filter by kind', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
-    ProfitType::factory()->income()->create(['name' => 'Income A']);
-    ProfitType::factory()->expense()->create(['name' => 'Expense A']);
+    ProfitType::factory()->for($user->group)->income()->create(['name' => 'Income A']);
+    ProfitType::factory()->for($user->group)->expense()->create(['name' => 'Expense A']);
 
     actingAs($user)
         ->getJson(route('internal.profit-types.index', ['kind' => ProfitTypeKind::Income->value]))

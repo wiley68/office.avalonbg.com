@@ -15,6 +15,13 @@ class Access extends Model
     /** @use HasFactory<AccessFactory> */
     use HasFactory, PreservesCreator;
 
+    public function version(): string
+    {
+        return hash('sha256', json_encode([
+            $this->id, $this->group_id, $this->name, $this->category, $this->content, $this->is_encrypted,
+        ], JSON_THROW_ON_ERROR));
+    }
+
     /** @return BelongsTo<Group, $this> */
     public function group(): BelongsTo
     {

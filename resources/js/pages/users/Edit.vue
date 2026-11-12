@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, defineAsyncComponent, ref } from 'vue';
+import GroupSelect from '@/components/GroupSelect.vue';
 import Icon from '@/components/Icon.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,12 +38,14 @@ type EditableUser = {
     name: string;
     email: string;
     status: number;
+    group_id: number | null;
     two_factor_enabled?: boolean;
 };
 
 const props = defineProps<{
     user: EditableUser;
     manageableRole?: UserRole;
+    groups: { id: number; name: string }[];
 }>();
 
 const { t } = useTranslations();
@@ -55,6 +58,7 @@ const form = useForm({
     password: '',
     password_confirmation: '',
     status: props.user.status,
+    group_id: props.user.group_id === null ? '' : String(props.user.group_id),
 });
 
 const userStatus = computed({
@@ -180,6 +184,13 @@ const onSubmit = () => {
                                         {{ form.errors.email }}
                                     </p>
                                 </div>
+
+                                <GroupSelect
+                                    v-if="manageableRole === 'user'"
+                                    v-model="form.group_id"
+                                    :groups="groups"
+                                    :error="form.errors.group_id"
+                                />
 
                                 <div class="space-y-2">
                                     <Label for="status">{{ t('users.fields.status') }}</Label>

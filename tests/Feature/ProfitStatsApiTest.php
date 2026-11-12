@@ -17,14 +17,12 @@ beforeEach(function () {
 });
 
 test('profits stats api aggregates months for calendar year', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
-    $other = User::factory()->create();
-    $other->assignRole('user');
+    $other = User::factory()->officeUser()->create();
 
-    $incomeType = ProfitType::factory()->income()->create();
-    $expenseType = ProfitType::factory()->expense()->create();
+    $incomeType = ProfitType::factory()->for($user->group)->income()->create();
+    $expenseType = ProfitType::factory()->for($user->group)->expense()->create();
 
     ProfitEntry::factory()->for($user)->for($incomeType, 'profitType')->create([
         'date' => '2026-01-15',
@@ -41,7 +39,7 @@ test('profits stats api aggregates months for calendar year', function () {
         'amount' => 500,
     ]);
 
-    ProfitEntry::factory()->for($other)->for($incomeType, 'profitType')->create([
+    ProfitEntry::factory()->for($other)->for(ProfitType::factory()->for($other->group)->state(['kind' => $incomeType->kind]), 'profitType')->create([
         'date' => '2026-01-10',
         'amount' => 9999,
     ]);
@@ -69,10 +67,9 @@ test('profits stats api aggregates months for calendar year', function () {
 });
 
 test('profits stats api supports custom date range by months', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
-    $incomeType = ProfitType::factory()->income()->create();
+    $incomeType = ProfitType::factory()->for($user->group)->income()->create();
 
     ProfitEntry::factory()->for($user)->for($incomeType, 'profitType')->create([
         'date' => '2026-02-10',

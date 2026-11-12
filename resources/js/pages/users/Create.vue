@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import GroupSelect from '@/components/GroupSelect.vue';
 import Icon from '@/components/Icon.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,6 +40,7 @@ import type { BreadcrumbItem, UserRole } from '@/types';
 
 const props = defineProps<{
     manageableRole?: UserRole;
+    groups: { id: number; name: string }[];
 }>();
 
 const { t } = useTranslations();
@@ -51,6 +53,7 @@ const form = useForm({
     password: '',
     password_confirmation: '',
     status: 1,
+    group_id: '',
 });
 
 const userStatus = computed({
@@ -226,6 +229,13 @@ async function copyGeneratedPassword(): Promise<void> {
                                         {{ form.errors.email }}
                                     </p>
                                 </div>
+
+                                <GroupSelect
+                                    v-if="manageableRole === 'user'"
+                                    v-model="form.group_id"
+                                    :groups="groups"
+                                    :error="form.errors.group_id"
+                                />
 
                                 <div class="space-y-2">
                                     <Label for="status">{{ t('users.fields.status') }}</Label>

@@ -40,11 +40,13 @@ class DocumentPolicy
 
     private function isOfficeUser(User $user): bool
     {
-        return $user->hasRole(UserRole::User->value);
+        return $user->hasRole(UserRole::User->value)
+            && $user->group_id !== null
+            && $user->group()->exists();
     }
 
     private function ownsDocument(User $user, Document $document): bool
     {
-        return $this->isOfficeUser($user) && $document->user_id === $user->id;
+        return $this->isOfficeUser($user) && $document->group_id === $user->group_id;
     }
 }

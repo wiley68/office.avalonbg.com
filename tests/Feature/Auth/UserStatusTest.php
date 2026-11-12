@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Group;
 use App\Models\User;
 use App\Support\Translations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -66,11 +67,12 @@ test('admin can deactivate user on update', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
-    $managedUser = User::factory()->create();
+    $managedUser = User::factory()->officeUser()->create();
     $managedUser->assignRole('user');
 
     actingAs($admin)
         ->put("/users/{$managedUser->id}", [
+            'group_id' => $managedUser->group_id,
             'name' => $managedUser->name,
             'email' => $managedUser->email,
             'status' => 0,
@@ -92,6 +94,7 @@ test('new users are active by default when created by admin', function () {
     post('/users', [
         'name' => 'New User',
         'email' => 'active.user@example.com',
+        'group_id' => Group::factory()->create()->id,
         'password' => 'Password123!',
         'password_confirmation' => 'Password123!',
         'status' => 1,

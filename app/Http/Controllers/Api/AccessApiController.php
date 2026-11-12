@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Access;
 use App\Models\User;
+use App\Services\AccessEncryptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,12 +13,14 @@ use Illuminate\Support\Facades\Gate;
 
 class AccessApiController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, AccessEncryptionService $encryptionService): JsonResponse
     {
         Gate::authorize('viewAny', Access::class);
 
         /** @var User $user */
         $user = Auth::user();
+
+        $context = $encryptionService->context();
 
         $validated = $request->validate([
             'per_page' => 'integer|min:1|max:100',
@@ -34,8 +37,8 @@ class AccessApiController extends Controller
         $filter = $validated['search'] ?? '';
 
         $query = Access::query()
-            ->where('user_id', $user->id)
-            ->select(['id', 'name', 'category', 'content', 'is_encrypted', 'created_at']);
+            ->where('group_id', $user->group_id)
+            ->select(['id', 'group_id', 'user_id', 'name', 'category', 'content', 'is_encrypted', 'created_at']);
 
         if ($filter !== '') {
             $query->where(function ($q) use ($filter) {
@@ -53,6 +56,10 @@ class AccessApiController extends Controller
             ->orderBy($sortBy, $sortOrder)
             ->paginate($perPage, ['*'], 'page', $page);
 
-        return response()->json($accesses);
+        return response()->json($accesses->through(fn (Access $access): array => [
+            ...$access->only(['id', 'name', 'category', 'content', 'is_encrypted', 'created_at']),
+            'version' => $access->version(),
+            'encryption_context' => $context,
+        ]));
     }
 }

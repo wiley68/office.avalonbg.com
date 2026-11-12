@@ -20,6 +20,8 @@ import {
 } from './columns';
 import type { AccessListItem } from './columns';
 
+const props = defineProps<{ encryptionContext: string }>();
+
 const { t } = useTranslations();
 const { showError } = useAppToast();
 
@@ -39,7 +41,7 @@ const formMode = ref<'create' | 'edit'>('create');
 const editingAccess = ref<AccessListItem | null>(null);
 
 const showDeleteDialog = ref(false);
-const accessToDelete = ref<number | null>(null);
+const accessToDelete = ref<AccessListItem | null>(null);
 
 const { rows, pagination, loading, search, fetch } =
     useApiTable<AccessListItem>({
@@ -80,7 +82,7 @@ const openEdit = (access: AccessListItem): void => {
 };
 
 const requestDeleteAccess = (accessId: number): void => {
-    accessToDelete.value = accessId;
+    accessToDelete.value = rows.value.find((access) => access.id === accessId) ?? null;
     showDeleteDialog.value = true;
 };
 
@@ -102,11 +104,16 @@ const confirmDelete = (): void => {
         return;
     }
 
-    const accessId = accessToDelete.value;
+    const access = accessToDelete.value;
     accessToDelete.value = null;
     showDeleteDialog.value = false;
 
-    router.delete(destroy(accessId).url, {
+    router.delete(destroy(access.id).url, {
+        data: { encryption_context: access.encryption_context, version: access.version },
+        onError: async (errors) => {
+            showError(t('common.error'), Object.values(errors).join('\n'));
+            await fetch();
+        },
         preserveScroll: true,
         onSuccess: async () => {
             await fetch();
@@ -189,6 +196,7 @@ onMounted(async () => {
         </div>
 
         <AccessFormModal
+            :encryption-context="props.encryptionContext"
             v-model:open="showFormModal"
             :mode="formMode"
             :access="editingAccess"

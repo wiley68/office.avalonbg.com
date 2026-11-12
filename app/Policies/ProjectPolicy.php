@@ -35,11 +35,13 @@ class ProjectPolicy
 
     private function isOfficeUser(User $user): bool
     {
-        return $user->hasRole(UserRole::User->value);
+        return $user->hasRole(UserRole::User->value)
+            && $user->group_id !== null
+            && $user->group()->exists();
     }
 
     private function ownsProject(User $user, Project $project): bool
     {
-        return $this->isOfficeUser($user) && $project->user_id === $user->id;
+        return $this->isOfficeUser($user) && $project->group_id === $user->group_id;
     }
 }

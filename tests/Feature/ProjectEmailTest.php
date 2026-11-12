@@ -29,8 +29,7 @@ beforeEach(function () {
 
 function createOfficeUserWithImap(): array
 {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+    $user = User::factory()->officeUser()->create();
 
     $account = UserImapAccount::factory()->for($user)->create();
 
@@ -46,9 +45,11 @@ function mockImapArchiveResponses(
     int $uid,
     array $body = ['text' => 'Archived body text.', 'html' => null],
     array $attachments = [],
+    int $uidvalidity = 123456,
 ): MockInterface {
     /** @var MockInterface&ImapMailboxService $imapMailboxService */
     $imapMailboxService = mock(ImapMailboxService::class);
+    $imapMailboxService->shouldReceive('folderUidValidity')->andReturn($uidvalidity);
 
     $imapMailboxService
         ->shouldReceive('fetchMessageBody')
@@ -403,7 +404,9 @@ test('office user can fetch linked email body', function () {
         'status' => ProjectEmailLinkStatus::Active,
     ]);
 
-    mock(ImapMailboxService::class)
+    $imap = mock(ImapMailboxService::class);
+    $imap->shouldReceive('folderUidValidity')->andReturn($link->uidvalidity);
+    $imap
         ->shouldReceive('fetchMessageBody')
         ->once()
         ->with(
@@ -431,7 +434,9 @@ test('office user can list linked email attachments', function () {
         'status' => ProjectEmailLinkStatus::Active,
     ]);
 
-    mock(ImapMailboxService::class)
+    $imap = mock(ImapMailboxService::class);
+    $imap->shouldReceive('folderUidValidity')->andReturn($link->uidvalidity);
+    $imap
         ->shouldReceive('fetchMessageAttachments')
         ->once()
         ->with(
@@ -460,7 +465,9 @@ test('office user can download linked email attachment', function () {
         'status' => ProjectEmailLinkStatus::Active,
     ]);
 
-    mock(ImapMailboxService::class)
+    $imap = mock(ImapMailboxService::class);
+    $imap->shouldReceive('folderUidValidity')->andReturn($link->uidvalidity);
+    $imap
         ->shouldReceive('fetchAttachmentPart')
         ->twice()
         ->with(
@@ -554,8 +561,7 @@ test('office user cannot remove email thread with foreign link ids', function ()
 test('office user cannot manage email links for another users project', function () {
     [$owner] = createOfficeUserWithImap();
 
-    $other = User::factory()->create();
-    $other->assignRole('user');
+    $other = User::factory()->officeUser()->create();
     UserImapAccount::factory()->for($other)->create();
 
     $project = Project::factory()->for($owner)->create();
@@ -627,6 +633,8 @@ test('office user can batch link messages to own project', function () {
     /** @var MockInterface&ImapMailboxService $imapMailboxService */
     $imapMailboxService = mock(ImapMailboxService::class);
 
+    $imapMailboxService->shouldReceive('folderUidValidity')->andReturn(999);
+
     foreach ([10, 11] as $uid) {
         $imapMailboxService
             ->shouldReceive('fetchMessageBody')
@@ -692,6 +700,7 @@ test('batch link archives attachments into documents and attaches them to projec
         20,
         ['text' => 'Please review the attached specification.', 'html' => null],
         [['part' => '2', 'filename' => 'specification.pdf']],
+        uidvalidity: 999,
     );
 
     actingAs($user);
@@ -736,6 +745,7 @@ test('batch link preserves binary attachment bytes when archiving documents', fu
             'content' => $binaryContent,
             'mime_type' => 'application/pdf',
         ]],
+        uidvalidity: 999,
     );
 
     actingAs($user);
